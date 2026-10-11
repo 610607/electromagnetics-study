@@ -1,0 +1,310 @@
+\chapter{四个标准系统：电容、电阻、电感与磁路}\label{ch:systems}
+
+\begin{chapterguide}
+\guidequestion{电路课里的 $R$、$C$、$L$ 是写在元件旁边的三个数字。它们是从哪里来的？把一个场问题压缩成一个数字时，丢掉了什么？}
+\begin{guidegoals}
+\item 从场方程出发推导平行板电容、均匀导体电阻和长螺线管电感，说清每一步用了哪条定律；
+\item 用磁路方程估计带气隙铁芯中的磁通，解释为什么磁动势和磁能主要集中在很短的气隙里；
+\item 推导 Poynting 定理，并用它说明电阻中的热量从哪里进入导体；
+\item 比较 $R$、$C$、$L$ 与磁阻 $\mathcal R$：各自压缩了哪条场关系，储能还是耗散，压缩时丢掉了什么；
+\item 写出三种元件的阻抗，知道微分电感描述的是什么。
+\end{guidegoals}
+\guideprereq{\secref{sec:electric-ohm}（欧姆定律）；\secref{sec:magnetic-linkage}（磁链与电感）；\chref{ch:matter}（$\vb D$、$\vb H$，位移电流）；\chref{ch:interfaces}（界面条件，\exref{ex:twolayer}）。}
+\end{chapterguide}
+
+\section{同一个配方：场、积分、一个数}\label{sec:systems-recipe}
+
+前几章分别处理了电荷与电场、电流与磁场、物质与界面。这一章把它们用在四个最简单、也最常用的装置上：平行板电容器、均匀导体、长螺线管、带气隙的铁芯。电路课把它们分别记成 $C$、$R$、$L$ 和磁阻 $\mathcal R$。
+
+\begin{intuition}[集总参数是场问题的“答案摘要”]
+一个集总参数只回答“从端子上看，这个装置是什么样子”。它把场在内部如何分布、在边缘怎样弯曲、随频率怎样改变，统统压缩掉了。只要端子关系就够用，这种压缩就是有用的；当我们关心内部某一点的场或热点时，就必须回到场。
+\end{intuition}
+
+我们要看到，四个参数是\emph{同一个配方}做出来的：
+
+\begin{enumerate}
+\item 由对称性确定场的\emph{形状}（均匀、沿轴、沿路径）；
+\item 用一条守恒定律或积分定律，把场的\emph{大小}与一个端子量（电荷 $Q$、电流 $I$、安匝 $NI$）联系起来；
+\item 沿路径或在截面上积分，得到另一个端子量（电压 $V$、磁链 $\lambda$、磁通 $\Phi$）；
+\item 两个端子量之比只取决于几何与材料——这就是集总参数。
+\end{enumerate}
+
+\fig{four_systems}{四个标准系统，每个都画出了场的样子（上）和压缩的过程（下方标签）。电容器：自由电荷决定 $D$，再得到 $E$ 与电压；电阻：电流决定 $J$，再得到 $E$ 与电压；电感：电流决定 $B$，再得到磁通与磁链（场线按精确的磁通函数绘制）；磁路：安匝数沿闭合路径分配给铁芯与气隙，磁通处处相同。}{fig:four_systems}
+
+\section{电容器：一次连起 Q、D、E、V 与 C}\label{sec:systems-capacitor}
+
+取面积为 $A_c$、间距为 $d$ 的平行金属板，板间充满均匀无损的介质 $\varepsilon=\varepsilon_0\varepsilon_r$，极板上分别放自由电荷 $+Q$ 与 $-Q$。设板的尺寸远大于间距，忽略边缘效应（\figref{fig:four_systems} 中的虚线弧）。
+
+按配方走一遍：对称性使板间的场均匀并垂直于极板，板外为零；在极板表面用薄盒，即界面条件 \eqref{eq:normalbc}（金属内部 $\vb D=0$），得 $D=Q/A_c$；本构关系给出 $E=D/\varepsilon$；沿间隙积分得电压 $V=Ed$。合在一起：
+\begin{keyeq}
+D=\frac{Q}{A_c},\quad E=\frac{Q}{\varepsilon A_c},\quad V=\frac{Qd}{\varepsilon A_c},\quad C\equiv\frac QV=\frac{\varepsilon A_c}{d}.
+\label{eq:capall}
+\end{keyeq}
+电容公式只是这个场解的简写，并不是一条独立的局部定律。
+
+\begin{example}{一个具体的电容器}\label{ex:systems-cap}
+$A_c=0.01\,\mathrm{m^2}$，$d=1\,\mathrm{mm}$，$\varepsilon_r=4$，$Q=1\,\mathrm{nC}$。求 $D$、$E$、$V$、$P$、$C$ 和储能。（理想几何的教学数值；这就是\exref{ex:dielectriccap} 中的电容器，只是给出了具体尺寸。）
+\solution
+由 \eqref{eq:capall}：$D=10^{-7}\,\mathrm{C/m^2}$，$E\approx2.82\,\mathrm{kV/m}$，$V\approx2.82\,\mathrm V$，$C\approx354\,\mathrm{pF}$。极化 $P=D-\varepsilon_0E=7.5\times10^{-8}\,\mathrm{C/m^2}$，即自由电荷的 $3/4$ 被束缚电荷抵消。储能 $W_e=\tfrac12CV^2\approx1.41\times10^{-9}\,\mathrm J$。同样的电荷放在真空间隙里，电压约为 $11.3\,\mathrm V$。
+\end{example}
+
+\subsubsection{能量在哪里} 对板间体积积分电场能量密度 $\tfrac12ED$（\secref{sec:systems-energy}）：
+\begin{equation}
+W_e=\tfrac12ED\,(A_cd)=\tfrac12\Bigl(\frac Vd\Bigr)\Bigl(\frac{Q}{A_c}\Bigr)A_cd=\tfrac12QV=\tfrac12CV^2 ,
+\end{equation}
+与电路公式完全一致。能量储存在极板之间的场里。
+
+\subsubsection{固定电荷还是固定电压} 插入介质会使储能变小还是变大？答案取决于保持什么不变。断开电源、$Q$ 固定时，$W_e=Q^2/(2C)$ 随 $C$ 增大而\emph{减小}：上例中插入 $\varepsilon_r=4$ 的介质，储能降为真空时的 $1/4$。接在电源上、$V$ 固定时，$W_e=CV^2/2$ 随 $C$ 增大而\emph{增加}，电源补充了电荷，也补充了能量。两者并不矛盾：控制变量不同，与电源交换的功也不同。
+
+\begin{compare}{插入介质：固定 $Q$ 与固定 $V$}{固定 $Q$（断开电源）}{固定 $V$（接着电源）}
+\cmprow{$E$}{降为 $1/\varepsilon_r$}{不变，$E=V/d$}
+\cmprow{$D$、$Q$}{不变}{增大为 $\varepsilon_r$ 倍}
+\cmprow{$V$}{降为 $1/\varepsilon_r$}{不变}
+\cmprow{储能}{$Q^2/(2C)$，降为 $1/\varepsilon_r$}{$CV^2/2$，增大为 $\varepsilon_r$ 倍}
+\cmprow{能量从哪来、到哪去}{介质被吸入，场对它做功}{电源提供电荷与能量}
+\cmpsum{“介质让电场变弱、储能变小”只对固定电荷成立；问能量之前，先问是什么保持不变。}
+\end{compare}
+
+\subsubsection{充电电流} 电压随时间变化时，引线中的电流 $I=\dot Q=C\dot V$。这个电流并没有穿过介质：在两板之间接替它的是位移电流 $\partial_t\vb D$，其面积积分恰好等于 $I$（\secref{sec:matter-displacement}）。
+
+\section{电阻：V、E、J、R 与热}\label{sec:systems-resistor}
+
+取电导率为 $\sigma$、长 $\ell$、截面积 $A_c$ 的均匀导体，两端用理想电极通入电流 $I$。稳态下电荷守恒加上对称性，使 $J=I/A_c$ 沿导体处处相同；局部欧姆定律给出 $E=J/\sigma$；沿长度积分得到电压：
+\begin{equation}
+V=\int_0^\ell E\,\dd x=\frac{I\ell}{\sigma A_c},\qquad R=\frac{\ell}{\sigma A_c}.
+\label{eq:resistor}
+\end{equation}
+
+耗散功率可以用三种方式计算：
+\begin{equation}
+P=VI=I^2R=\int_{\text{导体}}\vb E\cdot\vb J\dV .
+\label{eq:power3}
+\end{equation}
+前两种只看端子，第三种看场。最后这个等式不只是验算单位：它让“局部热点”有了明确的意义。总电阻相同的两个导体，内部的功率密度和温度分布可以完全不同。\exref{ex:twolayer} 就是例子：双层导体的 $R=400\,\Omega+1000\,\Omega=1400\,\Omega$，两层串联，电阻相加——这正是“$J_n$ 在界面上连续”在电路语言中的样子；但只有 $2\,\mathrm{mm}$ 厚的那一层，功率密度是另一层的 10 倍。只给出 $R$，这个信息就丢了。
+
+导体也有介电常数和极化。直流近似在电流平衡中忽略了位移电流，但 $\vb D$ 与界面电荷并没有因此消失，它们必须与求得的电场相容（\secref{sec:interfaces-surfacecharge}）。\emph{忽略方程中的一个小项，不等于宣布对应的物理量不存在。}
+
+\section{电感：螺线管的 L 与磁能}\label{sec:systems-inductor}
+
+取 $N$ 匝、长 $\ell$、截面积 $A_c$ 的长螺线管，管内充满线性材料 $\mu$，忽略端部与漏磁。
+
+按配方：对称性使管内磁场均匀、沿轴，管外为零；沿一边在管内、一边在管外的矩形回路用安培定律的自由电流形式 \eqref{eq:DHintegral}，$H\ell=NI$，于是 $H=NI/\ell$、$B=\mu NI/\ell$；每一匝链接相同的磁通 $\Phi=BA_c$，磁链 $\lambda=N\Phi$；最后
+\begin{keyeq}
+L=\frac{\lambda}{I}=\frac{\mu N^2A_c}{\ell}.
+\label{eq:Lsolenoid}
+\end{keyeq}
+$L$ 正比于 $N^2$：一个 $N$ 来自“$N$ 匝电流共同产生磁场”，另一个 $N$ 来自“$N$ 匝共同链接这个磁场”。
+
+\begin{example}{本书的螺线管的电感}\label{ex:systems-inductor}
+沿用\secref{sec:solenoid} 的螺线管：$n_t=1000\,\mathrm{m^{-1}}$，$a=0.02\,\mathrm m$，空芯。取长 $\ell=1\,\mathrm m$ 的一段（$N=1000$），求 $L$；$I=5\,\mathrm A$ 时的磁链与储能；$\dot I=10^6\,\mathrm{A/s}$ 时的端电压。
+\solution
+$A_c=\pi a^2\approx1.26\times10^{-3}\,\mathrm{m^2}$，由 \eqref{eq:Lsolenoid}，$L\approx1.58\,\mathrm{mH}$。$I=5\,\mathrm A$ 时 $\lambda=LI\approx7.90\,\mathrm{mWb}$，储能 $W_m=\tfrac12LI^2\approx19.7\,\mathrm{mJ}$。用场来算：管内 $B\approx6.28\,\mathrm{mT}$，能量密度 $B^2/(2\mu_0)\approx15.7\,\mathrm{J/m^3}$，乘以管内体积 $\pi a^2\ell$，同样得到 $19.7\,\mathrm{mJ}$。端电压 $L\dot I\approx1.58\,\mathrm{kV}$——恰好是\secref{sec:solenoid} 算出的每匝 $1.58\,\mathrm V$ 电动势乘以 1000 匝。
+\end{example}
+
+管内充满线性铁芯时，$L$ 增大为 $\mu_r$ 倍；但这只在铁芯远离饱和时成立（\chref{ch:bh}）。多个绕组时，每个绕组的磁链来自所有绕组的电流，$\lambda_i=\sum_jL_{ij}I_j$，非对角项是互感（\chref{ch:eddy}）。
+
+\section{磁路初识：铁芯与气隙}\label{sec:systems-magcircuit}
+
+把螺线管的磁通引进一个带气隙的铁环，就得到 MRI 磁体、电机和变压器中反复出现的结构。它不再有螺线管那样高的对称性，但只要磁通基本被约束在铁芯里，仍然可以用同样的配方。\chref{ch:lumped} 会系统地讨论这种“集总磁路”；这里只建立最基本的一条方程。
+
+设铁芯平均路径长 $\ell_y$、截面积 $A_y$，气隙长 $g$、截面积 $A_g$，绕组提供 $NI$ 安匝；忽略漏磁和气隙边缘效应（\figref{fig:core_gap}）。
+\begin{enumerate}
+\item \emph{磁通连续。}$\nabla\cdot\vb B=0$（在铁与空气的界面上即 $B_n$ 连续）使同一磁通依次穿过铁芯和气隙：$\Phi=A_yB_y=A_gB_g$。
+\item \emph{安培定律。}沿平均路径对 $\vb H$ 积分，等于路径套住的自由电流 $NI$：
+\end{enumerate}
+\begin{keyeq}
+NI=\ell_yH_y(B_y)+g\frac{B_g}{\mu_0}=\ell_yH_y\!\Bigl(\frac{\Phi}{A_y}\Bigr)+\frac{g\,\Phi}{\mu_0A_g}.
+\label{eq:coreconnection}
+\end{keyeq}
+$H_y(B_y)$ 是铁芯材料的（一般为非线性的）逆 B–H 关系。给定电流、几何与材料关系，\eqref{eq:coreconnection} 就决定了 $\Phi$；然后才得到 $B_y$、$B_g$、$H_y$ 以及铁芯的磁化 $M_y=B_y/\mu_0-H_y$。它们都是结果，不是可以分别指定的输入。
+
+\subsubsection{线性铁芯：磁路的“欧姆定律”} 若铁芯线性，$H_y=B_y/\mu_y$，\eqref{eq:coreconnection} 化为
+\begin{equation}
+\mathcal F=NI=\Phi\bigl(\mathcal R_y+\mathcal R_g\bigr),\qquad \mathcal R_y=\frac{\ell_y}{\mu_yA_y},\quad \mathcal R_g=\frac{g}{\mu_0A_g}.
+\label{eq:magohm}
+\end{equation}
+$\mathcal F$ 叫\textbf{磁动势}（单位 A），$\mathcal R=\ell/(\mu A)$ 叫\textbf{磁阻}（单位 A/Wb，即 1/H）。串联的磁阻相加，与\exref{ex:twolayer} 中串联的电阻相加是同一件事：\chref{ch:interfaces} 已经看到，$\sigma$ 界面与 $\mu$ 界面服从同一套数学。
+
+\begin{example}{带气隙的铁环}\label{ex:systems-core}
+铁环平均路径 $\ell_y=0.2\,\mathrm m$，气隙 $g=1\,\mathrm{mm}$，截面积处处为 $A_c=4\,\mathrm{cm^2}$，铁芯取线性 $\mu_r=1000$；绕组 $N=200$ 匝，$I=2\,\mathrm A$。求磁通、气隙磁通密度、磁动势在铁芯与气隙间的分配，以及电感。（教学数值。）
+\solution
+$\mathcal R_y=\ell_y/(\mu_r\mu_0A_c)\approx3.98\times10^5\,\mathrm{A/Wb}$，$\mathcal R_g=g/(\mu_0A_c)\approx1.99\times10^6\,\mathrm{A/Wb}$，气隙磁阻是铁芯的 5 倍。于是
+\begin{equation*}
+\Phi=\frac{NI}{\mathcal R_y+\mathcal R_g}\approx1.68\times10^{-4}\,\mathrm{Wb},\qquad B=\frac{\Phi}{A_c}\approx0.419\,\mathrm T .
+\end{equation*}
+$400\,\mathrm A$ 的磁动势中，铁芯分得 $H_y\ell_y\approx66.7\,\mathrm A$，气隙分得 $H_gg\approx333.3\,\mathrm A$，约 83\%。电感 $L=N^2/(\mathcal R_y+\mathcal R_g)\approx16.8\,\mathrm{mH}$。
+\end{example}
+
+\fig{core_gap}{带气隙的铁环（\exref{ex:systems-core}）。左：绿色绕组提供 $NI$，虚线为平均磁路，同一磁通依次穿过铁芯和气隙；气隙两侧的点线提示边缘效应，本节的模型忽略它。右：气隙只占路径长度的 0.5\%，却分走了 83\% 的磁动势和 83\% 的磁能。}{fig:core_gap}
+
+这个例子有几个值得记住的数字（\figref{fig:core_gap}）。气隙只占路径长度的 0.5\%，却承担了 83\% 的磁动势：因为 $\mathcal R_g/\mathcal R_y=(g/\ell_y)(\mu_r)(A_y/A_g)=5$，铁的 $\mu_r$ 把它的长度“打了一千折”。等价地，$B=\mu_0NI/(g+\ell_y/\mu_r)$：$0.2\,\mathrm m$ 长的铁芯只相当于 $0.2\,\mathrm{mm}$ 的空气。磁能也是如此：串联元件中磁通相同，各段储能 $\tfrac12\Phi^2\mathcal R_i$ 正比于磁阻，所以 83\% 的磁能在气隙里，这与对气隙体积积分 $B^2/(2\mu_0)$ 的结果一致。
+
+若没有气隙，同样的线性模型会给出 $B\approx2.51\,\mathrm T$、$L\approx100\,\mathrm{mH}$。这个 $B$ 已经超过 \eqref{eq:syntheticbh} 那条教学 B–H 曲线的饱和磁通密度 $1.6\,\mathrm T$，线性模型不再可信。有了气隙，同样的安匝只产生 $0.42\,\mathrm T$，远低于 $1.6\,\mathrm T$：磁路的特性主要由一段空气决定，铁的非线性影响也小得多。
+
+这一节的模型有三处明显的简化。第一，即使大部分磁动势降在气隙上，狭窄的铁芯截面仍可能因饱和而限制磁通；铁芯局部的工作点由\emph{整个}磁路决定，非线性时要解 \eqref{eq:coreconnection}（\secref{sec:lumped-nonlinear}）。第二，忽略了漏磁和边缘效应；它们需要用场计算或测量来标定，不能凭经验系数估计（\secref{sec:lumped-validity}）。第三，电感 $L=N^2/\mathcal R$ 的一般形式、多支路磁路的“基尔霍夫定律”，都留到\chref{ch:lumped}。此外，永磁体可以代替或补充绕组成为磁路的源；它的材料关系（回复线）与软铁不同，不能套用 $\vb B=\mu\vb H$，留到\secref{sec:bh-hysteresis} 与\secref{sec:lumped-pm} 讨论。
+
+\section{能量：储存、耗散与流动}\label{sec:systems-energy}
+
+电容器储存 $\tfrac12CV^2$，电感储存 $\tfrac12LI^2$，电阻耗散 $I^2R$。这些能量在哪里？又是怎样到达那里的？
+
+\subsection{能量密度与损耗密度}
+对无损、可逆、线性、时不变且张量对称的材料，电场与磁场的能量密度为
+\begin{equation}
+w_e=\tfrac12\vb E\cdot\vb D,\qquad w_m=\tfrac12\vb B\cdot\vb H\qquad[\mathrm{J/m^3}].
+\label{eq:energydensity}
+\end{equation}
+实电导率中的欧姆损耗密度为
+\begin{equation}
+p=\vb E\cdot\vb J_c=\vb E^{\mathsf T}\sig\vb E\qquad[\mathrm{W/m^3}].
+\label{eq:lossdensity}
+\end{equation}
+前面三节已经分别验证：对电容器板间积分 $w_e$ 得 $\tfrac12CV^2$，对螺线管内部积分 $w_m$ 得 $\tfrac12LI^2$，对导体积分 $p$ 得 $I^2R$。可逆的非线性磁材料中，能量需要沿本构曲线积分，不能直接写成 $BH/2$（\chref{ch:framework}）。
+
+\begin{compare}{储存与耗散}{能量密度 $w_e$、$w_m$}{损耗密度 $p$}
+\cmprow{单位}{$\mathrm{J/m^3}$}{$\mathrm{W/m^3}$（多一个“每秒”）}
+\cmprow{来自哪个材料参数}{$\varepsilon$、$\mu$}{$\sigma$}
+\cmprow{能否取回}{能：场减弱时能量还给电源}{不能：变成热}
+\cmprow{电路对应}{$C$、$L$}{$R$}
+\cmprow{在 Poynting 定理中}{时间导数项 $\partial_tw$}{源项 $\vb E\cdot\vb J$}
+\cmpsum{储能可以取回，耗散不能；要把功率变成能量，必须先说明它持续了多久。}
+\end{compare}
+
+\subsection{叉积的散度}
+要追踪能量的流动，需要一个新的向量恒等式。对任意两个光滑矢量场 $\vb F$、$\vb G$，
+\begin{equation}
+\nabla\cdot(\vb F\times\vb G)=\vb G\cdot(\nabla\times\vb F)-\vb F\cdot(\nabla\times\vb G).
+\tag{V5}\label{id:crossdiv}
+\end{equation}
+它来自乘积法则：求散度时，导数要么落在 $\vb F$ 上，要么落在 $\vb G$ 上。落在 $\vb F$ 上的各项恰好拼成 $\vb G\cdot(\nabla\times\vb F)$；落在 $\vb G$ 上的各项也拼成一个旋度，只是叉积换了次序，多出一个负号。
+
+\begin{deeper}[逐分量验证 \eqref{id:crossdiv}]
+$\nabla\cdot(\vb F\times\vb G)=\partial_x(F_yG_z-F_zG_y)+\partial_y(F_zG_x-F_xG_z)+\partial_z(F_xG_y-F_yG_x)$。把导数作用在 $\vb F$ 上的六项按 $G_x$、$G_y$、$G_z$ 归并：
+$G_x(\partial_yF_z-\partial_zF_y)+G_y(\partial_zF_x-\partial_xF_z)+G_z(\partial_xF_y-\partial_yF_x)=\vb G\cdot(\nabla\times\vb F)$；
+作用在 $\vb G$ 上的六项按 $F_x$、$F_y$、$F_z$ 归并：
+$F_x(\partial_zG_y-\partial_yG_z)+F_y(\partial_xG_z-\partial_zG_x)+F_z(\partial_yG_x-\partial_xG_y)=-\vb F\cdot(\nabla\times\vb G)$。
+\end{deeper}
+
+\subsection{Poynting 定理}
+取 $\vb F=\vb E$、$\vb G=\vb H$，再把两条旋度方程 $\nabla\times\vb E=-\partial_t\vb B$、$\nabla\times\vb H=\vb J_f+\partial_t\vb D$ 代进去：
+\begin{equation}
+\nabla\cdot(\vb E\times\vb H)=\vb H\cdot(\nabla\times\vb E)-\vb E\cdot(\nabla\times\vb H)
+=-\vb H\cdot\partial_t\vb B-\vb E\cdot\partial_t\vb D-\vb E\cdot\vb J_f .
+\label{eq:poyntinggeneral}
+\end{equation}
+这是一个精确的宏观关系。对 \eqref{eq:energydensity} 所说的那类材料，$\vb H\cdot\partial_t\vb B=\partial_tw_m$，$\vb E\cdot\partial_t\vb D=\partial_tw_e$。记 $w=w_e+w_m$ 与 \textbf{Poynting 矢量} $\vb S=\vb E\times\vb H$（单位 $\mathrm{W/m^2}$），得到
+\begin{keyeq}
+\frac{\partial w}{\partial t}+\nabla\cdot\vb S=-\vb E\cdot\vb J_f .
+\label{eq:poynting}
+\end{keyeq}
+对一个固定体积 $\Omega$ 用散度定理 \eqref{id:div}：
+\begin{equation}
+\frac{\dd}{\dd t}\int_\Omega w\dV+\oint_{\partial\Omega}\vb S\cdot\vb n\dS=-\int_\Omega\vb E\cdot\vb J_f\dV .
+\label{eq:poyntingintegral}
+\end{equation}
+三项各说一件事：体内储能的变化，加上穿过边界流出的能量，等于场对自由电流所做功的负值。若 $\vb J_f=\vb J_s+\sig\vb E$，传导部分 $\vb E^{\mathsf T}\sig\vb E\ge0$ 是热；外加源电流 $\vb J_s$ 那部分则是与外部驱动交换的能量，不能一概称为热。色散或磁滞材料中，$\vb H\cdot\partial_t\vb B$ 与 $\vb E\cdot\partial_t\vb D$ 不再是某个能量函数的时间导数，需要相应的材料动力学来区分储能与耗散。
+
+\begin{pitfall}[“Poynting 矢量只属于辐射；准静态装置里能量沿导线流动”]
+$\vb S=\vb E\times\vb H$ 不是电荷的电流密度，也不沿 $\vb B$ 的方向，也不只在辐射中出现。准静态近似忽略的是辐射与某些反馈，并不是说 $\vb E\times\vb H=0$，也不是说电路的能量只存在于导线内部~\cite{haus}。下面的例子说明，一个直流电阻的热量正是由周围的场从侧面送进来的。
+\end{pitfall}
+
+\begin{example}{电阻中的热从哪里进来}\label{ex:systems-poynting}
+半径为 $a$ 的长直圆柱导体载直流电流 $I$，导体内电场 $E_z$ 沿轴均匀。求导体表面的 Poynting 矢量与单位长度流入的功率。
+\solution
+切向电场在表面连续 \eqref{eq:tangentbc}，所以紧贴表面外侧的电场也是 $E_z$。安培定律给出表面处 $H_\theta=I/(2\pi a)$。叉积 $\vb E\times\vb H=E_z\vb e_z\times H_\theta\vb e_\theta=-E_zH_\theta\vb e_r$，\emph{沿半径向内}。单位长度流入的功率为
+\begin{equation*}
+2\pi a\cdot E_zH_\theta=E_zI=\frac{I^2R}{\ell},
+\end{equation*}
+最后一步用了 $E_z=V/\ell=IR/\ell$。流入的功率恰好等于单位长度的欧姆热（\figref{fig:poynting_resistor}）。
+\end{example}
+
+\fig{poynting_resistor}{圆柱电阻中的能量流动。左：导体内 $\vb E$（蓝）与 $\vb J$（绿）沿轴向；$\vb H$ 绕导体环绕，在左侧指出纸面、右侧指入纸面；Poynting 矢量 $\vb S=\vb E\times\vb H$（棕）从四周沿半径向内。右：右侧表面一点处三个矢量的方向关系。单位长度流入的能量 $2\pi aE_zH_\theta$ 恰好等于单位长度的欧姆热。}{fig:poynting_resistor}
+
+\subsection{正弦稳态：峰值与有效值}
+正弦稳态中关心的往往是一个周期内的平均。若 $\widetilde{\vb E}$ 是\emph{峰值}相量（\secref{sec:regimes-phasor}），$\sigma$ 为实数，则周期平均损耗为
+\begin{equation}
+\overline p=\tfrac12\sigma|\widetilde{\vb E}|^2 ;
+\end{equation}
+若用有效值（RMS）幅值，就没有这个 $\tfrac12$。例如 $\sigma=0.5\,\mathrm{S/m}$ 中峰值 $100\,\mathrm{V/m}$ 的场，平均损耗为 $2500\,\mathrm{W/m^3}$；若 $100\,\mathrm{V/m}$ 是有效值，则为 $5000\,\mathrm{W/m^3}$。两者差一倍，换算之前必须先弄清楚幅值约定。把体功率除以质量密度就得到比吸收率 SAR（\secref{sec:framework-sar}）；它是由场派生的观测量，不是另一种场。
+
+\section{对照：R、C、L 与磁阻}\label{sec:systems-compare}
+
+\tabref{tab:systems-rclr} 把四个集总参数放在一起。
+
+\begin{table}[htbp]\centering\small
+\caption{四个集总参数：各自压缩了哪条场关系。}\label{tab:systems-rclr}
+\begin{tabularx}{\linewidth}{@{}l l Y l l Y@{}}
+\toprule
+参数 & 定义 & 用到的场关系 & 理想几何 & 单位 & 能量\\\midrule
+$R$ & $V/I$ & $\vb J=\sigma\vb E$，$\nabla\cdot\vb J=0$ & $\ell/(\sigma A_c)$ & $\Omega$ & 耗散 $I^2R$\\
+$C$ & $Q/V$ & $\vb D=\varepsilon\vb E$，$\nabla\cdot\vb D=\rho_f$ & $\varepsilon A_c/d$ & F & 储存 $\tfrac12CV^2$\\
+$L$ & $\lambda/I$ & $\vb B=\mu\vb H$，$\nabla\times\vb H=\vb J_f$ & $\mu N^2A_c/\ell$ & H & 储存 $\tfrac12LI^2$\\
+$\mathcal R$ & $\mathcal F/\Phi$ & $\vb B=\mu\vb H$，$\nabla\cdot\vb B=0$，$\nabla\times\vb H=\vb J_f$ & $\ell/(\mu A_c)$ & A/Wb & 储存 $\tfrac12\Phi^2\mathcal R$\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+四者的共同点是：两个端子量之比只取决于几何和一个材料参数。它们在压缩中丢掉的东西也相似：
+\begin{itemize}
+\item \emph{场的局部分布。}同一个 $R$ 可以对应完全不同的热点（\exref{ex:twolayer}）；同一个 $C$ 可以对应边缘处很强的局部电场。
+\item \emph{边缘与泄漏。}电容器的边缘场、磁路的漏磁与气隙边缘效应，都不在理想公式里。
+\item \emph{频率依赖。}频率升高后，导体中的涡流与趋肤效应会改变场的分布，参数随之改变（\chref{ch:regimes}、\chref{ch:eddy}）。
+\item \emph{非线性。}有铁时 $L$ 与 $\mathcal R$ 依赖工作点（\chref{ch:bh}）。
+\end{itemize}
+
+在四个参数中，电阻与磁阻最容易被看成“同一种东西”。它们的公式只差一个材料参数，串并联规则也相同，物理却不同。
+
+\begin{compare}{电阻 $R$ 与磁阻 $\mathcal R$}{电阻 $R$}{磁阻 $\mathcal R$}
+\cmprow{定义}{$V/I$}{$\mathcal F/\Phi$}
+\cmprow{公式}{$\ell/(\sigma A_c)$}{$\ell/(\mu A_c)$}
+\cmprow{能量}{耗散：$I^2R$ 是热功率}{储存：$\tfrac12\Phi^2\mathcal R$ 是磁能；$\Phi^2\mathcal R$ 不是损耗}
+\cmprow{“绝缘体”}{有：导体外的空气几乎不导电}{没有：$\mu_0$ 只比铁的 $\mu$ 小 $10^3$–$10^5$ 倍，磁通会泄漏}
+\cmprow{材料参数}{$\sigma$ 通常与电流大小无关}{铁的 $\mu$ 随 $B$ 变化，会饱和}
+\cmprow{损耗从哪来}{就是 $R$ 本身}{需要另外的涡流、磁滞模型}
+\cmpsum{磁路借用了电路的形式，没有借用它的物理：电阻生热，磁阻储能；电流有绝缘体，磁通没有。}
+\end{compare}
+
+\section{阻抗：通向频域的一步}\label{sec:systems-impedance}
+
+正弦稳态中采用 $e^{\jj\omega t}$ 约定的相量（\secref{sec:regimes-phasor}），对时间求导变成乘以 $\jj\omega$。端子电压相量与电流相量之比叫\textbf{阻抗} $Z=\widetilde V/\widetilde I$，一般为复数：
+\begin{equation}
+Z_R=R,\qquad Z_L=\jj\omega L,\qquad Z_C=\frac{1}{\jj\omega C}.
+\label{eq:impedance}
+\end{equation}
+它们分别来自 $v=Ri$、$v=L\,\dd i/\dd t$ 与 $i=C\,\dd v/\dd t$。理想的串联电阻电感为 $R+\jj\omega L$。多个线圈时 $\lambda_i=\sum_jL_{ij}I_j$，阻抗成为矩阵 \eqref{eq:multicircuit}。
+
+非线性的偏置磁轭中，常数电感不再存在。在一个给定的工作状态附近，可以定义\textbf{微分电感} $L_{{\rm diff},ij}=\partial\lambda_i/\partial I_j$。它只描述该状态附近的小变化，不能用于大幅度的摆动（\chref{ch:bh}、\eqref{eq:biaslinearization}）。
+
+所有这些集总描述都默认：场的\emph{形状}不随频率改变，只是大小跟着端子量变化。频率足够低时这是对的。频率升高后，导体中感应出的涡流会反过来改写磁场，铜中的电流挤向表面，常数 $R$ 与 $L$ 都不再够用；导电屏蔽会带来随频率变化的损耗与耦合，一个常数电感矩阵未必适合宽频带的描述。什么时候可以忽略这些效应，需要比较几个时间尺度——这是下一章的问题。
+
+\begin{takeaways}
+\begin{itemize}
+\item $R$、$C$、$L$、$\mathcal R$ 都由同一个配方得到：对称性定形状，一条定律定大小，积分得端子量，比值只依赖几何与材料。
+\item 电容器：$D=Q/A_c$，$C=\varepsilon A_c/d$；储能 $\tfrac12CV^2$ 在板间的场里。插入介质后储能变小还是变大，取决于固定 $Q$ 还是固定 $V$。
+\item 电阻：$R=\ell/(\sigma A_c)$，$P=VI=I^2R=\int\vb E\cdot\vb J\dV$；相同的 $R$ 可以有完全不同的局部热点。
+\item 电感：$L=\mu N^2A_c/\ell$，储能 $\tfrac12LI^2$ 在管内的场里。磁路：$NI=\ell_yH_y+gB_g/\mu_0$，很短的气隙承担了大部分磁动势与磁能。
+\item Poynting 定理 $\partial_tw+\nabla\cdot(\vb E\times\vb H)=-\vb E\cdot\vb J_f$ 由 \eqref{id:crossdiv} 推出；电阻的热量从侧面经场流入。峰值与有效值的平均功率相差 2 倍。
+\item 集总参数丢掉了局部分布、边缘与泄漏、频率依赖和非线性；电阻生热而磁阻储能，磁通没有绝缘体。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item \exref{ex:systems-cap} 的电容器断开电源后，把极板间距拉大到 $2\,\mathrm{mm}$（介质仍充满间隙）。$E$、$V$、$C$、储能各变为原来的多少？多出来的能量从哪里来？
+\item 已知一块导体的电阻 $R$ 和通过的电流 $I$，能算出它内部的最大功率密度吗？
+\item 螺线管长度和电流不变，匝数加倍。$B$、$\lambda$、$L$ 各变为多少倍？为什么 $L$ 不是加倍？
+\item 把\exref{ex:systems-core} 的气隙加大到 $2\,\mathrm{mm}$，其余不变。$B$ 与 $L$ 大约变为多少？
+\item 在\exref{ex:systems-poynting} 中把电阻换成超导体（内部 $\vb E=0$）。表面的 Poynting 矢量是多少？这说明了什么？
+\item $\sigma=0.5\,\mathrm{S/m}$ 的组织中，电场幅值为 $100\,\mathrm{V/m}$。若这是峰值，平均损耗密度是多少？若是有效值呢？
+\item 为什么说“$\Phi^2\mathcal R$ 是磁路的损耗功率”是错的？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item $Q$ 不变，$D$、$E$ 不变；$V=Ed$ 加倍，$C$ 减半，储能 $Q^2/(2C)$ 加倍。多出的能量来自拉开极板时克服两板吸引力所做的机械功。
+\item 不能。$R$ 只给出总功率 $I^2R$；局部功率密度 $\vb E\cdot\vb J$ 取决于内部的场分布，例如\exref{ex:twolayer} 中两层的功率密度相差 10 倍。
+\item $B=\mu NI/\ell$ 加倍；每匝磁通加倍且匝数加倍，$\lambda$ 变为 4 倍；$L=\lambda/I$ 也变为 4 倍。一个 $N$ 来自产生磁场，另一个来自链接磁场。
+\item $\mathcal R_g$ 加倍，总磁阻由 $\mathcal R_y+\mathcal R_g$ 变为 $\mathcal R_y+2\mathcal R_g$。$B=\mu_0NI/(2g+\ell_y/\mu_r)\approx0.228\,\mathrm T$，$L\approx9.14\,\mathrm{mH}$，都约为原来的 0.55 倍——气隙越主导，结果越接近“与气隙长度成反比”。
+\item 表面切向电场为零，$\vb S=\vb E\times\vb H=0$：没有能量流入，也就没有热。电流照样流动，磁场照样存在，但场不向导体输送功率。
+\item 峰值：$\overline p=\tfrac12\sigma E^2=2500\,\mathrm{W/m^3}$；有效值：$\sigma E^2=5000\,\mathrm{W/m^3}$。
+\item 磁阻对应的是储能 $\tfrac12\Phi^2\mathcal R$，磁通不变时它不消耗功率。磁性材料中的损耗来自涡流与磁滞，需要单独的模型。
+\end{answers}

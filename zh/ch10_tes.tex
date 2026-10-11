@@ -1,0 +1,225 @@
+\chapter{TES：给定电流的体积传导}\label{ch:tes}
+
+\begin{chapterguide}
+\guidequestion{两块电极贴在头皮上，电源推着 $1\,\mathrm{mA}$ 的电流从一块流进、从另一块流出。电流在头里怎样分布？在电极、接触层、头皮、颅骨、脑组织这一长串东西里，哪些边界条件真正决定了答案，哪些只是计算上的约定？}
+\begin{guidegoals}
+\item 从电荷守恒与欧姆定律推导 $\nabla\cdot(\sig\nabla\phi)=0$，说明它为什么一般不是拉普拉斯方程，什么时候要换成复导纳率；
+\item 写出绝缘表面与电极上的边界条件，检查电流相容性，区分“固定电势参考”与“把边界接地”；
+\item 比较三种电极模型——指定电势、指定电流密度、完整电极模型，解释电极边缘的电流集中，以及为什么某些峰值会随网格加密不断增大；
+\item 用叠加（导联场）表示多电极刺激，判断哪些量对源线性、哪些量对解剖非线性，为什么 $\abs{\vb E}$ 不能直接相加。
+\end{guidegoals}
+\guideprereq{\secref{sec:electric-ohm}（欧姆定律）、\eqref{eq:continuity}（电荷守恒）；\chref{ch:interfaces}（\exref{ex:twolayer}，\secref{sec:interfaces-surfacecharge}）；\secref{sec:regimes-eqs}（电准静态的适用条件）。}
+\end{chapterguide}
+
+\section{两块电极，一块导体}\label{sec:tes-scene}
+
+经颅电刺激（TES）的装置比 TMS 还简单：两块（或更多）电极贴在头皮上，电源规定流过电极的电流。\chref{ch:intro} 的因果链里，TES 没有“线圈电流产生变化磁通”这两步，电流直接从电极进入身体。其余几步照样发生：电流在组织中流动，在电导率不同的界面上留下电荷，电荷的场决定了组织里的电场。
+
+我们先用全书的算例“含夹杂的导电方块”（\tabref{tab:intro-examples}）看一眼答案。方块代表一个导体截面，四周绝缘，电导率为 $\sigma=1$；右上方有一个电导率为 10 的圆形夹杂。顶边上贴两块宽 $w=0.25$ 的电极，左边一块注入电流 $I$，右边一块把它引出（\figref{fig:tes_setup}）。所有量都已归一化：长度以方块边长计，电导率以背景值计。
+
+\fig{tes_setup}{两块电极之间的体积传导（P1 有限元计算，电极按均匀电流密度建模）。左：均匀导体。右：同样的电极，导体内有 $\sigma=10$ 的圆形夹杂。绿色实线是电流线，相邻两线之间流过的电流相等，所以线越密电流密度越大；紫色虚线是等势线。坐标与场均已归一化，夹杂按单元标签近似。}{fig:tes_setup}
+
+图里有三件事值得注意。第一，电流线全部从阳极出发、终止于阴极，大部分电流贴着顶边走了“近路”，只有少数绕到深处。第二，等势线处处与电流线垂直（各向同性材料中 $\vb J=\sigma\vb E$ 与 $-\nabla\phi$ 同向），并且垂直地碰到绝缘边界——电流不能穿过那里，电场在边界上就没有法向分量。第三，夹杂把电流线“吸”了进去，夹杂内的等势线却变得稀疏：电流多了，电场反而小了。这正是\chref{ch:interfaces} 的两条界面条件：电流穿进夹杂时 $J_n$ 连续，$E_n$ 降为十分之一；沿界面流动时 $E_t$ 连续，$J_t$ 增大十倍。两种情形下，夹杂里同样的电场都推动了多得多的电流。
+
+这个图是怎样算出来的？需要三样东西：体内的方程、边界条件、以及一个电势参考。本章依次讨论它们，然后说明多块电极的场怎样叠加。
+
+\begin{intuition}[TES 的源全在边界上]
+导体内部没有任何源：没有外加电流，也没有变化的磁通。体内的场完全由“电流从边界的哪里进、从哪里出”和电导率的分布决定。所以 TES 建模的大部分功夫，花在边界——尤其是电极——的描述上。
+\end{intuition}
+
+\section{电导方程从哪里来}\label{sec:tes-pde}
+
+设 $\Omega$ 是身体的导电区域。我们做三个假设，每个都对应\chref{ch:regimes} 中的一把尺子：
+\begin{enumerate}
+\item 材料静止、线性：$\sig$ 不随场强改变；
+\item 感应反馈可以忽略：组织中的电流太弱，它们的磁场变化不会感应出可观的电场，于是 $\nabla\times\vb E\approx0$，可以写 $\vb E=-\nabla\phi$（磁扩散的尺度 $\eta_m\ll1$，\eqref{eq:scales}）；
+\item 在电流平衡中电荷积累可以忽略：$\nabla\cdot\vb J=0$（电荷弛豫远快于驱动的变化，$\eta_d\ll1$，\secref{sec:regimes-eqs}）。
+\end{enumerate}
+另外，体内没有外加的电流源。代入欧姆定律 $\vb J=\sig\vb E$ \eqref{eq:jfrome}：
+\begin{equation}
+\vb J=-\sig\nabla\phi,\qquad \nabla\cdot\vb J=0,
+\end{equation}
+于是
+\begin{keyeq}
+\nabla\cdot(\sig\nabla\phi)=0\qquad\text{在 }\Omega\text{ 内}.
+\label{eq:tespde}
+\end{keyeq}
+这是一个椭圆型的传导问题。\exref{ex:twolayer} 就是它最简单的一维解：两层中 $\sigma\,\dd\phi/\dd x$ 处处相同，电势连续、斜率在界面处折弯。
+
+\subsection{它一般不是拉普拉斯方程}
+对标量电导率，用乘积法则 \eqref{id:product} 展开：
+\begin{equation}
+\sigma\nabla^2\phi+\nabla\sigma\cdot\nabla\phi=0 .
+\end{equation}
+只有在 $\sigma$ 为常数的子区域内，第二项才消失，方程才化为 $\nabla^2\phi=0$。在组织界面上，$\nabla\sigma$ 是一个集中在界面上的“尖峰”，第二项正是界面电荷所在（\secref{sec:interfaces-surfacecharge} 的“深入一步”）。各向异性组织 \eqref{eq:sigmatensor}中，$\sig$ 是张量，连“分区后各自满足拉普拉斯方程”也不成立。
+
+\begin{pitfall}[“先在每块组织里解 $\nabla^2\phi=0$，界面上让 $\phi$ 连续就行”]
+$\phi$ 连续只是一半的界面条件；另一半是法向电流连续 $\sigma_1\partial_n\phi_1=\sigma_2\partial_n\phi_2$ \eqref{eq:einterface}。把分段常数的 $\sigma$ 当作光滑常数提到导数外面，恰好丢掉了这一半。从散度形式 \eqref{eq:tespde} 出发的有限元，会自动满足法向电流连续（\chref{ch:femscalar}），这正是要从散度形式出发的原因~\cite{simnibs}。
+\end{pitfall}
+
+\subsection{位移电流不可忽略时：复导纳率}
+假设 3 把电流平衡中的电荷积累——也就是位移电流 \eqref{eq:continuityfromampere}——忽略掉了。若驱动频率较高，或某些组织的 $\omega\varepsilon/\sigma$ 不够小，就要在电流平衡中保留 $\partial_t\vb D$。在正弦稳态中用峰值相量（\secref{sec:regimes-phasor}），把电导率换成复导纳率 $\boldsymbol Y=\sig+\jj\omega\eps$ \eqref{eq:admittivity}：
+\begin{keyeq}
+\nabla\cdot\bigl(\boldsymbol Y\,\nabla\widetilde\phi\bigr)=0 .
+\label{eq:tescomplex}
+\end{keyeq}
+方程形式完全不变，只是系数和解都变成了复数：不同位置的电势可以有不同的相位。
+
+组织的 $\sigma$ 与 $\varepsilon$ 还随频率变化（色散）。对一个包含多种频率成分的波形，有两种做法：在波形频谱需要的各个频率上分别求解，再合成时域结果；或者采用满足因果性的时域材料模型。只有当相关频带内空间算子几乎不随频率变化时，才可以算一张纯电阻场图，再乘以波形。
+
+\begin{compare}{电阻性模型与复导纳率模型}{电阻性：$\nabla\cdot(\sig\nabla\phi)=0$}{复导纳率：$\nabla\cdot(\boldsymbol Y\nabla\widetilde\phi)=0$}
+\cmprow{保留了什么}{传导电流}{传导电流与位移电流}
+\cmprow{系数与解}{实数；全场同相}{复数；各点相位可以不同}
+\cmprow{处理波形}{一张场图 $\times$ 波形}{逐频求解再合成，或用时域材料模型}
+\cmprow{材料数据}{每种组织一个 $\sigma$}{每个频率的 $\sigma(\omega)$、$\varepsilon(\omega)$}
+\cmprow{何时可用}{相关频带内 $\omega\varepsilon/\sigma\ll1$，且 $\sigma$ 近似不随频率变}{位移不可忽略但仍为 EQS（\secref{sec:regimes-eqs}）}
+\cmpsum{两者是同一条守恒方程；区别只在“电流”是否包括位移电流，以及系数能不能在整个频带里当作常数。}
+\end{compare}
+
+\section{边界：符号、电流相容性与参考}\label{sec:tes-boundary}
+\eqref{eq:tespde} 只说明体内的电流“不生不灭”。电流从哪里进、从哪里出，要由边界条件说明。
+
+\subsection{边界上的电流}
+取 $\vb n$ 为身体表面的\emph{外}法向，记 $g=\vb J\cdot\vb n$ 为向外流出的电流密度。由 $\vb J=-\sig\nabla\phi$，
+\begin{keyeq}
+-\vb n\cdot\sig\nabla\phi=g .
+\label{eq:tesneumann}
+\end{keyeq}
+皮肤与空气接触的部分是绝缘的，$g=0$；注入电流的电极下 $g<0$。习惯上更常用向内的电流密度 $j_{\rm in}=-g=\vb n\cdot\sig\nabla\phi$。第 $l$ 块电极 $\Gamma_l$ 注入的总电流为
+\begin{keyeq}
+I_l=\int_{\Gamma_l}j_{\rm in}\dS,\qquad \sum_lI_l=0 .
+\label{eq:currentcompatibility}
+\end{keyeq}
+第二式不是额外的规定。对 $\nabla\cdot\vb J=0$ 在整个 $\Omega$ 上积分并用散度定理 \eqref{id:div}，$\oint_{\partial\Omega}\vb J\cdot\vb n\dS=0$；绝缘部分没有贡献，剩下的就是各电极电流之和为零——进来多少，就必须出去多少。三块电极若分别注入 $+2\,\mathrm{mA}$ 和 $-0.5\,\mathrm{mA}$，第三块必须是 $-1.5\,\mathrm{mA}$。
+
+\begin{example}{只注入、不引出的电流去了哪里}\label{ex:tes-ground}
+在\figref{fig:tes_setup} 的方块上，只给阳极规定 $j_{\rm in}=I/w$，忘了阴极；为了让求解器能够运行，把左下角一个节点的电势固定为零（“接地”）。求解器顺利给出了一个解。电流去了哪里？
+\solution
+由 \eqref{eq:currentcompatibility}，稳态下不可能只进不出，所以这个解一定在某处偷偷引出了电流。有限元方程组在固定电势的节点上不再要求电流平衡，那个节点上的“反力”就是从那里流出的电流。计算给出：左下角节点的反力恰好是 $-I$，其余所有节点的电流平衡都在舍入误差以内。也就是说，“接地”的那个节点变成了一块面积为零的电极，吸走了全部电流——它附近的电场是奇异的，整个电流分布也与真实的双电极实验毫无关系。把一个节点接地只能选定电势的零点，不能修复一个不守恒的源。
+\end{example}
+
+\subsection{参考与接地不是一回事}
+如果所有电极都给定电流，边界条件就全是 \eqref{eq:tesneumann} 这种“导数型”条件（Neumann 条件）。它们只确定 $\phi$ 的梯度，于是 $\phi$ 只确定到一个常数：$\phi$ 加上任何常数，$\vb E$、$\vb J$ 都不变（\secref{sec:electric-potential}）。求解时必须去掉这个自由度，例如要求 $\int_\Omega\phi\dV=0$，或者把某一个节点的电势固定为零。这只消掉了线性方程组的零空间，不改变任何可观测的场。
+
+把\emph{整个}外表面设为 $\phi=0$ 则完全不同。它是一个物理边界条件：它规定外表面处处与一个零电势的大导体相接，电流可以从任何地方流出去。真实的头皮表面是绝缘的，这样做等于换了一个实验。
+
+\begin{compare}{固定参考与边界接地}{固定参考：一个点或 $\int\phi\dV=0$}{边界接地：整个外表面 $\phi=0$}
+\cmprow{规定了几个数}{一个}{表面上每一点一个}
+\cmprow{改变 $\vb E$、$\vb J$ 吗}{不改变}{改变}
+\cmprow{表面的法向电流}{仍由 \eqref{eq:tesneumann} 规定（绝缘处为零）}{由解决定，一般不为零}
+\cmprow{作用}{消掉 $\phi$ 的常数自由度，使方程组可解}{描述表面与大导体（如接地的盐水浴）接触}
+\cmprow{用错的后果}{无（只要电流相容）}{电流从“绝缘”表面漏出，场被严重改写}
+\cmpsum{参考只选一个零点，接地则改变了实验。}
+\end{compare}
+
+\section{电极不只是一个电流标签}\label{sec:tes-electrodes}
+
+“这块电极注入 $1\,\mathrm{mA}$”只说了总电流，没有说这 $1\,\mathrm{mA}$ 在电极下面怎样分布。分布取决于电极怎样建模，常见的有三种（\figref{fig:electrode_models}）：
+\begin{enumerate}
+\item \textbf{指定电势}（等势电极）：电极下 $\phi=U_l$。它描述一块理想导电、与组织理想接触的金属。电流密度由解决定，总电流再由 $U_l$ 的大小调节。
+\item \textbf{指定电流密度}：电极下 $j_{\rm in}=I_l/|\Gamma_l|$ 均匀。这是最简单的写法，$|\Gamma_l|$ 为电极面积；但它忽略了金属本身是等势的。
+\item \textbf{完整电极模型}（complete electrode model, CEM）：金属等势，电压为未知数 $U_l$；金属与组织之间有一层接触层（凝胶、盐水垫、角质层），单位面积的接触阻抗为 $z_l$（单位 $\Omega\,\mathrm{m^2}$）。
+\end{enumerate}
+
+\subsection{完整电极模型}
+接触层很薄，可以看成无数个并联的小电阻：每一小块面积上流过的电流密度，正比于这一小块两端的电压。采用向内电流约定，
+\begin{keyeq}
+U_l-\phi=z_l\,j_{\rm in},\qquad \int_{\Gamma_l}j_{\rm in}\dS=I_l .
+\label{eq:cem}
+\end{keyeq}
+第一式是接触层的“局部欧姆定律”，第二式是总电流约束。两者合起来，同时决定了电极电压 $U_l$ 与电极下不均匀的电流分布~\cite{cem}。它的弱形式见 \eqref{eq:cemweak}。
+
+完整电极模型把前两种模型连成一条线。$z_l\to0$ 时，接触压降消失，组织侧电势等于金属电压，回到模型 1。$z_l$ 很大时，$U_l$ 必须很大才能推动电流 $I_l$，组织侧电势沿电极的起伏 $\Delta\phi$ 相对于 $U_l$ 可以忽略，$j_{\rm in}=(U_l-\phi)/z_l$ 近乎均匀，接近模型 2。有限的 $z_l$ 处在两者之间。
+
+\fig{electrode_models}{三种电极模型。上：示意，箭头长短表示电流密度。下：在\figref{fig:tes_setup} 右图（含夹杂）的方块上算出的阳极下电流密度（总电流相同，按平均值 $I/w$ 归一化；$z\sigma/w$ 为归一化的接触阻抗）。等势电极（黑）边缘的峰值超出坐标，并随网格加密不断增大；CEM（橙）的曲线不随网格改变，接触阻抗越大越接近均匀分布（绿）。}{fig:electrode_models}
+
+\subsection{边缘为什么特别多}
+等势电极下，电流可以自由选择从电极的哪一部分流出。从边缘出发的电流还可以向电极外侧的导体展开，所走的路径电阻更小，电流便挤到两侧边缘；离另一块电极近的右缘，路径又最短，集中得最厉害（\figref{fig:electrode_models}）。这种“自由选择”还有一个可以计算的后果：总电流相同时，等势电极的体内耗散功率（归一化单位）是 1.34，强制均匀分布时是 1.47。只规定总电流时，电流会分布成耗散最小的样子——\chref{ch:tms} 会看到同一原理的另一种形式。
+
+在理想等势电极的边缘，几何突然从“等势”变成“绝缘”，电流密度在数学上趋于无穷。数值解无法表示无穷大，于是交出一个随网格加密而不断增大的峰值：把\figref{fig:electrode_models} 的网格尺寸逐次减半，右缘峰值依次为 6.9、9.8、14：每减半一次增大约 $\sqrt2$ 倍，缩小为 $1/4$ 时约增大一倍，恰是峰值按网格尺寸的 $-1/2$ 次方增长的样子。完整电极模型的峰值（$z\sigma/w=0.08$ 时约为平均值的 2.9 倍）则在不同网格上几乎相同：有限的接触阻抗把奇异性“磨圆”了。
+
+\begin{pitfall}[“网格越细，电极边缘的峰值越准”]
+如果一个点峰值随网格加密持续增大，它反映的可能是理想几何的奇异性，而不是越来越准确的有限热点。关心局部加热或电极附近的场时，需要合理的圆角、接触层（或完整电极模型），以及明确定义的平均观测量（例如在规定体积上的平均值），并检查它们在网格加密下是否收敛。
+\end{pitfall}
+
+\subsection{离电极远一些，模型差别多大}
+\figref{fig:electrode_models} 中电极边缘的差别是数倍；离电极较远处差别小得多。在两块电极中点的正下方、距顶边 $0.6$ 处（$x=0.5$，$y=0.4$），三种模型给出的 $\abs{\vb E}$ 分别为 0.41（等势）、0.42 与 0.44（CEM，$z\sigma/w=0.08$ 与 0.8）、0.45（均匀），彼此相差约 10\%。这个差别取决于电极大小与电极间距、关心的深度，并不是一个普适的数；结论只是：电极模型首先改变电极附近的场，远处的影响要逐个检查。
+
+完整电极模型也说明了驱动方式的区别。同样 $I=1$ 时，等势电极所需的电压（以 $I/\sigma$ 为单位）是 1.34；加入 $z\sigma/w=0.8$ 的接触层后升到 3.05，多出来的部分降在两个接触层上。若电源把电压固定在 1.34，接触层会使电流降到原来的 44\%；若电源固定电流，接触层不改变总电流，主要改变电极下的分布，离电极较远处的场只变化百分之几到十（上一段的数字）。
+
+\begin{compare}{恒流驱动与恒压驱动}{恒流：规定 $I_l$}{恒压：规定 $U_l$}
+\cmprow{边界条件}{\eqref{eq:tesneumann} 或 \eqref{eq:cem} 中给定 $I_l$}{等势电极或 \eqref{eq:cem} 中给定 $U_l$}
+\cmprow{组织 $\sigma$ 全部乘以 $s$（不计接触阻抗）}{$\vb E$ 变为 $1/s$，$\vb J$ 不变}{$\vb E$ 不变，$\vb J$ 与总电流变为 $s$ 倍}
+\cmprow{接触阻抗的作用}{主要改变电极下的电流分布}{还改变总电流：一部分电压降在接触层上}
+\cmprow{双层导体（\exref{ex:twolayer}）}{$J$ 固定，低电导率层 $E$ 大、更热}{总电压固定，各层分压取决于全部电阻}
+\cmpsum{恒流时电流不受组织与接触影响，电场随电导率变；恒压时情形反过来。改变电极模型或材料参数之前，先弄清电源固定的是哪一个量。}
+\end{compare}
+
+\section{叠加与导联场}\label{sec:tes-leadfield}
+
+\subsection{线性：一次求解，任意组合}
+解剖、电导率和电极条件都固定且线性时，\eqref{eq:tespde} 与边界条件都对源线性，场可以叠加。选一组满足 \eqref{eq:currentcompatibility} 的独立电流模式——例如 $L$ 块电极时，取“第 $k$ 块注入、公共回流电极引出”的 $L-1$ 种模式。若第 $k$ 种模式以单位幅值产生场 $\vb e_k(\vb r)$，任意驱动下
+\begin{keyeq}
+\vb E(\vb r,t)=\sum_ki_k(t)\,\vb e_k(\vb r) .
+\label{eq:tesleadfield}
+\end{keyeq}
+$i_k$ 是第 $k$ 种模式的电流幅值，归一化方式必须写明。$\vb e_k$ 常称为\textbf{导联场}（lead field）。由互易性，它还把“刺激”与“测量”联系起来：用同一对电极测量体内电流源时，测得电压对源位置的灵敏度分布正是这个场，只差归一化与符号约定（\secref{sec:framework-reciprocity}）。预先算好各个 $\vb e_k$，任意电流组合的场只需做一次加权求和，这正是多电极优化的基础。在频域模型中，$\vb e_k$ 是复数且依赖频率，叠加时必须带上相位。
+
+\subsection{场线性，模长不线性}
+\eqref{eq:tesleadfield} 对矢量 $\vb E$ 成立，对 $\abs{\vb E}$ 不成立。
+
+\begin{example}[unbreakable]{两种模式叠加}\label{ex:tes-superposition}
+某点处，模式 1 的单位场为 $\vb e_1=(3,0)$，模式 2 为 $\vb e_2=(-3,4)$（教学数值，单位为每单位电流模式的 V/m）。两种模式各以单位幅值同时施加时，该点的 $\abs{\vb E}$ 是多少？把模式 2 反向呢？沿 $\vb t=(0,1)$ 方向的纤维，电场分量是多少？
+\solution
+单独施加时 $\abs{\vb e_1}=3$、$\abs{\vb e_2}=5$。同时施加，$\vb E=(0,4)$，$\abs{\vb E}=4$——既不是 $3+5$，甚至小于 5。模式 2 反向，$\vb E=(6,-4)$，$\abs{\vb E}\approx7.2$。纤维方向的分量 $\vb E\cdot\vb t$ 是线性的：$0+4=4$，反向时 $0-4=-4$。
+\end{example}
+
+所以观测量要分开看。$\vb E$ 的分量、沿某方向的投影、对某区域的线性平均，都对源线性，可以直接叠加；$\abs{\vb E}^2$（例如发热）是电流的二次型，叠加时会出现交叉项；$\abs{\vb E}$ 本身以及“聚焦度”之类的比值，则既不线性，也不是二次型。优化多电极电流时，这决定了问题能否写成线性或二次规划（\chref{ch:framework}）。
+
+\subsection{对源线性，对解剖不线性}
+改变电极电流，只改变 \eqref{eq:tesleadfield} 中的系数 $i_k$。改变解剖、组织电导率、接触状态或电极位置，则改变了方程本身——离散后就是改变了刚度矩阵——场随之以非线性的方式变化。
+
+一个常见的错误是把这两种依赖混在一起：例如把“电流加倍、场加倍”的经验推广到“电导率加倍，场减半”。后者只在恒流驱动且\emph{所有}组织的电导率按同一倍数变化时成立（上一节的对照）；只改变一种组织时，场的变化取决于整个几何。
+
+\begin{compare}{改变源与改变解剖}{改变电极电流 $i_k$}{改变解剖、$\sigma$、接触或电极布局}
+\cmprow{改变了什么}{方程右端（边界数据）}{方程的系数与区域（算子本身）}
+\cmprow{场怎样变}{线性：$\vb E=\sum_ki_k\vb e_k$}{非线性：一般要重新求解}
+\cmprow{可以预先计算吗}{可以：$\vb e_k$ 只需算一次}{不能：每个新解剖一套新的 $\vb e_k$}
+\cmprow{对代理模型的含义}{线性结构可以精确地写进模型}{这部分依赖才需要从数据中学习}
+\cmpsum{“场对电流线性”不等于“场对解剖线性”；可靠的代理模型与逆向设计都要把这两种依赖分开。}
+\end{compare}
+
+到这里，TES 问题的源全在边界上：电流从电极进入，体内处处 $\nabla\cdot\vb J=0$。如果源不是电极，而是线圈产生的变化磁通——它在整个导体里推动电荷，却不从任何边界注入电流——方程和边界条件会怎样变？下一章会看到，答案用的是同一个算子，只换了右端。
+
+\begin{takeaways}
+\begin{itemize}
+\item 电导方程 $\nabla\cdot(\sig\nabla\phi)=0$ 来自三个假设：线性静止材料、可忽略的感应反馈、电流平衡中可忽略的电荷积累。它只在电导率均匀的子区域内化为 $\nabla^2\phi=0$；界面上被丢掉的 $\nabla\sigma\cdot\nabla\phi$ 正是界面电荷。
+\item 位移电流不可忽略时换成复导纳率 $\boldsymbol Y=\sig+\jj\omega\eps$；材料色散时要逐频求解或用时域材料模型，不能简单地把一张场图乘以波形。
+\item 外法向下 $-\vb n\cdot\sig\nabla\phi=g$；各电极电流之和必须为零。只注入不引出的模型，“接地”节点会悄悄变成吸走全部电流的点电极。
+\item 固定一个电势参考不改变场；把整个外表面设为 $\phi=0$ 是另一个实验。
+\item 总电流不决定电极下的分布。等势电极边缘的电流密度在理想几何中趋于无穷，数值峰值随网格加密不断增大；完整电极模型 $U_l-\phi=z_lj_{\rm in}$ 用接触阻抗把它变得有限。
+\item 固定解剖时 $\vb E=\sum_ki_k\vb e_k$：矢量场与线性观测量可以叠加，$\abs{\vb E}$ 不能；场对源线性，对解剖不线性。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 在电导率均匀的区域内，$\nabla\cdot(\sigma\nabla\phi)=0$ 与 $\nabla^2\phi=0$ 等价吗？在两种组织的界面上呢？
+\item 一个模型有四块电极，前三块分别注入 $+1$、$+1$、$-0.5\,\mathrm{mA}$。第四块的电流是多少？若有人只给前三块赋值，再把第四块的一个节点接地，会发生什么？
+\item 把\figref{fig:tes_setup} 中整个方块的电导率加倍，在恒流驱动下 $\vb E$、$\vb J$、电极电压怎样变化？恒压驱动下呢？
+\item 为什么说完整电极模型“连接”了等势电极与均匀电流密度电极？分别取哪个极限？
+\item 某软件报告电极边缘的最大 $\abs{\vb E}$ 在网格加密后从 2 增大到 2.8，再加密增大到 4。你会怎样解读和处理？
+\item 两种电极组合在某点分别产生 $3$ 与 $5\,\mathrm{V/m}$ 的场强。同时施加时，该点场强一定在 2 到 8 之间吗？一定是 8 吗？
+\item 有人训练了一个代理模型，输入是电极电流，输出是 $\abs{\vb E}$ 图；另一个代理模型输入解剖和电导率。哪一个可以完全由几次有限元求解精确构造？为什么？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item 在 $\sigma$ 为常数的区域内等价，因为 $\nabla\sigma=0$。在界面上不等价：还必须满足法向电流连续 $\sigma_1\partial_n\phi_1=\sigma_2\partial_n\phi_2$，它来自被丢掉的 $\nabla\sigma\cdot\nabla\phi$ 项。
+\item 由 $\sum I_l=0$，第四块为 $-1.5\,\mathrm{mA}$。只给前三块赋值时净注入 $+1.5\,\mathrm{mA}$，接地节点的反力就是 $-1.5\,\mathrm{mA}$：它成了一块点电极，与原本面积有限的第四块电极不同，附近的场是奇异的（\exref{ex:tes-ground}）。
+\item 恒流：$\vb J$ 不变，$\vb E$ 与电极电压减半。恒压：$\vb E$ 不变，$\vb J$ 与总电流加倍。
+\item 由 $U_l-\phi=z_lj_{\rm in}$：$z_l\to0$ 时组织侧电势等于金属电压，即等势电极；$z_l$ 很大时组织侧电势的起伏相对 $U_l$ 可忽略，$j_{\rm in}$ 近乎均匀，即指定电流密度电极。
+\item 峰值持续增大，提示它来自理想几何（电极边缘、尖角）的奇异性，不是一个收敛的物理量。应改用圆角或接触层（完整电极模型），并报告在规定体积上的平均值或其他在加密下收敛的观测量。
+\item 一定在 2 到 8 之间：由三角不等式，$\abs{5-3}\le\abs{\vb E}\le5+3$。但不一定是 8，具体取决于两个场的方向；只有两者同向时才是 8，反向时是 2。
+\item 第一个：固定解剖时 $\vb E$ 对电流精确线性，几次求解得到各 $\vb e_k$ 后，任意电流组合的 $\vb E$ 都能精确算出，$\abs{\vb E}$ 再由 $\vb E$ 求出（只是不能把 $\abs{\vb e_k}$ 直接相加）。第二个不能：解剖和电导率改变的是算子本身，场对它们是非线性的。
+\end{answers}

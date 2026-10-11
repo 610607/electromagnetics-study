@@ -1,0 +1,514 @@
+\chapter{集总磁路：从场到网络}\label{ch:lumped}
+
+\begin{chapterguide}
+\guidequestion{一个铁芯加一段气隙，怎样不解三维场就估出气隙里的磁场、线圈的电感和衔铁受的吸力？这样的估计什么时候可信，什么时候会错得离谱？}
+\begin{guidegoals}
+\item 从 $\nabla\cdot\vb B=0$ 与安培定律推导磁路的节点律与回路律，并说出每一步压缩用到的假设；
+\item 计算磁动势、磁阻与磁导，把铁芯—气隙结构画成网络，用串并联和节点法求各支路磁通；
+\item 由网络算出电感、互感、磁能与吸力，区分恒磁通与恒磁动势两种虚功写法；
+\item 用图解法和牛顿迭代求非线性磁轭与永磁体磁路的工作点，在“磁动势源”与“磁通源”两种等效之间自由转换；
+\item 判断集总模型在什么条件下可信，知道怎样用场解标定边缘效应与漏磁，以及为什么未经验证的模型不能直接放进优化器。
+\end{guidegoals}
+\guideprereq{\secref{sec:systems-magcircuit}（铁芯与气隙初识）；\eqref{eq:DHintegral}（$\vb H$ 的环量）；\secref{sec:magnetic-linkage}（磁链与电感）；\chref{ch:bh}（B--H 曲线与回复线）。}
+\end{chapterguide}
+
+\section{从场到集总：什么条件下可以压缩}\label{sec:lumped-fromfield}
+
+\secref{sec:systems-magcircuit} 用一行安培定律估过一个带气隙的铁芯。本章把那一行估算发展成一套完整的方法。先看一个具体装置：一个口字形的软铁芯，截面 $2\,\mathrm{cm}\times2\,\mathrm{cm}$，一侧柱上绕 200 匝线圈，另一侧柱上锯开一条 $1\,\mathrm{mm}$ 的气隙，成为一个 C 形铁芯（\figref{fig:gapped_core_network} 左）。我们想知道三件事：通 $2\,\mathrm A$ 电流时气隙里的 $B$ 有多大；线圈的电感是多少；如果把气隙换成一块可以移动的衔铁，它受多大的吸力。
+
+三维有限元可以回答全部问题，但它需要几何、网格和材料数据，算一次要几分钟到几小时。设计初期更需要的是：一分钟内给出量级，并且看清“哪个尺寸最要紧”。电路课早就做过同样的事。铜导线里的电流分布也是一个场问题，可是没人去解导线里的拉普拉斯方程，因为电流被铜约束在导线里，空气几乎不导电，于是一根导线可以压缩成一个电阻 $R$。
+
+软铁对磁通也有类似的约束作用：它的相对磁导率在 $10^3$ 到 $10^5$ 之间（\secref{sec:matter-linear}），磁通“愿意”沿铁走。把铁芯看成一根根\textbf{磁通管}，每一段管子用一个数描述，整个装置就变成一张网络。这一章的全部内容，都是在回答两个问题：这种压缩怎样从场方程推出来，它在什么时候不成立。
+
+\begin{intuition}[磁通管]
+磁路就是“磁通管”的网络。一段管子里进多少磁通就出多少，因为 $\nabla\cdot\vb B=0$；沿着管子绕一圈，$\vb H$ 的环量等于穿过的电流，这是安培定律。集总化只多加了一句话：\emph{管壁在哪里是事先知道的}。
+\end{intuition}
+
+最后这句话正是全部近似所在。\tabref{tab:lumped-assumptions} 列出了压缩所需的假设、各自的作用和失效方式，后面各节会逐一用到。
+
+\begin{table}[htbp]\centering\small
+\caption{把磁场压缩成磁路所需的假设。每一条都可能失效，失效时需要的修正也不同。}\label{tab:lumped-assumptions}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{.24\linewidth} Y Y >{\raggedright\arraybackslash}p{.13\linewidth}@{}}
+\toprule
+假设 & 为什么需要 & 什么时候失效 & 处理\\\midrule
+磁通只走指定路径（铁和气隙） & 每段才有一个共同的磁通 $\Phi$ & 气隙长、窗口宽、铁饱和，磁通从空气“抄近路” & \secref{sec:lumped-fringing}\\
+每段截面上 $B$ 近似均匀 & 才能写 $B=\Phi/A$，并让 $H$ 沿该段不变 & 拐角、截面突变、极面边缘 & \secref{sec:lumped-validity}\\
+气隙短：$g$ 远小于极面尺寸 & 气隙场近似均匀，面积就是极面面积 & $g$ 与极面尺寸可比，边缘磁通显著 & \secref{sec:lumped-fringing}\\
+静态或磁准静态，涡流可忽略 & 才能用 $\oint\vb H\cdot\dd\boldsymbol\ell=NI$，磁通按磁导分配 & 趋肤深度与叠片厚度可比 \eqref{eq:skindepth} & \chref{ch:eddy}\\
+材料关系已知 & 由 $\Phi$ 才能求出每段的 $H$ & 磁滞、温度变化、不可逆退磁 & \secref{sec:lumped-nonlinear}、\secref{sec:lumped-pm}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{元件：磁动势、磁阻、磁导与磁通}\label{sec:lumped-elements}
+
+\subsection{一段均匀磁通管就是一个磁阻}
+取一段长 $\ell$、截面积 $A$、磁导率 $\mu$ 的均匀磁性材料，里面没有自由电流，磁通 $\Phi$（即\chref{ch:magnetic} 的 $\Phi_B$）沿长度方向均匀穿过。截面上 $B=\Phi/A$，于是 $H=B/\mu=\Phi/(\mu A)$。沿长度积分 $\vb H$，得到这段材料两端的\textbf{磁压降}：
+\begin{equation}
+\int_a^b\vb H\cdot\dd\boldsymbol\ell=H\ell=\Phi\,\frac{\ell}{\mu A}.
+\end{equation}
+磁压降正比于穿过的磁通，比例系数只取决于几何与材料。把它定义为\textbf{磁阻}（reluctance；\eqref{eq:magohm} 已经用过它），倒数称为\textbf{磁导}（permeance）：
+\begin{keyeq}
+\mathcal R=\frac{\ell}{\mu A},\qquad \mathcal P=\frac1{\mathcal R}=\frac{\mu A}{\ell},\qquad \psi_a-\psi_b=\mathcal R\,\Phi .
+\label{eq:reluctance}
+\end{keyeq}
+这里 $\psi$ 是磁标势（\secref{sec:potentials-scalar}）：在没有电流的区域 $\vb H=-\nabla\psi$，磁压降就是两端的磁位差。磁阻的单位是 A/Wb，即 $\mathrm H^{-1}$；磁导的单位正好是亨利。
+
+推导和电阻 $R=\ell/(\sigma A)$ 一模一样，只是把 $\sigma$ 换成 $\mu$、把电流换成磁通（\figref{fig:circuit_analogy}）。这个公式立刻说明气隙为什么要紧：截面相同时，长 $g$ 的空气与长 $\mu_rg$ 的铁磁阻相同。若 $\mu_r=2000$，$1\,\mathrm{mm}$ 气隙相当于 $2.0\,\mathrm m$ 长的铁——比整个铁芯还长得多。
+
+\fig{circuit_analogy}{电路与磁路的同一条推导。上：均匀导体棒与均匀铁棒，分别由场的积分得到 $R=\ell/(\sigma A)$ 与 $\mathcal R=\ell/(\mu A)$。中：两条网络定律分别来自 $\nabla\cdot\vb J=0$ 与电场环量、$\nabla\cdot\vb B=0$ 与安培定律。中间一栏是逐项对应关系。下：方程同形，量级却不同——空气对电流几乎是完美绝缘体，对磁通却不是。}{fig:circuit_analogy}
+
+\subsection{磁动势：线圈提供的“电压”}
+线圈怎样进入网络？取一条沿铁芯中心线绕行一周的闭合回路 $C$，线圈的 $N$ 匝都套在这条回路上。静态或磁准静态下，\eqref{eq:DHintegral} 第二式中的位移电流可以略去（\secref{sec:regimes-mqs}），$\vb H$ 的环量等于穿过回路的自由电流。每一匝导线都穿过回路张成的曲面一次，于是
+\begin{keyeq}
+\mathcal F=NI=\oint_C\vb H\cdot\dd\boldsymbol\ell .
+\label{eq:mmf}
+\end{keyeq}
+$\mathcal F$ 叫\textbf{磁动势}（magnetomotive force, MMF）。匝数无量纲，它的单位就是安培，工程上常说“安匝”。回路方向与电流方向满足右手规则时，$NI$ 取正。
+
+磁动势与电动势的地位相同：它沿回路推动磁通，磁通流经各段磁阻时产生磁压降，绕行一圈，所有磁压降之和等于磁动势。下一节把这句话写成方程。
+
+\section{两条“基尔霍夫定律”}\label{sec:lumped-laws}
+
+\subsection{节点律来自 \texorpdfstring{$\nabla\cdot\vb B=0$}{div B = 0}}
+在几段磁通管汇合处（例如三柱铁芯的上轭中点）作一个闭合曲面 $S$ 把汇合处包起来。由 $\nabla\cdot\vb B=0$ 与散度定理 \eqref{id:div}，
+\begin{equation}
+\oint_S\vb B\cdot\vb n\dS=0 .
+\end{equation}
+把 $S$ 分成两部分：各磁通管的截面 $S_k$，以及其余的“侧面” $S_{\rm side}$。穿过 $S_k$ 的是各支路磁通 $\Phi_k$（以流出为正）；穿过侧面的是从铁表面漏进空气的磁通。若后者可以忽略，就得到
+\begin{keyeq}
+\sum_k\Phi_k=0\qquad\text{（流出节点为正）}.
+\label{eq:kcl-flux}
+\end{keyeq}
+注意近似发生在哪里：$\nabla\cdot\vb B=0$ 本身永远精确，节点律的误差全部来自“侧面上没有磁通”这一句。导线节点的侧面是空气，电流几乎为零；铁芯节点的侧面也是空气，磁通却未必为零。
+
+\subsection{回路律来自安培定律}
+沿网络中的任一闭合回路，取各支路的中心线组成积分路径 $C$。安培定律给出 $\oint_C\vb H\cdot\dd\boldsymbol\ell=\sum_jN_jI_j$，每个套在这条回路上的线圈贡献一项 \eqref{eq:mmf}。把左边的线积分按支路拆开，每一段用 \eqref{eq:reluctance} 写成磁阻乘磁通：
+\begin{keyeq}
+\sum_k\mathcal R_k\Phi_k=\sum_j\mathcal F_j=\sum_jN_jI_j .
+\label{eq:kvl-mmf}
+\end{keyeq}
+$\Phi_k$ 沿回路方向为正，$N_jI_j$ 的符号按右手规则确定。安培定律本身也是精确的；近似在于“每一段的 $\int\vb H\cdot\dd\boldsymbol\ell$ 等于 $\mathcal R_k\Phi_k$”，它要求该段截面上 $B$ 均匀、磁通全部沿该段流动。
+
+两条定律与电路的 KCL、KVL 形式完全相同。于是电路分析的全部工具——串联、并联、节点法、回路法、戴维南与诺顿等效——都可以直接搬过来。
+
+\begin{example}[label=ex:lumped-gapcore]{带气隙的 C 形铁芯}
+\figref{fig:gapped_core_network} 中的铁芯：铁中平均路径 $\ell_{\rm Fe}=0.30\,\mathrm m$，截面 $A=4.0\times10^{-4}\,\mathrm{m^2}$，按线性材料处理，$\mu_r=2000$；气隙 $g=1.0\,\mathrm{mm}$；线圈 $N=200$ 匝，$I=2.0\,\mathrm A$（均为教学输入；与\exref{ex:systems-core} 的铁环相比，铁中路径更长，$\mu_r$ 也更高）。忽略边缘与漏磁，求气隙磁场以及磁动势在铁与气隙之间的分配。
+\solution
+两个磁阻分别为
+\begin{equation*}
+\mathcal R_{\rm Fe}=\frac{\ell_{\rm Fe}}{\mu_0\mu_rA}=2.98\times10^5\,\mathrm{A/Wb},\qquad
+\mathcal R_g=\frac{g}{\mu_0A}=1.99\times10^6\,\mathrm{A/Wb}.
+\end{equation*}
+二者之比 $\mathcal R_g/\mathcal R_{\rm Fe}=\mu_rg/\ell_{\rm Fe}=6.67$。回路律给出
+\begin{equation*}
+\Phi=\frac{NI}{\mathcal R_{\rm Fe}+\mathcal R_g}=\frac{400\,\mathrm A}{2.29\times10^6\,\mathrm{A/Wb}}=1.75\times10^{-4}\,\mathrm{Wb},\qquad B=\frac{\Phi}{A}=0.437\,\mathrm T.
+\end{equation*}
+气隙上的磁压降 $\mathcal R_g\Phi=348\,\mathrm A$，占 $87.0\%$；铁上只有 $52\,\mathrm A$。场强相差更悬殊：气隙中 $H_g=B/\mu_0=3.48\times10^5\,\mathrm{A/m}$，铁中 $H_{\rm Fe}=174\,\mathrm{A/m}$，正好差 $\mu_r$ 倍。气隙长度只有铁芯路径的 $1/300$，却消耗了绝大部分磁动势。这正是 \eqref{eq:coreconnection} 取线性磁轭时给出的结果；\exref{ex:systems-core} 的参数下，气隙分得 $83\%$。
+\end{example}
+
+\fig{gapped_core_network}{从几何到网络。左：C 形铁芯、线圈与气隙（气隙宽度为看清而夸大），虚线是平均磁路。右：同一结构压缩成的网络——磁动势源 $\mathcal F=NI$ 串联铁芯磁阻与气隙磁阻；最右的条形图是\exref{ex:lumped-gapcore} 中磁动势的分配。}{fig:gapped_core_network}
+
+\section{串联、并联与节点法}\label{sec:lumped-network}
+
+\subsection{串并联与磁通分配}
+同一磁通依次穿过的几段是\textbf{串联}，磁阻相加；两端磁位差相同、磁通各走各路的几段是\textbf{并联}，磁导相加：
+\begin{equation}
+\mathcal R_{\rm ser}=\sum_k\mathcal R_k,\qquad \mathcal P_{\rm par}=\sum_k\mathcal P_k,\qquad
+\Phi_k=\Phi\,\frac{\mathcal P_k}{\sum_j\mathcal P_j}\quad\text{（并联分流）}.
+\end{equation}
+最后一式说明，并联支路按磁导分走磁通——磁通走的是“磁导大”的路，不一定是几何上最短的路。
+
+\subsection{节点法：未知量是节点的磁位}
+复杂网络用节点法最省事。选一个参考节点，令其磁位 $\psi=0$；其余节点的磁位 $\psi_n$ 为未知量。一条从节点 $a$ 到节点 $b$ 的支路，磁导为 $\mathcal P_k$，内含一个沿 $a\to b$ 方向推动磁通的磁动势 $\mathcal F_k$，其磁通为
+\begin{equation}
+\Phi_k=\mathcal P_k\,(\psi_a-\psi_b+\mathcal F_k).
+\end{equation}
+对每个非参考节点写节点律 \eqref{eq:kcl-flux}，得到线性方程组
+\begin{equation}
+\mathbf P\boldsymbol\psi=\vb s,\qquad
+P_{nn}=\sum_{k\ni n}\mathcal P_k,\quad P_{nm}=-\!\!\sum_{k:\,n\leftrightarrow m}\!\!\mathcal P_k,\quad
+s_n=\sum_{k\ni n}\pm\mathcal P_k\mathcal F_k .
+\label{eq:lumped-nodal}
+\end{equation}
+$\mathbf P$ 与电路的电导矩阵结构相同：对称、对角占优。$s_n$ 中的符号由磁动势推动磁通流入（$+$）还是流出（$-$）节点 $n$ 决定。只有两个节点时，方程只剩一个未知量。
+
+\begin{example}[label=ex:lumped-ecore]{三柱铁芯的节点分析}
+\figref{fig:three_limb_network} 的三柱（E 形）铁芯，深度 $2\,\mathrm{cm}$，$\mu_r=2000$（线性，教学输入）。两侧支路的铁中路径各长 $0.18\,\mathrm m$（侧柱加上下轭各一半），截面 $4.0\times10^{-4}\,\mathrm{m^2}$；中柱路径 $0.08\,\mathrm m$，截面 $8.0\times10^{-4}\,\mathrm{m^2}$。中柱有 $1.0\,\mathrm{mm}$ 气隙，右柱有 $0.25\,\mathrm{mm}$ 气隙，左柱无气隙。左柱绕 $N_1=200$ 匝，$I_1=1.0\,\mathrm A$。求三柱中的磁通。
+\solution
+以上、下轭中点为节点 T、B，取 $\psi_B=0$。三条支路的磁阻（$\mathrm{A/Wb}$）：
+\begin{gather*}
+\mathcal R_L=1.79\times10^5,\qquad
+\mathcal R_C=3.98\times10^4+9.95\times10^5=1.03\times10^6,\\
+\mathcal R_R=1.79\times10^5+4.97\times10^5=6.76\times10^5 .
+\end{gather*}
+对应磁导为 $5.59$、$0.967$、$1.48\,\mu\mathrm H$。左支路含磁动势 $N_1I_1=200\,\mathrm A$，向上推动磁通。节点 T 的磁通守恒给出唯一的方程
+\begin{equation*}
+\mathcal P_L(N_1I_1-\psi_T)-\mathcal P_C\psi_T-\mathcal P_R\psi_T=0
+\ \Longrightarrow\
+\psi_T=\frac{\mathcal P_LN_1I_1}{\mathcal P_L+\mathcal P_C+\mathcal P_R}=139\,\mathrm A .
+\end{equation*}
+于是左柱向上 $\Phi_L=\mathcal P_L(200\,\mathrm A-\psi_T)=3.40\times10^{-4}\,\mathrm{Wb}$，中柱向下 $\Phi_C=\mathcal P_C\psi_T=1.34\times10^{-4}\,\mathrm{Wb}$，右柱向下 $\Phi_R=2.06\times10^{-4}\,\mathrm{Wb}$，满足 $3.40=1.34+2.06$。对应磁通密度为 $0.850$、$0.168$、$0.514\,\mathrm T$。
+
+右支路比中柱长一倍多，却分走了 $60\%$ 的磁通，因为它的气隙更短。用回路法（两个回路磁通为未知量）求解得到完全相同的结果，检查脚本对此做了核对。
+\end{example}
+
+\fig{three_limb_network}{三柱铁芯与它的两节点网络（\exref{ex:lumped-ecore}）。左：箭头粗细正比于各柱磁通，数字单位为 $10^{-4}\,\mathrm{Wb}$；T、B 是网络的两个节点。右：左支路含磁动势源，三条支路并联在 T、B 之间；节点法只有一个未知量 $\psi_T$。}{fig:three_limb_network}
+
+\section{气隙：边缘效应与漏磁}\label{sec:lumped-fringing}
+
+\subsection{磁通没有“绝缘体”}
+电路能压缩得如此干净，是因为铜和空气的电导率相差悬殊：铜约 $5.8\times10^7\,\mathrm{S/m}$，空气在 $10^{-14}\,\mathrm{S/m}$ 量级或更低，二者之比超过 $10^{21}$。导线外的漏电流可以放心地忽略。
+
+铁和空气的磁导率之比只有 $10^3$ 到 $10^5$。这意味着一条又短又宽的空气路径，磁导可以与一段又细又长的铁相当。\exref{ex:lumped-gapcore} 已经显示，$1\,\mathrm{mm}$ 的空气抵得上 $2\,\mathrm m$ 的铁；而铁芯窗口两侧相对的铁面，面积大、间距只有几厘米，也是一条不可忽视的空气通路。于是磁通总会有一部分不走我们画好的路。这部分磁通有两种常见形态（\figref{fig:fringing_leakage}）：
+\begin{itemize}
+\item \textbf{边缘效应}（fringing）：气隙两侧的磁力线向外鼓出，一部分磁通从极面边缘之外穿过气隙。气隙的有效截面因此大于极面面积~\cite{fitzgerald}，气隙磁导变大。
+\item \textbf{漏磁}（leakage）：磁通在气隙两侧磁位不同的铁之间，或在线圈附近，直接经空气闭合，根本不穿过气隙。在网络里，它是与气隙并联的一条磁导 $\mathcal P_{\rm leak}$。
+\end{itemize}
+二者的分界其实是一种约定：都是“没有走理想气隙通道”的磁通，网络只需要它们的总效果正确。
+
+\fig{fringing_leakage}{边缘效应与漏磁（二维场解，单位深度，线性铁 $\mu_r=2000$，$g=4\,\mathrm{mm}$）。左：磁力线（$A_z$ 等值线，相邻两线之间磁通相等）与 $|\vb B|$ 的浅色底图。大部分磁通沿铁芯走；一部分横穿窗口，一部分绕过绕组外侧，都不经过气隙。中：气隙附近放大，气隙中部的场近似均匀，两侧磁力线向外鼓出。右：网络里用两个待标定的量描述它们——气隙磁导乘以系数 $k$，再并联漏磁导 $\mathcal P_{\rm leak}$。}{fig:fringing_leakage}
+
+\figref{fig:fringing_leakage} 是用\chref{ch:femscalar}、\chref{ch:femvector} 的线性三角形单元求出的二维磁场（$A_z$ 形式，\secref{sec:potentials-2d}：$A_z$ 的等值线就是磁力线）。铁芯截面与\exref{ex:lumped-gapcore} 相同，但沿深度方向无限长，所以它只用来展示现象，不代表那个三维铁芯的精确数值。即使在这样规整的几何里，$g=4\,\mathrm{mm}$ 时绕组所在铁柱中约 $47\%$ 的磁通不从气隙正对极面的那一段通过。
+
+\subsection{修正系数从哪里来}
+网络里的修正写成
+\begin{equation}
+\mathcal P_g\ \to\ k\,\frac{\mu_0A}{g},\qquad \text{再并联 }\mathcal P_{\rm leak}.
+\end{equation}
+$k$ 与 $\mathcal P_{\rm leak}$ 取决于气隙与极面尺寸之比、极面形状、附近其他铁件的位置，铁一旦饱和还取决于工作点。它们没有一个普遍适用的公式。可靠的来源只有两个：
+\begin{enumerate}
+\item \textbf{场解}：对实际几何做二维或三维静磁计算（例如 FEMM~\cite{femm}），读出与网络对应的量——绕组磁链、穿过气隙中部的磁通、窗口里的漏磁通——再反推 $k$ 与 $\mathcal P_{\rm leak}$；
+\item \textbf{测量}：测电感（对应总磁导），用探测线圈测气隙磁通，用霍尔探头测气隙磁场。
+\end{enumerate}
+手册里能找到一些边缘修正的经验式，它们只在推导或拟合时所用的几何范围内有效；拿来用之前，同样要与场解或测量核对。\secref{sec:lumped-validity} 会用一个计算实例说明，在一个气隙长度上标定好的 $k$，拿到另一个气隙长度上会错多少。
+
+\section{电感、能量与吸力}\label{sec:lumped-energy}
+
+\subsection{电感就是匝数平方乘以磁导}
+线圈的磁链 $\lambda=N\Phi$（各匝链接同一磁通时，\secref{sec:magnetic-linkage}），而 $\Phi=NI/\mathcal R_{\rm tot}$，$\mathcal R_{\rm tot}$ 是从线圈两端“看进去”的总磁阻。于是
+\begin{keyeq}
+L=\frac{\lambda}{I}=\frac{N^2}{\mathcal R_{\rm tot}}=N^2\mathcal P_{\rm tot}.
+\label{eq:Lreluctance}
+\end{keyeq}
+\exref{ex:lumped-gapcore} 的线圈 $L=N^2/(2.29\times10^6\,\mathrm{A/Wb})=17.5\,\mathrm{mH}$。即使铁的磁导率变成无穷大，电感也只升到 $N^2/\mathcal R_g=20.1\,\mathrm{mH}$。气隙让电感对铁的性质不敏感——铁的 $\mu_r$ 随温度、应力和工作点变化很大，这是电感器铁芯常常故意留气隙的原因之一。
+
+\subsection{互感来自共享的磁路}
+多个线圈时，$\lambda_i=\sum_jL_{ij}I_j$ \eqref{eq:multicircuit}。在网络里，$L_{ij}$ 等于 $N_iN_j$ 乘以“线圈 $j$ 每安匝磁动势在线圈 $i$ 所在支路中产生的磁通”。两个线圈共用的那部分磁路决定了它们的耦合。
+
+继续\exref{ex:lumped-ecore}：在右柱再绕 $N_2=100$ 匝，参考方向取与右柱磁通方向一致。从左线圈看进去的总磁阻为 $\mathcal R_L+(\mathcal R_C\,\|\,\mathcal R_R)=5.88\times10^5\,\mathrm{A/Wb}$，所以 $L_{11}=68.0\,\mathrm{mH}$。左线圈的磁通有 $60\%$ 走右柱，于是 $M=L_{21}=N_2\Phi_R/I_1=20.6\,\mathrm{mH}$；同理 $L_{22}=12.1\,\mathrm{mH}$。反过来由右线圈激励、算左线圈的磁链，得到的 $L_{12}$ 与 $L_{21}$ 完全相等——这是磁导矩阵对称的直接结果，也是\secref{sec:framework-reciprocity} 互易性在网络中的体现。耦合系数 $M/\sqrt{L_{11}L_{22}}=0.72$：带气隙的中柱像一条旁路，分走了本可以链接第二个线圈的磁通。
+
+\subsection{磁能存在哪里}
+对线性磁路，给线圈充磁时电源做的功全部储存为磁能：
+\begin{keyeq}
+W=\int I\,\dd\lambda=\tfrac12\mathcal R\Phi^2=\frac{\mathcal F^2}{2\mathcal R}=\tfrac12LI^2 .
+\label{eq:lumped-energy}
+\end{keyeq}
+每一段磁阻分得 $W_k=\tfrac12\mathcal R_k\Phi_k^2$。这不是新的定义：一段均匀磁通管中的场能 $\int\tfrac12\vb B\cdot\vb H\dV=\tfrac12(\Phi/A)\,(\Phi/\mu A)\,A\ell$，恰好就是 $\tfrac12\mathcal R\Phi^2$。\exref{ex:lumped-gapcore} 中总磁能 $W=0.035\,\mathrm J$，其中 $87\%$ 储存在 $1\,\mathrm{mm}$ 的气隙里，与磁动势的分配比例相同（串联支路磁通相同）。
+
+注意 $\mathcal R\Phi^2$ 的单位是焦耳，而 $RI^2$ 的单位是瓦特。磁阻储存能量，电阻消耗功率；维持一个恒定磁通本身不需要功率，铁芯里的损耗来自涡流与磁滞，它们不在 $\mathcal R$ 里。
+
+\subsection{吸力：虚功原理}
+能量集中在气隙，所以力也作用在气隙两侧。设衔铁位置 $x$ 改变气隙长度，$\mathcal R=\mathcal R(x)$。让衔铁移动一小段 $\dd x$ 的同时保持磁链不变：线圈端电压 $v=\dd\lambda/\dd t=0$，电源不输入能量，机械功只能来自磁能的减少，$F\,\dd x=-\dd W$。另一种做法是保持电流（磁动势）不变：电源输入能量 $I\,\dd\lambda$，线性时其中一半增加磁能、另一半做机械功，这时用磁共能 $W'=\lambda I-W$ 记账最方便~\cite{fitzgerald,haus}。两条路给出同一个力：
+\begin{keyeq}
+F=-\frac{\partial W}{\partial x}\bigg|_{\Phi}=-\tfrac12\Phi^2\frac{\dd\mathcal R}{\dd x}
+\;=\;+\frac{\partial W'}{\partial x}\bigg|_{\mathcal F}=+\tfrac12\mathcal F^2\frac{\dd\mathcal P}{\dd x}.
+\label{eq:lumped-force}
+\end{keyeq}
+$F$ 是沿 $x$ 增大方向的力。气隙变大时磁阻变大，$\dd\mathcal R/\dd x>0$，所以 $F<0$：力总是试图缩短气隙、减小磁阻。\chref{ch:framework} 会把这两种写法放进更一般的非线性能量—共能框架。
+
+\begin{compare}{恒磁通与恒磁动势的虚功}{保持 $\lambda$（磁通）不变}{保持 $I$（磁动势）不变}
+\cmprow{电源输入}{零（$v=\dd\lambda/\dd t=0$）}{$I\,\dd\lambda$}
+\cmprow{能量去向}{机械功全部来自磁能减少}{线性时输入的一半增加磁能，一半做机械功}
+\cmprow{用哪个函数}{磁能 $W(\Phi,x)=\tfrac12\mathcal R\Phi^2$}{磁共能 $W'(\mathcal F,x)=\tfrac12\mathcal P\mathcal F^2$}
+\cmprow{力的公式}{$-\tfrac12\Phi^2\,\dd\mathcal R/\dd x$}{$+\tfrac12\mathcal F^2\,\dd\mathcal P/\dd x$}
+\cmprow{非线性材料}{$W=\int_0^{\Phi}\mathcal F\,\dd\Phi'$（$x$ 固定）}{$W'=\int_0^{\mathcal F}\Phi\,\dd\mathcal F'$（$x$ 固定）}
+\cmpsum{力是同一状态下的同一个力；不同的只是“假想移动时谁保持不变”，因而该对哪个能量函数求导。符号写错的常见原因，是用 $W$ 却保持了电流。}
+\end{compare}
+
+\begin{example}[label=ex:lumped-armature]{电磁铁吸引衔铁}
+U 形铁芯与一块平板衔铁组成闭合磁路，中间隔着两个长度均为 $x=1.0\,\mathrm{mm}$ 的气隙，每个极面面积 $A=4.0\times10^{-4}\,\mathrm{m^2}$。铁中路径（U 形与衔铁合计）$0.20\,\mathrm m$，$\mu_r=2000$；线圈 $N=300$ 匝，$I=2.0\,\mathrm A$（教学输入）。求电感、磁能与衔铁受力。
+\solution
+$\mathcal R(x)=\mathcal R_{\rm Fe}+2x/(\mu_0A)$，其中 $\mathcal R_{\rm Fe}=1.99\times10^5\,\mathrm{A/Wb}$，两个气隙合计 $3.98\times10^6\,\mathrm{A/Wb}$，总磁阻 $4.18\times10^6\,\mathrm{A/Wb}$。于是
+\begin{equation*}
+\Phi=\frac{NI}{\mathcal R}=1.44\times10^{-4}\,\mathrm{Wb},\quad B=0.359\,\mathrm T,\quad L=\frac{N^2}{\mathcal R}=21.5\,\mathrm{mH},\quad W=\tfrac12LI^2=0.043\,\mathrm J .
+\end{equation*}
+$\dd\mathcal R/\dd x=2/(\mu_0A)$，由 \eqref{eq:lumped-force}，
+\begin{equation*}
+F=-\tfrac12\Phi^2\frac{2}{\mu_0A}=-\frac{\Phi^2}{\mu_0A}=-41.0\,\mathrm N .
+\end{equation*}
+负号表示吸引。用恒磁动势公式得到同一数值。
+
+换一个角度核对：磁力线垂直穿出高磁导率铁面时，由 \eqref{eq:maxwellstress} 得到极面上的磁压力 $B^2/(2\mu_0)=51.3\,\mathrm{kPa}$，两个极面合计 $2A\cdot B^2/(2\mu_0)=41.0\,\mathrm N$，与虚功结果一致。若保持电流、把气隙缩小到 $0.5\,\mathrm{mm}$，力增大到 $150\,\mathrm N$，约为原来的 $3.6$ 倍。吸力随气隙减小急剧上升，这就是电磁铁吸合动作来得很突然的原因。
+\end{example}
+
+\section{非线性磁阻与工作点}\label{sec:lumped-nonlinear}
+
+\subsection{磁阻随工作点变化}
+到目前为止铁都是线性的。真实的铁沿 B--H 曲线工作（\chref{ch:bh}），$H_{\rm Fe}$ 是 $B_{\rm Fe}$ 的非线性函数，磁阻 $\mathcal R_{\rm Fe}=\ell_{\rm Fe}H_{\rm Fe}/\Phi$ 随磁通变化。C 形铁芯的回路律就是\eqref{eq:coreconnection}（那里磁轭的下标是 $y$）：
+\begin{equation}
+NI=\ell_{\rm Fe}\,H_{\rm Fe}\!\Bigl(\frac{\Phi}{A_{\rm Fe}}\Bigr)+\frac{g\,\Phi}{\mu_0A_g}.
+\end{equation}
+这是关于 $\Phi$ 的一个非线性标量方程。它有两种互补的解法。
+
+\subsection{图解：直线与曲线的交点}
+取 $A_{\rm Fe}=A_g$ 的情形。铁中的工作点 $(H_{\rm Fe},B)$ 必须同时满足两个关系：它在材料的 B--H 曲线上；它又满足上面的回路律，即
+\begin{equation}
+B=\frac{\mu_0}{g}\bigl(NI-\ell_{\rm Fe}H_{\rm Fe}\bigr).
+\end{equation}
+后者是 B--H 平面上的一条直线：在 $H_{\rm Fe}=0$ 处截距为 $\mu_0NI/g$（铁理想时的气隙磁场），在 $B=0$ 处截距为 $NI/\ell_{\rm Fe}$（磁动势全部降在铁上）。它代表“铁以外的磁路”对铁的要求，常称为\textbf{负载线}。两条线的交点就是工作点（\figref{fig:nonlinear_operating_point}a）。增大 $NI$，直线平行右移；交点沿曲线爬升，进入饱和后曲线变平，交点几乎只向右走——新增的磁动势大部分落在了铁上。
+
+\subsection{牛顿迭代}
+数值上，以 $H=H_{\rm Fe}$ 为未知量更方便（合成曲线 \eqref{eq:syntheticbh} 给出的是 $B(H)$）：
+\begin{equation}
+f(H)=\ell_{\rm Fe}H+\frac{g}{\mu_0}\frac{A_{\rm Fe}}{A_g}B(H)-NI=0,\qquad
+f'(H)=\ell_{\rm Fe}+\frac{g}{\mu_0}\frac{A_{\rm Fe}}{A_g}\mu_{\rm diff}(H),
+\end{equation}
+迭代 $H_{k+1}=H_k-f(H_k)/f'(H_k)$。$f'$ 里出现的是微分磁导率 \eqref{eq:permeabilities}，不是割线磁导率：牛顿法需要的是“$H$ 改变一点，残差改变多少”。\chref{ch:femvector} 中三维非线性有限元的牛顿切线，正是这个一维导数的推广。
+
+\begin{example}[label=ex:lumped-nonlinear]{合成 B--H 曲线的 C 形铁芯}
+\exref{ex:lumped-gapcore} 的铁芯改用合成曲线 \eqref{eq:syntheticbh}（$B_s=1.6\,\mathrm T$，$H_s=800\,\mathrm{A/m}$），$A_{\rm Fe}=A_g$。分别求 $NI=400$、$1000$、$2000\,\mathrm A$ 时的气隙磁场。
+\solution
+$NI=400\,\mathrm A$ 时 $B_g=0.421\,\mathrm T$。线性模型（$\mu_r=2000$）给出 $0.437\,\mathrm T$，差别来自合成曲线在原点处的相对磁导率只有约 $1590$；铁上的磁压降占 $16\%$。
+
+$NI=1000\,\mathrm A$ 时 $B_g=1.03\,\mathrm T$。$NI=2000\,\mathrm A$ 时 $B_g=1.60\,\mathrm T$，而线性模型给出 $2.19\,\mathrm T$，理想铁给出 $2.51\,\mathrm T$。此时铁中 $H_{\rm Fe}=2430\,\mathrm{A/m}$，铁上的磁压降已占 $37\%$。再把磁动势增加 $50\%$ 到 $3000\,\mathrm A$，气隙磁场只增加 $0.7\%$，铁中的 $H$ 却变为 $2.4$ 倍：铁芯饱和后，它取代气隙成为限制磁通的瓶颈（\figref{fig:nonlinear_operating_point}b）。
+
+$NI=2000\,\mathrm A$ 时从 $H_0=0$ 出发的牛顿迭代见\tabref{tab:lumped-newton}。前两步残差下降不快，进入根附近后每一步有效数字翻倍，这是二次收敛的标志。$f$ 是凹函数，从左侧出发的迭代单调地逼近根，不会越过它。
+\end{example}
+
+\begin{table}[htbp]\centering\small
+\caption{\exref{ex:lumped-nonlinear} 在 $NI=2000\,\mathrm A$ 时的牛顿迭代（从 $H_0=0$ 出发）。}\label{tab:lumped-newton}
+\begin{tabularx}{.78\linewidth}{@{}c Y Y@{}}
+\toprule
+迭代步 $k$ & $H_k$（A/m） & 残差 $f(H_k)$（A）\\\midrule
+0 & 0 & $-2000$\\
+1 & 1057 & $-578$\\
+2 & 1887 & $-181$\\
+3 & 2395 & $-12.2$\\
+4 & 2433.6 & $-2.8\times10^{-2}$\\
+5 & 2433.72 & $-1.5\times10^{-7}$\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\fig{nonlinear_operating_point}{非线性铁芯的工作点（\exref{ex:lumped-nonlinear}）。(a) B--H 平面上，三条虚线是 $NI=400$、$1000$、$2000\,\mathrm A$ 时的负载线，它们与材料曲线的交点就是工作点。(b) 气隙磁场随磁动势的变化：理想铁（点线）、线性铁（虚线）与合成曲线（实线）。铁一旦饱和，增加的磁动势几乎全部落在铁上。}{fig:nonlinear_operating_point}
+
+同一个工作点上有两个“磁阻”。割线磁阻 $\mathcal R_{\rm sec}=\mathcal F/\Phi$ 回答“总共多少磁通”；微分磁阻 $\mathcal R_{\rm diff}=\dd\mathcal F/\dd\Phi$ 回答“磁动势变一点，磁通变多少”。由 \eqref{eq:Lreluctance} 它们分别给出割线电感 $L_{\rm sec}=\lambda/I$ 与微分（小信号）电感 $L_{\rm diff}=\dd\lambda/\dd I$。\exref{ex:lumped-nonlinear} 在 $NI=400\,\mathrm A$ 时二者几乎相同（$16.9$ 与 $16.7\,\mathrm{mH}$）；在 $2000\,\mathrm A$ 时，铁的割线相对磁导率还有 $522$，微分相对磁导率却只剩 $15.4$，于是 $L_{\rm sec}=12.8\,\mathrm{mH}$，$L_{\rm diff}=0.98\,\mathrm{mH}$，相差十多倍。
+
+\begin{compare}{割线磁阻与微分磁阻}{割线磁阻 $\mathcal R_{\rm sec}$}{微分磁阻 $\mathcal R_{\rm diff}$}
+\cmprow{定义}{$\mathcal F/\Phi=\ell/(\mu_{\rm sec}A)$}{$\dd\mathcal F/\dd\Phi=\ell/(\mu_{\rm diff}A)$}
+\cmprow{回答的问题}{给定磁动势，总磁通多大}{磁动势小变化时，磁通变化多少}
+\cmprow{对应的电感}{$L_{\rm sec}=\lambda/I$}{$L_{\rm diff}=\dd\lambda/\dd I$（直流偏置上的小纹波）}
+\cmprow{进入饱和时}{缓慢增大}{迅速增大，铁的贡献趋近空气}
+\cmprow{用在}{割线（Picard）迭代、大信号估算}{牛顿迭代、偏置附近的线性化 \eqref{eq:biaslinearization}}
+\cmpsum{线性时二者相等；饱和的铁芯里它们可以相差一个数量级以上。说“这个电感是多少”之前，先说清是哪一种。}
+\end{compare}
+
+\section{永磁体进入磁路}\label{sec:lumped-pm}
+
+\subsection{从回复线得到两种等效源}
+永磁体不需要线圈也能产生磁通。它在磁路里是什么元件？答案藏在回复线 \eqref{eq:recoil} 里：$B_m=\mu_0\mu_{\rm rec}H_m+B_r$。设磁通沿磁化方向均匀穿过长 $\ell_m$、截面 $A_m$ 的磁体，两边乘以 $A_m$，并把 $H_m$ 写成磁体两端的磁压降 $H_m\ell_m$：
+\begin{keyeq}
+\Phi=\Phi_r+\mathcal P_m\,(H_m\ell_m),\qquad \Phi_r=B_rA_m,\qquad \mathcal P_m=\frac{\mu_0\mu_{\rm rec}A_m}{\ell_m}.
+\label{eq:lumped-pmnorton}
+\end{keyeq}
+这是一个\textbf{磁通源} $\Phi_r$ 并联一个内部磁导 $\mathcal P_m$——电路里的诺顿等效。把同一式子解出 $H_m\ell_m$：
+\begin{keyeq}
+-H_m\ell_m=\mathcal F_c-\mathcal R_m\Phi,\qquad \mathcal F_c=H_c\ell_m=\frac{B_r\ell_m}{\mu_0\mu_{\rm rec}},\qquad \mathcal R_m=\frac{\ell_m}{\mu_0\mu_{\rm rec}A_m},
+\label{eq:lumped-pmthevenin}
+\end{keyeq}
+这是一个\textbf{磁动势源} $\mathcal F_c$ 串联一个内部磁阻 $\mathcal R_m$——戴维南等效。磁体内部 $H_m<0$，沿磁化方向走过磁体，磁位升高 $-H_m\ell_m$，正像电池两端的端电压等于电动势减去内阻压降。$H_c=B_r/(\mu_0\mu_{\rm rec})$ 是直线回复线在 $B=0$ 处的截距；它不一定等于真实材料的矫顽力 $H_{cB}$，更不是安全的退磁界限（\secref{sec:bh-hysteresis}）。这里沿用 FEMM 等软件对线性磁体的记号~\cite{femm}；它与\chref{ch:bh} 软磁回线中的矫顽力 $H_c$ 同名而不同义。
+
+\begin{intuition}[永磁体是一层看不见的线圈]
+取 $\mu_{\rm rec}=1$。均匀磁化的磁体侧面有等效面电流 $K_M=M=B_r/\mu_0$ \eqref{eq:boundcurrent}，沿磁体长度 $\ell_m$ 的总电流正是 $B_r\ell_m/\mu_0=\mathcal F_c$。所以“磁动势源”不是比喻：一块磁体就是一个安匝数固定的螺线管。$B_r=1.2\,\mathrm T$、长 $5\,\mathrm{cm}$ 的磁体（$\mu_{\rm rec}=1.05$）相当于 $4.55\times10^4$ 安匝。
+\end{intuition}
+
+\fig{pm_equivalents}{同一块永磁体的两种网络等效。(a) 回复线的两个截距对应两种极端外部条件：外部磁阻为零（铁闭合）时 $B_m=B_r$，外部磁阻无穷大时 $H_m\ell_m=-\mathcal F_c$。(b) 磁动势源 $\mathcal F_c$ 串联内部磁阻 $\mathcal R_m$。(c) 磁通源 $\Phi_r$ 并联内部磁导 $\mathcal P_m$。两者对外部端口完全等价。}{fig:pm_equivalents}
+
+\begin{compare}{永磁体的两种等效源}{磁动势源（戴维南型）}{磁通源（诺顿型）}
+\cmprow{等效电路}{$\mathcal F_c$ 串联 $\mathcal R_m$}{$\Phi_r$ 并联 $\mathcal P_m=1/\mathcal R_m$}
+\cmprow{源参数}{$\mathcal F_c=H_c\ell_m=B_r\ell_m/(\mu_0\mu_{\rm rec})$}{$\Phi_r=B_rA_m$}
+\cmprow{物理图像}{侧面的等效面电流：一个固定安匝的线圈}{剩磁提供 $\Phi_r$，被磁体自身的退磁场抵掉一部分（经内部磁导“回流”）}
+\cmprow{顺手的场合}{回路法；磁体与线圈、气隙串联}{节点法；多块磁体并联}
+\cmprow{共同的局限}{只对外部等价；看不出磁体内部是否会不可逆退磁}{同左}
+\cmpsum{两种写法是同一条回复线的两种读法，$\mathcal F_c=\mathcal R_m\Phi_r$。选哪一种只看哪种让网络方程更简单。}
+\end{compare}
+
+\subsection{单回路：磁体、气隙与磁轭}
+最简单的永磁磁路由一块磁体、一段气隙和一段磁轭组成，长度分别为 $\ell_m$、$g$、$\ell_y$，截面积为 $A_m$、$A_g$、$A_y$。忽略漏磁与边缘效应，三段共用一个磁通：$B_m=\Phi/A_m$，$B_g=\Phi/A_g$，$B_y=\Phi/A_y$。沿回路应用安培定律（若另有线圈，贡献 $NI$）：
+\begin{equation}
+H_m\ell_m+\frac{B_g}{\mu_0}g+H_y(B_y)\,\ell_y=NI .
+\end{equation}
+只有磁体时 $NI=0$：磁体内部的负 $H_m$ 与气隙、磁轭中的正磁压降相抵。总和为零并不意味着磁通为零。代入回复线，得到关于 $\Phi$ 的非线性方程
+\begin{keyeq}
+\frac{\ell_m}{\mu_0\mu_{\rm rec}}\Bigl(\frac{\Phi}{A_m}-B_r\Bigr)+\frac{g\Phi}{\mu_0A_g}+\ell_yH_y\!\Bigl(\frac{\Phi}{A_y}\Bigr)=NI .
+\label{eq:nonlinearmagcircuit}
+\end{keyeq}
+用 \eqref{eq:lumped-pmthevenin} 的语言，它就是 $\mathcal F_c+NI=(\mathcal R_m+\mathcal R_g)\Phi+\ell_yH_y$：磁体的磁动势减去它自身内阻上的降落，剩下的分给气隙和磁轭。
+
+\begin{example}[label=ex:lumped-pm]{非线性磁轭的永磁磁路}
+磁轭采用合成曲线 \eqref{eq:syntheticbh}。教学输入：
+\begin{gather*}
+B_r=1.2\,\mathrm T,\quad \mu_{\rm rec}=1.05,\quad \ell_m=0.05\,\mathrm m,\quad g=0.02\,\mathrm m,\\
+\ell_y=0.40\,\mathrm m,\quad A_m=A_g=0.002\,\mathrm{m^2},\quad A_y=0.001\,\mathrm{m^2},\quad NI=0 .
+\end{gather*}
+\solution
+先看等效源：$\mathcal F_c=4.55\times10^4\,\mathrm A$，$\mathcal R_m=1.89\times10^7\,\mathrm{A/Wb}$，$\mathcal R_g=7.96\times10^6\,\mathrm{A/Wb}$。磁体的内部磁阻比气隙还大：即使磁轭理想，也有 $70\%$ 的磁动势消耗在磁体自身。理想磁轭、等截面时 $B_g/B_r=\ell_m/(\ell_m+\mu_{\rm rec}g)$，要让气隙磁场达到 $B_r$ 的可观比例，磁体就必须与气隙差不多长。
+
+数值求解 \eqref{eq:nonlinearmagcircuit} 得到
+\begin{equation*}
+\begin{gathered}
+\Phi=1.60702\times10^{-3}\,\mathrm{Wb},\qquad B_g=B_m=0.803511\,\mathrm T,\\
+B_y=1.607023\,\mathrm T,\qquad H_y=5590.68\,\mathrm{A/m},\qquad H_m=-3.00491\times10^5\,\mathrm{A/m}.
+\end{gathered}
+\end{equation*}
+回路残差小于 $2\times10^{-12}\,\mathrm A$；这只是求根精度，不是物理上的设计精度。若磁轭的磁导率无穷大，同一无漏磁模型给出
+\begin{equation*}
+B_g^{(\mu_y\to\infty)}=\frac{B_r\ell_m}{\ell_mA_g/A_m+\mu_{\rm rec}g}=0.845070\,\mathrm T,
+\end{equation*}
+非线性结果比它低 $4.92\%$。这个比例并非巧合。由戴维南形式，$\Phi=(\mathcal F_c-H_y\ell_y)/(\mathcal R_m+\mathcal R_g)$，因此
+\begin{equation*}
+\frac{B_g}{B_g^{(\mu_y\to\infty)}}=1-\frac{H_y\ell_y}{\mathcal F_c},
+\end{equation*}
+而磁轭上的磁压降 $H_y\ell_y=2236\,\mathrm A$ 恰好占 $\mathcal F_c$ 的 $4.92\%$。磁位的账本是：磁体提供 $-H_m\ell_m=1.50\times10^4\,\mathrm A$，气隙用掉 $1.28\times10^4\,\mathrm A$，磁轭用掉 $2.24\times10^3\,\mathrm A$。
+
+真正要紧的是另一个数。磁轭截面只有气隙的一半，磁通密度就是气隙的两倍：$B_y=1.607\,\mathrm T$，已经深入合成曲线的饱和拐点。气隙磁场只差 $5\%$，磁轭却已经饱和——只看气隙磁场，会完全错过这条设计约束。
+\end{example}
+
+\subsection{负载线与最大磁能积}
+磁体内部的工作点 $(H_m,B_m)$ 同样是两条线的交点：一条是材料的回复线，另一条由磁体以外的磁路决定。设磁体以外的磁路是线性的，总磁导为 $\mathcal P_{\rm ext}$，则 $-H_m\ell_m=\Phi/\mathcal P_{\rm ext}$，即 $B_m=-(\mathcal P_{\rm ext}\ell_m/A_m)H_m$。理想磁轭、$A_g=A_m$ 时 $\mathcal P_{\rm ext}=\mu_0A_g/g$，得到
+\begin{keyeq}
+B_m=-\mu_0\frac{\ell_m}{g}H_m .
+\label{eq:loadline}
+\end{keyeq}
+这条过原点的直线就是磁体的\textbf{负载线}，它的斜率由几何决定（\figref{fig:load_line}）。与\secref{sec:bh-hysteresis} 的写法 $B_m=-P\mu_0H_m$ 对照，一般情形下的磁导系数是 $P=\mathcal P_{\rm ext}\ell_m/(\mu_0A_m)$，理想磁轭、等截面时 $P=\ell_m/g$。气隙越长，$P$ 越小，负载线越平，工作点沿回复线向下移，$B_m$ 降低、$|H_m|$ 增大。\exref{ex:lumped-pm} 中 $P=2.5$，理想工作点在 $H_m=-2.69\times10^5\,\mathrm{A/m}$、$B_m=0.845\,\mathrm T$。计入非线性磁轭后，负载线变成一条曲线：磁轭饱和前它与理想负载线几乎重合，饱和后急转向左，交点因此落在 $0.8035\,\mathrm T$。
+
+工作点在第二象限（$B_m>0$、$H_m<0$）是永磁体的正常状态，本身并不说明发生了不可逆退磁；后者要看真实退磁曲线的拐点、温度与历史。
+
+\fig{load_line}{永磁体的负载线（\exref{ex:lumped-pm} 的磁体，$B_r=1.2\,\mathrm T$，$\mu_{\rm rec}=1.05$，$\ell_m=5\,\mathrm{cm}$）。实线为回复线；虚线为理想磁轭、等截面时不同气隙的负载线，空心圆为相应工作点。点线是等磁能积曲线 $|B_mH_m|=(BH)_{\max}$，它与回复线相切于方块处。点划线是计入非线性磁轭（$A_y=A_g/2$）后的负载曲线，菱形是例中求得的工作点。}{fig:load_line}
+
+把乘积 $B_m|H_m|$ 沿直线回复线求最大值：$B_m|H_m|=(B_r+\mu_0\mu_{\rm rec}H_m)(-H_m)$ 在 $H_m^*=-H_c/2$ 处最大，此时 $B_m^*=B_r/2$，
+\begin{keyeq}
+(BH)_{\max}=\frac{B_r^2}{4\mu_0\mu_{\rm rec}} .
+\label{eq:lumped-bhmax}
+\end{keyeq}
+本例材料为 $2.73\times10^5\,\mathrm{J/m^3}$，工作点在 $B_m^*=0.6\,\mathrm T$、$H_m^*=-4.55\times10^5\,\mathrm{A/m}$。
+
+这个量为什么重要？理想磁轭下，节点律给出 $B_mA_m=B_gA_g$，回路律给出 $|H_m|\ell_m=B_gg/\mu_0$。两式相乘，
+\begin{equation}
+V_m=A_m\ell_m=\frac{B_g^2V_g}{\mu_0\,B_m|H_m|},\qquad V_g=A_gg .
+\label{eq:lumped-vm}
+\end{equation}
+给定气隙体积与气隙磁场，磁体体积反比于工作点的磁能积；工作点落在 $(BH)_{\max}$ 时所需磁体最少~\cite{fitzgerald}。对本例的磁体长度，这要求 $g=\ell_m/\mu_{\rm rec}=47.6\,\mathrm{mm}$；实际的 $g=20\,\mathrm{mm}$ 对应的 $B_m|H_m|$ 是 $(BH)_{\max}$ 的 $83\%$。但最省磁体不等于最好的设计：均匀性、漏磁、温度裕量与退磁安全都可能要求别的工作点，而这些都不在 \eqref{eq:lumped-vm} 里。
+
+\section{多柱磁轭算例}\label{sec:lumped-multipillar}
+
+开放式永磁 MRI 磁体中有一类采用\figref{fig:multipillar_3d} 那样的结构：上下两块轭板，每块板上一块磁体和一块极靴，极靴之间是成像用的气隙，磁通经几根回磁柱返回。这里用一个教学算例看磁路能回答什么、不能回答什么。
+
+\fig[.8]{multipillar_3d}{四柱磁轭永磁体装置的三维示意（只表示几何，不是设计）。上下两块软铁轭板由四根回磁柱相连（前方一根画成半透明），每块轭板上有一块永磁体与一块极靴，成像区位于两极靴之间的气隙中央。实线表示主磁通：向上穿过两块磁体和气隙，经上轭板分流，沿各柱返回。另一条不穿过成像区的路径表示漏磁。}{fig:multipillar_3d}
+
+\begin{example}[label=ex:lumped-pillars]{N 柱磁轭的气隙磁场}
+两块相同的磁体与上节材料相同（$B_r=1.2\,\mathrm T$，$\mu_{\rm rec}=1.05$），各厚 $\ell_m=0.04\,\mathrm m$，截面 $A_m=0.20\,\mathrm{m^2}$；极面面积 $A_g=A_m$，气隙 $g=0.40\,\mathrm m$；$N$ 根相同的回磁柱各长 $\ell_p=0.60\,\mathrm m$、截面 $A_p$，采用合成曲线 \eqref{eq:syntheticbh}；极靴与轭板按理想铁处理。这些都是教学输入。求 $B_g$ 随 $N$ 与 $A_p$ 的变化。
+\solution
+两块磁体串联，各用一个戴维南源；$N$ 根柱两端磁位差相同，是并联，每根分走 $\Phi/N$。网络只有一个回路（\figref{fig:multipillar_yoke} b）：
+\begin{equation*}
+2\mathcal F_c=(2\mathcal R_m+\mathcal R_g)\,\Phi+\ell_pH_p,\qquad \Phi=NA_p\,B(H_p),
+\end{equation*}
+未知量 $H_p$ 用\secref{sec:lumped-nonlinear} 的方法求解。磁轭理想时 $B_g=2B_r\ell_m/(2\ell_m+\mu_{\rm rec}g)=0.192\,\mathrm T$，两块磁体合计 $2\mathcal F_c=7.28\times10^4\,\mathrm A$。
+
+取 $A_p=0.005\,\mathrm{m^2}$：$N=2$、$3$、$4$、$6$ 时 $B_g$ 分别为 $0.084$、$0.124$、$0.162$、$0.191\,\mathrm T$。$N=4$ 时柱中 $B_p=1.62\,\mathrm T$，柱上的磁压降占 $15\%$；$N=6$ 时 $B_p$ 降到 $1.27\,\mathrm T$，气隙磁场几乎达到理想值。
+
+拐点在哪里？磁轭理想时的磁通为 $0.192\,\mathrm T\times0.20\,\mathrm{m^2}=0.0384\,\mathrm{Wb}$；让它以 $1.6\,\mathrm T$ 左右的磁通密度通过柱子，柱的总截面约需 $0.024\,\mathrm{m^2}$。总截面大于它，$B_g$ 与理想值相差不到 $2\%$；小于它，柱子饱和，$B_g$ 几乎正比于总截面下降（\figref{fig:multipillar_yoke} c、d）。
+\end{example}
+
+\fig[.86]{multipillar_yoke}{多柱磁轭的网络模型（\exref{ex:lumped-pillars}）。(a) 侧视与俯视示意，两块磁体都沿向上方向磁化。(b) 网络：两块磁体合成 $2\mathcal F_c$ 与 $2\mathcal R_m$，串联气隙磁阻，再串联 $N$ 根并联的非线性柱；虚线的漏磁导没有参与计算。(c) $B_g$ 随柱数的变化，三条曲线对应三种柱截面。(d) 所有结果只依赖柱总截面 $NA_p$（标记为 $N=2$、$4$、$6$ 的计算点与 $N=4$ 的曲线重合）；虚线是柱中磁通密度，拐点处柱子进入饱和。}{fig:multipillar_yoke}
+
+\figref{fig:multipillar_yoke} d 暴露了网络的一个结构性盲点：在这个模型里，$B_g$ \emph{只}依赖柱的总截面 $NA_p$。两根 $0.01\,\mathrm{m^2}$ 的柱与四根 $0.005\,\mathrm{m^2}$ 的柱给出完全相同的答案。真实磁体当然不是这样。网络省略了下面这些效应，而它们恰恰是磁体设计最关心的：
+\begin{itemize}
+\item \textbf{漏磁}：极靴、磁体侧面与回磁柱之间、上下轭板之间都有空气通路。柱离极靴越近、根数越多，漏磁通常越大。开放式结构的气隙长、极面宽，漏磁可能占磁体磁通的很大一部分，其大小只能由场解给出。
+\item \textbf{极面边缘的边缘效应}：有效极面面积大于 $A_g$，气隙磁场在边缘附近下降。
+\item \textbf{气隙场的不均匀性}：网络只给出平均 $B_g$。成像需要的是成像区内的均匀度，它取决于极面形状、匀场和柱的数目与位置（柱的分布决定了场的对称性），完全超出磁路的能力（\chref{ch:magnets}、\chref{ch:mri}）。
+\item \textbf{三维局部效应}：轭板从中心向柱汇集磁通的路径、柱与轭板连接处的局部饱和、磁体边缘的局部退磁，都不是“一段均匀磁通管”。
+\item \textbf{磁体的拐点}：每块磁体的磁导系数只有 $P=2\ell_m/g=0.2$，理想磁轭下 $H_m=-764\,\mathrm{kA/m}$；柱子饱和时 $B_g$ 更低，反向场更强，$N=2$ 时达到 $-846\,\mathrm{kA/m}$。\secref{sec:bh-hysteresis} 已经说明，$H_{cJ}=800\,\mathrm{kA/m}$ 的材料在 $P=0.2$ 时就已越过拐点。网络默认回复线一直是直的，看不到这一点；选材时要用工作温度下的退磁曲线核对。
+\end{itemize}
+所以这个网络的正确用法是：快速判断柱的总截面是否落在拐点之上，以及各个参数的大致敏感度。要把它用于设计或优化，必须先按下一节的方法与场解对照标定。
+
+\section{集总模型何时可信：与场解对照标定}\label{sec:lumped-validity}
+
+\subsection{一次对照实验}
+判断一个集总模型可不可信，最直接的办法是：对同一几何、同一材料，分别用网络和场解计算，比较\emph{你真正需要的}那几个量。下面用\figref{fig:fringing_leakage} 的二维 C 形铁芯做一次完整的对照。场解采用线性三角形单元、沿材料边界加密的网格，外边界是边长 $1\,\mathrm m$ 的正方形，$A_z=0$；铁 $\mu_r=2000$，$NI=400\,\mathrm A$；气隙从 $0.5\,\mathrm{mm}$ 变到 $8\,\mathrm{mm}$，即 $g/w$ 从 $0.025$ 到 $0.4$（$w=2\,\mathrm{cm}$ 为柱宽）。把网格加密一倍、或把外边界扩大一倍，下面引用的比值变化都小于 $0.5\%$——先确认场解本身收敛，它才有资格当“参照”。
+
+\fig{lumped_validation}{同一个二维 C 形铁芯，网络与场解的对照。(a) 两个量的“场解/网络”比值：绕组铁柱中的磁通（决定电感）与气隙中心的 $B$。(b) 让网络在每个气隙长度上都与场解的柱磁通吻合所需的等效面积系数 $k$；虚线表示在 $g/w=0.05$ 处标定后固定使用。}{fig:lumped_validation}
+
+结果（\figref{fig:lumped_validation}a）分成截然不同的两类：
+\begin{itemize}
+\item \textbf{气隙中心的 $B$}：网络与场解在整个范围内相差不到 $1.5\%$。$g=1\,\mathrm{mm}$ 时比值为 $0.994$，$g=8\,\mathrm{mm}$ 时为 $0.987$。气隙中部的场由“气隙两侧的磁位差除以 $g$”决定，而网络几乎正确地给出了这个磁位差。
+\item \textbf{绕组铁柱中的磁通}：$g=1\,\mathrm{mm}$ 时场解比网络大 $26\%$（比值 $1.26$），$g=8\,\mathrm{mm}$ 时达到 $2.50$ 倍。多出来的是边缘与漏磁通，它们与气隙并联，网络里根本没有。由 \eqref{eq:Lreluctance}，用网络算电感会低估同样的比例。
+\end{itemize}
+同一个模型，对一个量很准，对另一个量却差一倍以上。“集总模型准不准”这个问题没有意义；有意义的是“对我要的量，在我要的参数范围内，误差多大”。
+
+\subsection{标定，然后在别处检查}
+补救办法是把场解的信息“标定”进网络。例如，让网络的柱磁通与场解相等，可以反推出等效面积系数：$g=1\,\mathrm{mm}$ 时 $k=1.31$。问题在于 $k$ 随几何变化（\figref{fig:lumped_validation}b），$g=8\,\mathrm{mm}$ 时需要 $k=2.57$。如果在 $1\,\mathrm{mm}$ 处标定后把 $k=1.31$ 固定下来，拿去预测 $8\,\mathrm{mm}$ 的情形，柱磁通会低估 $48\%$。
+
+由此得到一套最低限度的验证流程：
+\begin{enumerate}
+\item \textbf{先验证参照本身}：场解要做网格与外边界的收敛检查；有条件时再与测量对照。
+\item \textbf{比较需要的量}：气隙磁通或平均 $B_g$、漏磁比例、电感或磁链、磁轭中的最大 $B$（拐角处的局部集中是平均值看不到的）、受力。
+\item \textbf{逐条放松假设}：把理想铁换成非线性铁，加入边缘与漏磁，看哪一条假设主导误差。
+\item \textbf{标定点与检验点分开}：用一部分设计点标定 $k$、$\mathcal P_{\rm leak}$，用\emph{另一部分}检查预测误差，并写明模型的有效范围。
+\end{enumerate}
+网络与场解的比较属于模型之间的对照；对真实装置，最终还需要与测量对照（\chref{ch:practice}）。
+
+\begin{pitfall}[“解析模型很快，直接放进优化器里”]
+优化器会主动去找模型最乐观的地方，而那往往正是模型失效的地方。以\exref{ex:lumped-pillars} 为例：若以“铁最少、且 $B_g\ge0.18\,\mathrm T$”为目标，优化器会把柱的总截面压到拐点附近——柱子正好处于饱和边缘，结果对 B--H 数据、局部饱和与漏磁最敏感；它还会认为柱数无关紧要，而柱的位置根本不在网络里——漏磁与均匀性的代价都看不见；它也看不见磁体在小 $P$ 下越过拐点的风险。用这样一个未经验证的模型训练代理模型（surrogate），代理模型会忠实地继承同样的偏差。正确的顺序是：先在整个设计空间上用场解验证或标定模型，把设计变量限制在验证过的范围内，最后用场解复核优化结果。
+\end{pitfall}
+
+\section{对照：电路与磁路}\label{sec:lumped-compare}
+
+本章一直在利用电路与磁路的相似：同样的方程形式，于是同样的解法。最后把“像”与“不像”放在一起。
+
+\begin{compare}{电路与磁路}{电路}{磁路}
+\cmprow{源}{电动势 $V_s$}{磁动势 $\mathcal F=NI$；永磁体的 $\mathcal F_c$ 或 $\Phi_r$}
+\cmprow{流}{电流 $I$}{磁通 $\Phi$}
+\cmprow{元件}{$R=\ell/(\sigma A)$，消耗功率 $RI^2$}{$\mathcal R=\ell/(\mu A)$，储存能量 $\tfrac12\mathcal R\Phi^2$}
+\cmprow{节点律}{来自 $\nabla\cdot\vb J=0$，要求电荷不积累}{来自 $\nabla\cdot\vb B=0$，场方程永远精确}
+\cmprow{“绝缘”}{空气比金属低 20 多个数量级，漏电流可略}{空气只比铁低 3--5 个数量级：边缘与漏磁}
+\cmprow{非线性}{普通电阻近似线性}{饱和是常态，磁阻随工作点变化}
+\cmprow{维持直流}{需要持续功率}{磁通本身不耗功率，只有绕组铜损}
+\cmpsum{方程同形，所以电路的全部解法都能照搬；量级不同，所以磁路的每一个元件都要追问一句：磁通真的只走这条路吗？}
+\end{compare}
+
+磁路给出了气隙场的第一个估计，也清楚地指出了它看不到的东西：漏磁、局部饱和、气隙场的空间分布。下一章离开集总模型，回到永磁体与磁轭的三维场：要得到这些量，还需要算什么？
+
+\begin{takeaways}
+\begin{itemize}
+\item 磁路的两条定律直接来自场方程：节点律 $\sum\Phi_k=0$ 来自 $\nabla\cdot\vb B=0$，回路律 $\sum\mathcal R_k\Phi_k=\sum NI$ 来自安培定律。近似只在“磁通只走指定路径、截面上均匀”这一步。
+\item $\mathcal R=\ell/(\mu A)$：$1\,\mathrm{mm}$ 气隙抵得上米量级的铁，所以气隙常常决定磁通、电感和能量的分布；$L=N^2/\mathcal R_{\rm tot}$，$W=\tfrac12\mathcal R\Phi^2$，$F=-\tfrac12\Phi^2\,\dd\mathcal R/\dd x$。
+\item 非线性铁的工作点是负载线与 B--H 曲线的交点；牛顿迭代用微分磁导率。割线与微分磁阻（电感）在饱和时可以相差一个数量级以上。
+\item 永磁体在网络里是磁动势源串联内部磁阻，或磁通源并联内部磁导；两者对外等价。磁路平衡时磁轭可能已经饱和，而气隙磁场只降低几个百分点。
+\item 磁通没有绝缘体：边缘与漏磁的修正只能由场解或测量标定，并在标定以外的点上检验。未经验证的集总或解析模型，不能直接放进优化器或用来训练代理模型。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 在\exref{ex:lumped-gapcore} 中把气隙加宽到 $2\,\mathrm{mm}$，其余不变，$B_g$ 约为多少？为什么几乎减半？
+\item $\nabla\cdot\vb B=0$ 是精确的，节点律 $\sum\Phi_k=0$ 为什么却是近似的？
+\item \exref{ex:lumped-ecore} 中若把右柱的气隙焊死，三柱的磁通分配会怎样变化？$\psi_T$ 变大还是变小？
+\item 保持电流不变让衔铁吸近一小段，机械功从哪里来？电源多输入的能量去了哪里？
+\item 有人在有限元软件里给永磁体区域赋了 $\mu_r=1.05$，却没有输入剩磁。这样的模型描述的是什么？
+\item \exref{ex:lumped-pillars} 的网络认为“两根大柱等于四根小柱”。举出两个真实磁体中二者不同的原因。
+\item 若把\exref{ex:lumped-pillars} 的网络交给优化器去“减少用铁”，它最可能选出什么样的设计？在采用之前应该做什么？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item $\mathcal R_g$ 加倍到 $3.98\times10^6\,\mathrm{A/Wb}$，总磁阻 $4.28\times10^6\,\mathrm{A/Wb}$，$B_g=0.234\,\mathrm T$。气隙磁阻本来就占总磁阻的 $87\%$，所以磁场几乎与 $g$ 成反比。
+\item 场方程精确，但节点律还假设节点闭合面的“侧面”（铁表面以外的空气）上没有磁通穿过。漏磁正是穿过侧面的磁通。
+\item 右支路磁阻降到 $\mathcal R_R=1.79\times10^5\,\mathrm{A/Wb}$，磁导增大，右柱分走更多磁通；并联磁导变大使 $\psi_T=\mathcal P_LN_1I_1/\sum\mathcal P$ 变小，左柱上的磁压降变大，总磁通增加。
+\item 来自电源。恒电流时电源输入 $I\,\dd\lambda$，一半增加磁能，一半做机械功（磁共能记账）。
+\item 一个磁导率略大于空气的软磁物体：没有剩磁就没有源，场处处为零。永磁体必须同时给出 $\vb B_r$（或等效的磁化、矫顽场）与回复磁导率。
+\item 例如：柱离极靴的距离和根数改变漏磁；柱的数目与位置决定气隙场的对称性和均匀度；粗柱与轭板连接处的局部饱和、机械与开放程度也不同。网络对这些都不敏感。
+\item 它会把柱的总截面压到刚好满足约束的最小值，约 $0.022\,\mathrm{m^2}$，紧挨着拐点（约 $0.024\,\mathrm{m^2}$），并认为柱数与柱的位置无关紧要。采用前应在该设计附近做场解：检查漏磁、柱与轭板中的局部 $B$、气隙均匀度，并确认模型在这一区域已经标定过。
+\end{answers}
+

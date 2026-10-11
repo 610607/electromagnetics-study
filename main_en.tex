@@ -1,0 +1,116 @@
+\documentclass[11pt,a4paper,oneside,openany]{book}
+\newif\ifChinese
+\Chinesefalse
+\input{preamble}
+\hypersetup{pdftitle={Electromagnetics for Quasistatic Simulation (5th edition, learning edition)},pdfauthor={Prepared for Biobot},
+  pdfsubject={Maxwell equations, quasistatic approximations, FEM, TMS, TES, MRI coils, lumped magnetic circuits and magnets}}
+
+\begin{document}
+% =====================================================================
+\begin{titlepage}
+\thispagestyle{empty}
+% Everything is placed absolutely on the page, so the layout does not depend on the text block.
+\begin{tikzpicture}[remember picture,overlay]
+\fill[accent] (current page.north west) rectangle ([yshift=-92mm]current page.north east);
+\node[anchor=north west,inner sep=0pt,text width=166mm] at ([xshift=22mm,yshift=-20mm]current page.north west) {%
+  {\color{white}\sffamily\large A question-driven course\par}
+  \vspace{6mm}
+  {\color{white}\sffamily\bfseries\fontsize{32}{39}\selectfont Electromagnetics for\\ Quasistatic Simulation\par}
+  \vspace{5mm}
+  {\color{white}\sffamily\large From Maxwell's equations to physical intuition, finite elements, coils and magnetic circuits\par}};
+\node[anchor=north,inner sep=0pt] at ([yshift=-104mm]current page.north) {\includegraphics[width=150mm]{figures/coil_block_3d.pdf}};
+\node[anchor=south west,inner sep=0pt,text width=166mm] at ([xshift=22mm,yshift=22mm]current page.south west) {%
+  {\sffamily\color{accent} TMS\enspace·\enspace TES\enspace·\enspace MRI gradient and shim coils\enspace·\enspace lumped magnetic circuits\par\vspace{1mm}
+   permanent magnets and yokes\enspace·\enspace nerve stimulation and SAR\par}
+  \vspace{7mm}
+  {\color{muted}\rule{166mm}{.5pt}}\par\vspace{3mm}
+  {\sffamily\small Prepared for Biobot\hfill Fifth edition · learning edition · October 2026\hfill SI units throughout\par}};
+\end{tikzpicture}
+\null
+\end{titlepage}
+
+% =====================================================================
+\frontmatter
+\pagestyle{fancy}
+\inputchapter{en/front_preface}
+\cleardoublepage
+\phantomsection\label{nav:contents}
+\tableofcontents
+
+% =====================================================================
+\mainmatter
+\bookpart{Part I}{The language of fields}{Before writing any equation, we clarify what a field describes, which questions a simulation should answer, and the geometric tools that describe sources and swirls. This part does not aim at completeness; it gives every later step a place to stand.}{%
+\chref{ch:intro}\quad\nameref{ch:intro}\par
+\chref{ch:calculus}\quad\nameref{ch:calculus}}
+\inputchapter{en/ch01_intro}
+\inputchapter{en/ch02_calculus}
+
+\bookpart{Part II}{Electricity and magnetism: two parallel languages}{Electricity and magnetism each have a language of sources, fields, potentials and materials. This part tells the two side by side and keeps asking where they agree and where they differ; four standard systems — capacitor, resistor, inductor and magnetic circuit — then tie every quantity back together.}{%
+\chref{ch:electric}\quad\nameref{ch:electric}\par
+\chref{ch:magnetic}\quad\nameref{ch:magnetic}\par
+\chref{ch:matter}\quad\nameref{ch:matter}\par
+\chref{ch:interfaces}\quad\nameref{ch:interfaces}\par
+\chref{ch:systems}\quad\nameref{ch:systems}}
+\inputchapter{en/ch03_electric}
+\inputchapter{en/ch04_magnetic}
+\inputchapter{en/ch05_matter}
+\inputchapter{en/ch06_interfaces}
+\inputchapter{en/ch07_systems}
+
+\bookpart{Part III}{Time, approximation and representation}{A simulation never solves the ``complete'' Maxwell equations. This part answers two questions: for a given frequency, size and material, which couplings may be dropped with justification; and which potentials can represent the same physical field, and what their freedom means.}{%
+\chref{ch:regimes}\quad\nameref{ch:regimes}\par
+\chref{ch:potentials}\quad\nameref{ch:potentials}}
+\inputchapter{en/ch08_regimes}
+\inputchapter{en/ch09_potentials}
+
+\bookpart{Part IV}{Core field problems}{The language is now applied to real devices: electrodes injecting current (TES), coils inducing electric fields (TMS), eddy currents in conductors, nonlinear ferromagnetic materials, lumped magnetic circuits, and permanent magnets with yokes. Each chapter starts from a concrete modelling question and ends with a result that can be checked.}{%
+\chref{ch:tes}\quad\nameref{ch:tes}\par
+\chref{ch:tms}\quad\nameref{ch:tms}\par
+\chref{ch:eddy}\quad\nameref{ch:eddy}\par
+\chref{ch:bh}\quad\nameref{ch:bh}\par
+\chref{ch:lumped}\quad\nameref{ch:lumped}\par
+\chref{ch:magnets}\quad\nameref{ch:magnets}}
+\inputchapter{en/ch10_tes}
+\inputchapter{en/ch11_tms}
+\inputchapter{en/ch12_eddy}
+\inputchapter{en/ch13_bh}
+\inputchapter{en/ch14_lumped}
+\inputchapter{en/ch15_magnets}
+
+\bookpart{Part V}{From equations to matrices: finite elements}{A boundary-value problem becomes a matrix equation that can be solved and checked: first a smallest example by hand, then scalar finite elements, vector finite elements and nonlinear solves.}{%
+\chref{ch:femscalar}\quad\nameref{ch:femscalar}\par
+\chref{ch:femvector}\quad\nameref{ch:femvector}}
+\inputchapter{en/ch16_femscalar}
+\inputchapter{en/ch17_femvector}
+
+\bookpart{Part VI}{Applications: one field, different questions}{TES, TMS, MRI gradients, coil design, neural response and RF heating share one field theory; what differs is the source, the retained approximation and the observable of interest.}{%
+\chref{ch:framework}\quad\nameref{ch:framework}\par
+\chref{ch:mri}\quad\nameref{ch:mri}\par
+\chref{ch:coils}\quad\nameref{ch:coils}\par
+\chref{ch:neuro}\quad\nameref{ch:neuro}\par
+\chref{ch:rf}\quad\nameref{ch:rf}}
+\inputchapter{en/ch18_framework}
+\inputchapter{en/ch19_mri}
+\inputchapter{en/ch20_coils}
+\inputchapter{en/ch21_neuro}
+\inputchapter{en/ch22_rf}
+
+\bookpart{Part VII}{Integration and verification}{The chapters are joined into reproducible, checkable simulation projects, and we learn to separate ``were the equations solved right?'' from ``were the right equations solved?''.}{%
+\chref{ch:projects}\quad\nameref{ch:projects}\par
+\chref{ch:practice}\quad\nameref{ch:practice}}
+\inputchapter{en/ch23_projects}
+\inputchapter{en/ch24_practice}
+
+% =====================================================================
+\appendix
+\inputchapter{en/appendices}
+\chapter{Index of comparisons}\label{app:compare}
+\phantomsection\label{nav:compare}
+The comparison boxes of the book are listed below in order of appearance. When revising, pick a pair of concepts that you tend to confuse, return to its box, reread what the two have in common and where they differ, and then try to say the final one-line summary in your own words.
+\begingroup\small
+\listofcomparisons
+\endgroup
+
+\backmatter
+\input{references_en}
+\end{document}

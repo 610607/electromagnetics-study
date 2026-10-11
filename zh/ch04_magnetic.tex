@@ -1,0 +1,398 @@
+\chapter{电流、磁场与感应}\label{ch:magnetic}
+
+\begin{chapterguide}
+\guidequestion{理想长螺线管的外面没有磁场。可是在它外面套一圈导线，让螺线管的电流变化起来，导线两端却测得出电压。导线所在之处明明 $\vb B=0$，它怎么“知道”管里的磁场在变？}
+\begin{guidegoals}
+\item 用洛伦兹力说明 $\vb B$ 的含义，计算有向曲面上的磁通，并解释磁力为什么不做功；
+\item 对照 $\nabla\cdot\vb E$ 与 $\nabla\cdot\vb B$，说清“磁场没有源头”带来的后果；
+\item 用安培定律求长直导线和长螺线管的磁场，知道 Biot–Savart 定律在什么时候取代它；
+\item 用“环量等于磁通”理解磁矢势 $\vb A$，并一步写出螺线管内外的 $\vb A$ 与感应电场；
+\item 区分静电场与感应电场、磁通与磁链，以及电流 $I$ 与电流变化率 $\dd I/\dd t$ 各自缩放的量。
+\end{guidegoals}
+\guideprereq{\chref{ch:calculus}（散度、旋度，\eqref{id:div}–\eqref{id:zeros}）；\chref{ch:electric}（电场、电流密度、电荷守恒）。}
+\end{chapterguide}
+
+\section{一个让人困惑的实验}\label{sec:magnetic-puzzle}
+
+取一根很长的螺线管，通上电流。管内有一个几乎均匀的磁场；管外的磁场则很弱，在“无限长”的理想化下恰好为零。现在在螺线管外面、离绕组几厘米的地方套一圈导线，导线两端接一只电压表。
+
+电流不变时，电压表读数为零。让电流增大，电压表立刻有了读数；电流增大得越快，读数越大。更奇怪的是，把这圈导线换成一个大一倍的圆圈，或者换成方形，只要它仍然套住螺线管一次，读数就不变。可是导线所在的每一点都有 $\vb B=0$。
+
+\fig[.72]{solenoid_3d}{一个有限长螺线管（绿色绕组）在电流增大时的场。红色为磁场线：管内向上，密集而近乎均匀；出了管口绕到外面闭合，在管外分散到很大的空间里，因而很弱——线圈越长，管外越弱，无限长的极限下为零。蓝色闭合环是管外的一条感应电场线（$\dd I/\dd t>0$），绕行方向与绕组电流相反。本章要回答：管外几乎没有磁场的地方，为什么会有这样一圈电场？}{fig:solenoid_3d}
+
+\figref{fig:solenoid_3d} 画出了这个场景。导线所在的位置就在那一圈蓝色电场线附近。要解释这个实验，需要四样东西：$\vb B$ 到底测量什么（\secref{sec:magnetic-B}）；为什么可以说“一圈导线链接了多少磁通”（\secref{sec:magnetic-divB}）；变化的磁通怎样产生电场（\secref{sec:magnetic-faraday}）；以及描述这一切最顺手的工具——磁矢势 $\vb A$（\secref{sec:magnetic-A}）。\secref{sec:solenoid} 会给出完整的答案和具体数字。
+
+\begin{intuition}[局部量与回路量]
+场在一点的值是\emph{局部}的；磁通与环量却是关于\emph{一整条回路}的。本章的谜题来自把两者混为一谈：导线上每一点的 $\vb B$ 都是零，但导线围成的回路所链接的磁通并不为零。
+\end{intuition}
+
+\section{磁通密度 B：用力来定义}\label{sec:magnetic-B}
+
+\subsection{运动电荷受的力}
+洛伦兹力 \eqref{eq:lorentz} 中与速度有关的那一项给出 $\vb B$ 的操作性定义：以速度 $\vb v$ 运动的电荷 $q$ 受力 $q\vb v\times\vb B$。$\vb B$ 叫\textbf{磁通密度}（magnetic flux density），单位是特斯拉，$1\,\mathrm T=1\,\mathrm{N/(A\,m)}=1\,\mathrm{Wb/m^2}$。
+
+叉积使磁力总垂直于速度，于是
+\begin{equation}
+(q\vb v\times\vb B)\cdot\vb v=0 .
+\end{equation}
+磁力只改变点电荷运动的方向，不改变它的动能。这句话只针对\emph{单个点电荷}的瞬时功率。它并不是说磁体推不动线圈，也不是说机电系统不能交换机械能；在这些过程中，电场以及外部电源所做的功必须一并计入能量平衡（\secref{sec:systems-energy}）。
+
+\subsection{磁通：场穿过一个有向曲面}
+给定一个曲面 $S$，并在它上面选定单位法向 $\vb n$，穿过它的\textbf{磁通}为
+\begin{equation}
+\Phi_B(S)=\int_S\vb B\cdot\vb n\dS\qquad[\mathrm{Wb}=\mathrm{T\,m^2}].
+\label{eq:atlasflux}
+\end{equation}
+点积只取场的法向分量。均匀场中一块面积为 $A_c$ 的平面，法向与场夹角为 $\theta$ 时，$\Phi_B=BA_c\cos\theta$。
+
+\fig{magnetic_flux}{同一个均匀磁场与一块平面（侧视），三种朝向。看右侧的短竖线：它是平面在垂直于 $\vb B$ 的平面上的投影，长度正比于 $A_c\cos\theta$；红点标出穿过平面的场线，数目同样按 $\cos\theta$ 减少。转动平面改变的是磁通，场本身没有变。}{fig:magnetic_flux}
+
+\figref{fig:magnetic_flux} 给出一个便于记忆的图像：场线画得等间距时，磁通就是“穿过曲面的场线条数”。平面与场平行（$\theta=90^\circ$）时没有一条场线穿过，磁通为零，尽管那里的 $B$ 一点也不小。
+
+磁通的正负取决于法向的选择：把 $\vb n$ 反过来，$\Phi_B$ 变号。若曲面以一条有方向的闭合曲线 $C$ 为边界，本书总是按\emph{右手规则}选法向：四指沿 $C$ 的绕向弯曲，拇指指向 $\vb n$。法拉第定律的符号（\secref{sec:magnetic-faraday}）就建立在这个约定上。
+
+\section{磁场没有源头：B 的散度为零}\label{sec:magnetic-divB}
+
+电场线从正电荷出发、终止于负电荷，高斯定律 \eqref{eq:gaussvac} 用 $\nabla\cdot(\varepsilon_0\vb E)=\rho$ 把这件事写成了方程。对磁场，相应的方程右端是零：
+\begin{equation}
+\nabla\cdot\vb B=0,\qquad \oint_{\partial V}\vb B\cdot\vb n\dS=0 .
+\label{eq:divB}
+\end{equation}
+第二式由散度定理 \eqref{id:div} 得到：对\emph{任何}闭合曲面，进入多少磁通，就流出多少。宏观电磁学里没有“磁荷”，磁场线没有起点，也没有终点。
+
+\subsection{一个立即有用的推论：磁通只由边界决定}
+设 $S_1$ 与 $S_2$ 是以同一条闭合曲线 $C$ 为边界的两个曲面，法向都按 $C$ 的绕向用右手规则选取。把 $S_2$ 的法向反过来，两者就拼成一个闭合曲面。由 \eqref{eq:divB}，
+\begin{equation}
+\int_{S_1}\vb B\cdot\vb n\dS-\int_{S_2}\vb B\cdot\vb n\dS=0
+\quad\Longrightarrow\quad \Phi_B(S_1)=\Phi_B(S_2).
+\end{equation}
+所以穿过 $C$ 所张任何曲面的磁通都相同，可以直接说“回路 $C$ \textbf{链接}的磁通”，不必说明用的是哪个曲面。开头实验中的那圈导线链接多少磁通，因此是一个确定的数。电通量就没有这个性质：两个曲面之间若夹着电荷，穿过它们的电通量就不同。
+
+\begin{compare}{$\nabla\cdot\vb E$ 与 $\nabla\cdot\vb B$}{电场：有源}{磁场：无源}
+\cmprow{散度}{$\nabla\cdot(\varepsilon_0\vb E)=\rho$}{$\nabla\cdot\vb B=0$}
+\cmprow{闭合曲面通量}{等于包围的电荷 $Q/\varepsilon_0$}{恒为零}
+\cmprow{场线}{起于正电荷，止于负电荷}{无起点、无终点}
+\cmprow{开曲面通量}{随曲面而变（中间可能夹着电荷）}{只由边界曲线决定}
+\cmprow{另一半信息}{旋度：静态为零，一般为 $-\partial_t\vb B$}{旋度：由电流决定（\secref{sec:magnetic-ampere}）}
+\cmpsum{电荷是电场的源头，磁场没有源头；正因为如此，“一条回路链接的磁通”才有唯一的意义。}
+\end{compare}
+
+\begin{pitfall}[“$\nabla\cdot\vb B=0$，所以磁场线都是闭合的圈，磁场也比较均匀”]
+$\nabla\cdot\vb B=0$ 只说明任一小体积内没有净磁通产生。场线可以闭合，也可以延伸到无穷远，还可以有更复杂的全局结构；局部定律证明不了每条场线都是简单闭环，更不意味着场均匀或各分量为零。MRI 中的主磁场强度、梯度场和线圈磁链，都是对同一个无散的 $\vb B$ 做不同运算（取值、求空间导数、做面积分）得到的。
+\end{pitfall}
+
+\section{电流是磁场的涡旋源：安培定律}\label{sec:magnetic-ampere}
+
+散度只说了磁场的一半。另一半是旋度：真空中、电流不随时间变化时，
+\begin{keyeq}
+\nabla\times\vb B=\mu_0\vb J,\qquad \oint_C\vb B\cdot\dd\boldsymbol\ell=\mu_0 I(S),
+\label{eq:amperevac}
+\end{keyeq}
+$\mu_0\approx4\pi\times10^{-7}\,\mathrm{H/m}$ 为真空磁导率，$I(S)$ 是穿过以 $C$ 为边界的曲面 $S$ 的电流，法向按右手规则选取。积分形式由 Stokes 定理 \eqref{id:stokes} 得到。电流只在它所在之处“搅动”磁场；离开电流，$\nabla\times\vb B=0$。
+
+这条方程自带一个限制。旋度的散度恒为零 \eqref{id:zeros}，对两边取散度得 $\nabla\cdot\vb J=0$：电流必须处处无散。稳态电流满足这一点（\eqref{eq:continuity} 中 $\partial_t\rho=0$），给电容器充电的电流却不满足——电流流进极板就停住了。\chref{ch:matter} 会补上位移电流来解决这个矛盾（\secref{sec:matter-displacement}）。
+
+和高斯定律一样，安培定律的积分形式只有在对称性足够高时才能直接给出场。下面两个例子是全书的基础。
+
+\subsubsection{长直导线} 无限长直导线载电流 $I$。由对称性，$\vb B$ 只有绕导线的环向分量 $B_\theta(r)$。沿半径为 $r$ 的圆周积分，$2\pi rB_\theta=\mu_0I$，即
+\begin{equation}
+B_\theta=\frac{\mu_0I}{2\pi r}.
+\label{eq:wireB}
+\end{equation}
+请记住一个细节：导线\emph{外}没有电流，那里处处 $\nabla\times\vb B=0$；可是任何绕导线一圈的回路，环量都是 $\mu_0I$。“局部无旋”与“绕一圈的环量不为零”并不矛盾，因为回路里套着一个旋度不为零的区域（导线）。同样的结构会在 \secref{sec:solenoid} 原样重现。
+
+\subsubsection{长螺线管} 把每单位长度 $n_t$ 匝、电流为 $I$ 的绕组理想化为一层环向面电流 $K=n_tI$。由对称性，场沿轴向，只依赖半径。先取一个完全位于管外、两条长边平行于轴的矩形回路：它不包围电流，所以两条长边上的 $B_z$ 相等——管外的场与半径无关；而离管无穷远处场必须趋于零，所以\emph{管外处处 $B=0$}。再取一个一边在管内、一边在管外、长为 $\ell$ 的矩形：只有管内那条边有贡献，$B\ell=\mu_0n_t\ell I$。于是
+\begin{equation}
+B=\mu_0n_tI\quad(\text{管内，与半径无关}),\qquad B=0\quad(\text{管外}).
+\label{eq:solenoidB}
+\end{equation}
+
+\begin{example}{本章的螺线管}\label{ex:magnetic-solenoid}
+理想长螺线管 $n_t=1000\,\mathrm{m^{-1}}$，电流 $I=5\,\mathrm A$。管内磁通密度是多少？（本章与\chref{ch:systems} 都用这组教学输入，它们不对应某台具体设备。）
+\solution
+由 \eqref{eq:solenoidB}，$B=4\pi\times10^{-7}\times1000\times5\,\mathrm T\approx6.28\,\mathrm{mT}$。这个值与管的半径无关，也与观察点在管内的位置无关。
+\end{example}
+
+\section{任意形状的电流：Biot–Savart 定律}\label{sec:magnetic-biot}
+
+TMS 的八字线圈、MRI 的梯度线圈都没有足以直接使用安培定律的对称性。这时需要一个显式公式：在\emph{均匀}的线性介质（磁导率 $\mu$，真空中即 $\mu_0$）中，稳态、无散的源电流 $\vb J_s$ 产生的磁场为
+\begin{equation}
+\vb B(\vb r)=\frac{\mu}{4\pi}\int\frac{\vb J_s(\vb r')\times(\vb r-\vb r')}{\abs{\vb r-\vb r'}^3}\,\dd V'.
+\label{eq:biotsavart}
+\end{equation}
+它把空间里每一个电流元的贡献叠加起来，前提是场在无穷远处衰减。\chref{ch:potentials} 会从磁矢势方程推导它（\eqref{eq:curlcurlA}、\eqref{eq:Agreen}）。细导线中把 $\vb J_s\dd V'$ 换成 $I\,\dd\boldsymbol\ell'$。
+
+\begin{pitfall}[“只把线圈本身画进几何文件就够了”]
+\eqref{eq:biotsavart} 要求源电流无散，即电流路径必须闭合，\emph{包括回流导线和引线}。省略回流路径的绕组几何，描述的已经不是实际的电路。另外，周围一旦有铁磁物体，这个自由空间积分就不再等于总场；它仍可以作为更大的耦合模型中的“源场”~\cite{haus}。
+\end{pitfall}
+
+\subsection{圆环线圈：一个可以手算的基准}
+半径为 $a$ 的圆环载电流 $I$，求轴线上距环心 $z$ 处的场（\figref{fig:loop_axis} 左）。每个电流元 $I\dd\ell$ 到观察点的距离都是 $R=\sqrt{a^2+z^2}$，产生的 $\dd\vb B$ 大小为 $\mu_0I\dd\ell/(4\pi R^2)$，方向垂直于连线。环上相对的两个电流元贡献的横向分量大小相等、方向相反，互相抵消；轴向分量都占 $\dd B$ 的 $a/R$，彼此相加。绕环一周积分，并把 $N$ 匝理想化为重合的圆环：
+\begin{keyeq}
+B_z(z)=\frac{\mu_0NIa^2}{2(a^2+z^2)^{3/2}},\qquad B_z(0)=\frac{\mu_0NI}{2a}.
+\label{eq:loopaxis}
+\end{keyeq}
+
+\fig{loop_axis}{圆环线圈轴线上的场。左：对称性论证——相对两个电流元的 $\dd\vb B$ 横向分量相消、轴向分量相加。右：$B_z(z)/B_z(0)$ 的解析公式（曲线）与数值 Biot–Savart 求和（点）的比较；把圆环换成 6 段折线时中心场偏高约 10\%，24 段时误差约 0.6\%。远处的场按 $|z|^{-3}$ 衰减（虚线），是磁偶极子的特征。}{fig:loop_axis}
+
+公式说明了三件事：场正比于电流；空间尺度由半径 $a$ 决定，在 $|z|\approx0.77a$ 处降为中心值的一半；远处 $B_z\propto|z|^{-3}$，这正是\chref{ch:matter} 所说的磁偶极场。它最常见的用途是\emph{检验程序}：自己写的 Biot–Savart 积分或轴对称静磁求解器，先在这里与 \eqref{eq:loopaxis} 对一对（\figref{fig:loop_axis} 右）。它不能用来估计磁轭附近的总场。
+
+\begin{compare}{安培定律与 Biot–Savart 定律}{安培定律 \eqref{eq:amperevac}}{Biot–Savart 定律 \eqref{eq:biotsavart}}
+\cmprow{是什么}{场必须满足的约束（旋度、环量）}{在无界均匀介质中满足该约束的显式解}
+\cmprow{何时直接给出 $\vb B$}{对称性很高：长直导线、长螺线管}{任意形状的电流分布}
+\cmprow{需要知道}{回路包围的总电流，加上对称性}{全部电流分布，包括回流路径}
+\cmprow{有材料时}{改写为 $\nabla\times\vb H=\vb J_f$ 后仍成立（\chref{ch:matter}）}{只适用于均匀线性介质；有铁时只给出源场}
+\cmpsum{同一条物理规律的两种用法：安培定律是“约束”，Biot–Savart 是特定条件下的“解”。}
+\end{compare}
+
+\section{磁矢势 A：环量就是磁通}\label{sec:magnetic-A}
+\eqref{eq:divB} 是对磁场的一个约束。有一个办法让它自动成立：恒等式 \eqref{id:zeros} 说，任何矢量场的旋度都无散。所以若把磁场写成
+\begin{equation}
+\vb B=\nabla\times\vb A,
+\label{eq:atlasA}
+\end{equation}
+无论 $\vb A$ 取什么，$\nabla\cdot\vb B=0$ 都成立。$\vb A$ 叫\textbf{磁矢势}，单位为 $\mathrm{T\,m}=\mathrm{Wb/m}=\mathrm{V\,s/m}$：对空间求一次导数得到 $\vb B$，对时间求一次导数得到电场的一部分（\secref{sec:magnetic-faraday}）。在拓扑合适的区域内，任何无散的 $\vb B$ 都能这样表示（\chref{ch:potentials}）。
+
+\subsection{A 的意义在它的环量}
+某一点 $\vb A$ 的大小并不是“那里有多少磁性”。$\vb A$ 的物理意义藏在 Stokes 定理里：
+\begin{keyeq}
+\oint_C\vb A\cdot\dd\boldsymbol\ell=\int_S(\nabla\times\vb A)\cdot\vb n\dS=\Phi_B(S).
+\label{eq:Aflux}
+\end{keyeq}
+\emph{$\vb A$ 沿闭合回路的环量，就是这条回路链接的磁通。}由于磁通只由边界决定（\secref{sec:magnetic-divB}），这个说法与曲面的选取无关。它把求得的矢势直接连到线圈磁链与电感上（\secref{sec:magnetic-linkage}）~\cite{vectorboundary}。
+
+\subsection{均匀磁场的矢势}
+取均匀场 $\vb B=B_0\vb e_z$。一个满足 \eqref{eq:atlasA} 的矢势是
+\begin{equation}
+\vb A_{\rm sym}=\frac{B_0}{2}(-y,\,x,\,0).
+\end{equation}
+验算：$(\nabla\times\vb A_{\rm sym})_z=\partial_x(B_0x/2)-\partial_y(-B_0y/2)=B_0$，其余分量为零。这个 $\vb A$ 绕 $z$ 轴打转，大小 $A_\theta=B_0r/2$ 随半径增大。沿半径为 $r$ 的圆周，环量为 $2\pi r\cdot B_0r/2=\pi r^2B_0$，恰好是圆盘的磁通（\figref{fig:magnetic_flux} 中的 $BA_c$）。
+
+\fig[.8]{a_circulation_3d}{均匀磁场与它的对称矢势。竖直的红色箭头是处处相同的 $\vb B=B_0\vb e_z$；紫色圆环是 $\vb A_{\rm sym}$ 的场线，绕 $z$ 轴打转，大小 $A_\theta=B_0r/2$ 随半径增大（图中画了三个半径）。沿中间那个圆环累加 $\vb A$，得到 $2\pi r\cdot B_0r/2=\pi r^2B_0$，正是穿过阴影圆面的磁通。}{fig:a_circulation_3d}
+
+\figref{fig:a_circulation_3d} 说明：一个\emph{打转}的 $\vb A$ 可以描述一个\emph{笔直均匀}的 $\vb B$。矢势箭头不是磁场箭头，不能用读磁场图的方式去读它。
+
+反过来，环量关系也是求 $\vb A$ 的捷径。只要磁场具有轴对称性，选择绕轴打转、大小只依赖半径的矢势，就有
+\begin{equation}
+2\pi r\,A_\theta(r)=\Phi_B(r)\quad\Longrightarrow\quad A_\theta(r)=\frac{\Phi_B(r)}{2\pi r},
+\label{eq:Afromflux}
+\end{equation}
+$\Phi_B(r)$ 为半径 $r$ 的圆所链接的磁通。\secref{sec:solenoid} 将用这一行算出螺线管内外的矢势。顺带一提，$2\pi rA_\theta$ 就是轴对称场的“磁通函数”：它的等值线就是磁场线，相邻等值线之间夹着相等的磁通。本章的场线图（\figref{fig:flux_linkage}）就是这样画的（\secref{sec:potentials-2d}）。
+
+满足 \eqref{eq:atlasA} 的矢势并不唯一：$(0,\,B_0x,\,0)$ 的旋度同样是 $B_0\vb e_z$，箭头却全部指向 $y$ 方向。这种“同一个磁场、不同的矢势”的自由度叫规范自由度，留到\secref{sec:potentials-gauge} 讨论。本章始终使用绕轴打转的对称选择。
+
+\section{法拉第定律：变化的磁通产生环流电场}\label{sec:magnetic-faraday}
+
+现在回到开头的实验。实验事实是：一条固定回路链接的磁通发生变化时，沿回路出现电场的环量。写成方程，
+\begin{keyeq}
+\oint_C\vb E\cdot\dd\boldsymbol\ell=-\frac{\dd}{\dd t}\int_S\vb B\cdot\vb n\dS ,
+\label{eq:faradayintegral}
+\end{keyeq}
+其中 $C$ 与 $S$ 固定不动，$\vb n$ 与 $C$ 的绕向满足右手规则。左端叫\textbf{感应电动势}（electromotive force, EMF）：
+\begin{equation}
+\mathcal E=\oint_C\vb E\cdot\dd\boldsymbol\ell=-\frac{\dd\Phi_B}{\dd t}.
+\label{eq:atlasemf}
+\end{equation}
+“电动势”是历史名称，它的单位是伏特，不是牛顿。由于 $\Phi_B$ 只由 $C$ 决定，这条定律对 $S$ 的选择没有歧义。对 \eqref{eq:faradayintegral} 用 Stokes 定理，并让回路缩小到一点，得到微分形式 $\nabla\times\vb E=-\partial_t\vb B$，即\chref{ch:intro} 的 \eqref{eq:curlboth} 中的法拉第定律。
+
+负号有直观的含义（楞次定律）：若沿 $C$ 有导体，感应电流产生的磁通总是\emph{抵抗}原磁通的变化。回路在磁场中运动时还要计入 $\vb v\times\vb B$ 的贡献，不能直接套用固定回路的公式（\chref{ch:eddy}）。
+
+\subsection{用矢势看感应电场}
+把 $\vb B=\nabla\times\vb A$ 代入 $\nabla\times\vb E=-\partial_t\vb B$：
+\begin{equation}
+\nabla\times\Bigl(\vb E+\frac{\partial\vb A}{\partial t}\Bigr)=0 .
+\end{equation}
+所以 $\vb E=-\partial_t\vb A$ 就是一个满足法拉第定律的电场；最一般的电场还可以再加上一个梯度项，$\vb E=-\partial_t\vb A-\nabla\phi$ \eqref{eq:Etwopotentials}。梯度的旋度为零 \eqref{id:zeros}，绕任何闭合回路的环量也为零，因此\emph{感应环量全部由 $-\partial_t\vb A$ 承担}；$-\nabla\phi$ 只负责满足电荷与边界的要求（\chref{ch:interfaces}、\chref{ch:tms}）。对 \eqref{eq:Aflux} 求时间导数，可以再次看到这一点：$\oint_C(-\partial_t\vb A)\cdot\dd\boldsymbol\ell=-\dd\Phi_B/\dd t$。
+
+\subsection{均匀变化的磁场}
+\begin{example}{均匀 $\partial_tB$ 产生的电场}\label{ex:magnetic-uniform}
+在一个柱形区域内，磁场 $B_z(t)$ 空间均匀、随时间增大，$\partial_tB_z=1000\,\mathrm{T/s}$。求离轴 $r=0.08\,\mathrm m$ 处的电场。
+\solution
+由柱对称，电场绕轴打转，大小只依赖 $r$。沿半径为 $r$ 的圆周用 \eqref{eq:faradayintegral}：
+\begin{equation}
+2\pi rE_\theta=-\frac{\dd}{\dd t}\bigl(\pi r^2B_z\bigr)\quad\Longrightarrow\quad E_\theta=-\frac r2\,\partial_tB_z .
+\label{eq:uniforminduction}
+\end{equation}
+代入数字，$|E_\theta|=0.04\times1000\,\mathrm{V/m}=40\,\mathrm{V/m}$。负号表示：$B$ 指出纸面且增大时，电场顺时针绕行（\figref{fig:induction}）。用 $\vb A_{\rm sym}=\tfrac12\vb B\times\vb r$ 直接算 $-\partial_t\vb A$，得到同样的结果。这个估计要求整个圆盘内 $\partial_tB_z$ 均匀并具有柱对称；真实的、不均匀的人体必须求解自己的边值问题（\chref{ch:tms}）。
+\end{example}
+
+\fig{induction}{均匀增大的磁场中的感应电场。左：$\vb B$ 指出纸面且增大，按右手规则取逆时针的回路 $C$，$\oint_C\vb E\cdot\dd\boldsymbol\ell=-\dot\Phi_B<0$，所以电场顺时针；箭头长度正比于 $|E_\theta|$，中心为零、向外线性增大。右：$\partial_tB_z=1000\,\mathrm{T/s}$ 时 $|E_\theta|$ 随半径的变化，$r=8\,\mathrm{cm}$ 处为 $40\,\mathrm{V/m}$。}{fig:induction}
+
+这个例子值得多看一眼：磁场在空间里\emph{完全均匀}，电场却绕成圈，而且在不同半径大小不同。绕整个圈积分不为零，所以这个电场不能写成一个单值电势的梯度。
+
+\begin{pitfall}[“要感应出电场，磁场必须有很大的空间梯度”]
+感应来自磁场随\emph{时间}的变化，与 $\vb B$ 的空间梯度无关：上例中 $\vb B$ 空间均匀，照样产生 $40\,\mathrm{V/m}$。“梯度”一词在本书里有两个不同的用处——TMS 的驱动是 $\partial_t\vb B$；长直轴突的兴奋则与电场沿纤维方向的\emph{空间}变化有关，那是另一回事（\chref{ch:neuro}）。
+\end{pitfall}
+
+\section{回到螺线管：外部 B=0，E 却不为零}\label{sec:solenoid}
+
+现在可以完整地回答开头的问题。取半径为 $a$、每单位长度 $n_t$ 匝的理想长空芯螺线管，忽略端部。由 \eqref{eq:solenoidB}，管内磁场 $B_z=B_c(t)=\mu_0n_tI(t)$，管外为零（\chref{ch:matter} 会把管内的结果写成 $H_z=n_tI$）。
+
+\subsubsection{第一步：由磁通得到矢势} 用 \eqref{eq:Afromflux}。管内半径为 $r$ 的圆链接磁通 $\pi r^2B_c$；管外任何半径的圆都链接全部磁通 $\pi a^2B_c$。分别除以周长 $2\pi r$：
+\begin{equation}
+A_\theta(r,t)=
+\begin{cases}
+B_c(t)\,r/2, & r<a,\\[2pt]
+B_c(t)\,a^2/(2r), & r>a.
+\end{cases}
+\label{eq:solenoidA}
+\end{equation}
+不需要做任何矢量积分，只用了“环量等于磁通”。注意管外 $\vb B=0$，$\vb A$ 却不为零。
+
+\subsubsection{第二步：对时间求导} 在柱对称、管外不导电的理想情形下，取不带额外梯度项的对称表示 $\vb E=-\partial_t\vb A$：
+\begin{keyeq}
+E_\theta(r,t)=-\frac{\partial A_\theta}{\partial t}=
+\begin{cases}
+-\dot B_c(t)\,r/2, & r<a,\\[2pt]
+-\dot B_c(t)\,a^2/(2r), & r>a.
+\end{cases}
+\label{eq:solenoidE}
+\end{keyeq}
+管内的结果与 \eqref{eq:uniforminduction} 相同；管外的电场按 $1/r$ 衰减，但\emph{不为零}（\figref{fig:solenoid_profiles}）——\figref{fig:solenoid_3d} 中管外那一圈蓝色电场线，就是它在有限长线圈中的样子。
+
+\fig{solenoid_profiles}{理想长螺线管在电流增大时的场（首阶磁准静态结果）。左：截面图。绿色为绕组，管内 $\vb B$ 指出纸面，管外 $\vb B=0$；蓝色箭头为感应电场，长度正比于 $|E_\theta|$，在管外依然存在。任何只套住螺线管一次的回路 $C$，环量都是 $-\pi a^2\dot B_c$。右：径向剖面。$B_z$ 在绕组处跳到零；$A_\theta$ 与 $|E_\theta|$ 归一化后形状相同，管内正比于 $r$，管外正比于 $1/r$。}{fig:solenoid_profiles}
+
+\begin{example}{螺线管的数字}\label{ex:magnetic-solenoidE}
+沿用\exref{ex:magnetic-solenoid}：$n_t=1000\,\mathrm{m^{-1}}$，$a=0.02\,\mathrm m$，某一时刻 $I=5\,\mathrm A$、$\dot I=10^6\,\mathrm{A/s}$。求管内 $r=1\,\mathrm{cm}$ 与管外 $r=4\,\mathrm{cm}$ 处的 $A_\theta$、$E_\theta$，以及套住螺线管的单匝导线中的感应电动势。
+\solution
+$B_c=\mu_0n_tI\approx6.28\,\mathrm{mT}$，$\dot B_c=\mu_0n_t\dot I\approx1.26\times10^3\,\mathrm{T/s}$。管内 $r=0.01\,\mathrm m$ 处：
+\begin{equation*}
+A_\theta=\frac{B_cr}{2}\approx3.14\times10^{-5}\,\mathrm{Wb/m},\qquad E_\theta=-\frac{\dot B_cr}{2}\approx-6.28\,\mathrm{V/m}.
+\end{equation*}
+若管内有一根同轴的均匀导体（$\sigma=0.2\,\mathrm{S/m}$），且它对磁场的反馈很弱，对应的环向电流密度约为 $-1.26\,\mathrm{A/m^2}$。管外 $r=0.04\,\mathrm m=2a$ 处，$B=0$，而
+\begin{equation*}
+E_\theta=-\frac{\dot B_ca^2}{2r}\approx-6.28\,\mathrm{V/m},
+\end{equation*}
+与管内 $1\,\mathrm{cm}$ 处一样大。套住螺线管一次的导线，感应电动势为
+\begin{equation*}
+\mathcal E=-\pi a^2\dot B_c\approx-1.58\,\mathrm V,
+\end{equation*}
+与导线圈的大小、形状无关。这些都是教学输入，不是任何刺激方案的参数。
+\end{example}
+
+\subsection{谜题的答案}
+导线所在之处 $\vb B=0$，所以那里 $\nabla\times\vb E=-\partial_t\vb B=0$：电场在管外\emph{局部无旋}。直接验算也是如此，$E_\theta\propto1/r$ 使 $(1/r)\,\dd(rE_\theta)/\dd r=0$。但管外区域中间有一个“洞”——螺线管占据的那部分空间，它不是单连通的。绕这个洞一圈的回路链接着管内全部的磁通，环量就是 $-\pi a^2\dot B_c$。导线并不需要“感知”管内的磁场；它感受到的是自己所在之处实实在在的电场，而这个电场的环量由法拉第定律锁定为回路链接的磁通的变化率。
+
+\begin{intuition}[感应电场绕着变化的磁通，正如磁场绕着电流]
+把 $\nabla\times\vb B=\mu_0\vb J$ 与 $\nabla\times\vb E=-\partial_t\vb B$ 并排放：变化的磁通 $-\partial_t\vb B$ 在法拉第定律中的角色，正是电流在安培定律中的角色。于是长螺线管外的感应电场 $E_\theta=-\dot\Phi_B/(2\pi r)$，与长直导线外的磁场 $B_\theta=\mu_0I/(2\pi r)$ 一模一样：都按 $1/r$ 衰减，都局部无旋，绕一圈的环量都不为零。
+\end{intuition}
+
+这也说明了一件事：任何一个局部的 $\vb B$ 采样都不足以确定回路的磁通或整个感应电场。只看导线所在之处的磁场图，开头的实验无法理解。
+
+\begin{pitfall}[“电压表测的就是两点之间的电势差”]
+电压表测的是它自己、引线和被测导线一起组成的整个回路上的电场线积分。回路链接的磁通在变化时，这个积分取决于回路怎样走线：在\exref{ex:magnetic-solenoidE} 的条件下读数约为 $1.58\,\mathrm V$，是因为测量回路套住了螺线管一次；把引线改走另一边，使测量回路不再套住螺线管，读数就会不同。此时 $\phi(b)-\phi(a)$ 一般不再等于 $-\int_a^b\vb E\cdot\dd\boldsymbol\ell$。
+\end{pitfall}
+
+\section{对照：静电场与感应电场}\label{sec:magnetic-static-vs-induced}
+
+\chref{ch:electric} 的电场由电荷产生，本章的电场由变化的磁通产生。它们是同一个物理量吗？是的：作用在电荷上的力都是 $q\vb E$，在导体中都驱动 $\vb J=\sigma\vb E$，都产生 $\vb E\cdot\vb J$ 的热。区别只在于产生它们的源不同，因而满足的旋度方程不同，场的几何形状也不同（\figref{fig:static_vs_induced}）。
+
+\fig{static_vs_induced}{两种来源的电场。左：一对正负线电荷的静电场，场线起于正电荷、止于负电荷，紫色虚线为等势线，任何闭合回路上的环量为零。右：一根变化的磁通管周围的感应电场，场线是闭合的圆，没有起点；套住磁通管的回路环量为 $-\dot\Phi_B$，不套住它的小回路环量为零。两幅图均按二维精确解绘制。}{fig:static_vs_induced}
+
+\begin{compare}{静电场与感应电场}{静电场（由电荷产生）}{感应电场（由变化的磁通产生）}
+\cmprow{源}{电荷：$\nabla\cdot(\varepsilon_0\vb E)=\rho$}{变化的磁通：$\nabla\times\vb E=-\partial_t\vb B$}
+\cmprow{旋度}{零}{$-\partial_t\vb B$，只在磁通变化之处非零}
+\cmprow{闭合回路环量}{恒为零}{等于 $-\dd\Phi_B/\dd t$}
+\cmprow{能否写成 $-\nabla\phi$}{能，电势是单值的}{不能（对套住变化磁通的回路）}
+\cmprow{场线}{起于正电荷，止于负电荷}{闭合，没有起点和终点}
+\cmprow{按什么缩放}{电荷、电压}{$\dd I/\dd t$（\secref{sec:magnetic-scaling}）}
+\cmprow{对电荷的作用}{$q\vb E$}{$q\vb E$，完全相同}
+\cmpsum{两者是同一种电场，推电荷、产生电流和热的方式完全一样；不同的只是由什么产生，以及因此满足的旋度方程。}
+\end{compare}
+
+真实导体中两部分同时存在。感应电场推动电荷，电荷在导体表面和电导率界面上堆积，堆积的电荷又产生静电场；总场 $\vb E=-\partial_t\vb A-\nabla\phi$ 是两者之和。\chref{ch:interfaces} 会讲清界面上为什么会堆积电荷，\chref{ch:tms} 会算出这部分“次级电场”。
+
+\section{磁通、磁链与电感}\label{sec:magnetic-linkage}
+
+开头的实验用的是单匝导线。实际线圈有许多匝，需要把各匝的磁通加起来。
+
+\subsection{磁链}
+磁通属于一个曲面，\textbf{磁链}属于一整个绕组。若第 $k$ 匝沿自己的绕向围成曲线 $C_k$、张成曲面 $S_k$，有符号的磁链为
+\begin{keyeq}
+\lambda=\sum_{k=1}^{N}\int_{S_k}\vb B\cdot\vb n_k\dS=\sum_{k=1}^{N}\oint_{C_k}\vb A\cdot\dd\boldsymbol\ell .
+\label{eq:linkage}
+\end{keyeq}
+第二个等号就是 \eqref{eq:Aflux}。只有当 $N$ 匝都链接相同的有符号磁通时，才能写成 $\lambda=N\Phi_B$。匝数无量纲，所以磁链的单位也是韦伯。
+
+\fig{flux_linkage}{磁链要逐匝相加。左：源线圈（绿）的磁场线按磁通函数精确绘制，相邻两条线之间的磁通相等；三匝拾取线圈沿轴排列，虚线是每匝张成的圆面。穿过第 1 匝的场线有一部分在到达第 2、3 匝之前就从侧面离开了。右：按 \eqref{eq:Aflux} 算出的各匝磁通。三匝的磁链只有 $1.69\,\Phi_1$，远小于 $3\Phi_1$。}{fig:flux_linkage}
+
+\figref{fig:flux_linkage} 是一个极端但真实的例子：拾取线圈放在源线圈的发散场中，远端的匝链接的磁通不到近端的四分之一，“$\lambda=N\Phi_B$”会把磁链高估七成多。绕得较松的线圈、有漏磁的变压器，都会出现各匝链接不等的情况。
+
+\subsection{端电压的符号}
+对整个绕组应用法拉第定律，沿绕组方向的感应电动势为 $-\dd\lambda/\dd t$。电路分析中常采用电感的\emph{被动符号约定}：端电压 $v_L$ 的参考正方向使电流从正端流入。在这一约定下，外电路必须提供
+\begin{equation}
+v_L=+\frac{\dd\lambda}{\dd t}
+\end{equation}
+才能克服感应电动势。两个式子符号相反，描述的却是同一条定律，只是所取的有向量不同。
+
+\begin{compare}{磁通与磁链}{磁通 $\Phi_B$}{磁链 $\lambda$}
+\cmprow{属于}{一个有向曲面（或一条回路）}{一整个绕组（$N$ 条回路）}
+\cmprow{定义}{$\int_S\vb B\cdot\vb n\dS=\oint_C\vb A\cdot\dd\boldsymbol\ell$}{各匝磁通之和 \eqref{eq:linkage}}
+\cmprow{单位}{Wb}{Wb（匝数无量纲）}
+\cmprow{与 $N$ 的关系}{无关}{仅当各匝相同时 $\lambda=N\Phi_B$}
+\cmprow{进入什么}{单匝的电动势 $-\dd\Phi_B/\dd t$}{绕组端电压 $v_L=\dd\lambda/\dd t$、电感 $L=\lambda/I$}
+\cmpsum{磁通回答“穿过这一圈的场有多少”，磁链回答“这个绕组一共被链接了多少”；端电压由磁链决定。}
+\end{compare}
+
+\subsection{电感}
+在固定的线性磁环境中（几何与材料都不变、没有铁磁饱和），$\vb B$ 正比于电流，磁链也正比于电流：
+\begin{equation}
+\lambda=LI .
+\label{eq:inductance}
+\end{equation}
+比例系数 $L$ 叫\textbf{电感}，单位亨利（H）。它只取决于绕组几何与周围材料，可以理解为“每安培电流产生的磁链”。于是端电压 $v_L=L\,\dd I/\dd t$。长螺线管的 $L\approx\mu N^2A_c/\ell$ 将在\chref{ch:systems} 中推导；有电阻时端电压为 $v=RI+\dd\lambda/\dd t$。多个线圈时 $\lambda_i=\sum_jL_{ij}I_j$，非对角项是互感（\chref{ch:eddy}）。
+
+\section{两种缩放：I 与 dI/dt}\label{sec:magnetic-scaling}
+
+\secref{sec:solenoid} 的公式里，$B_c$ 正比于 $I$，$E_\theta$ 却正比于 $\dot I$。这不是螺线管特有的巧合。只要几何与材料固定且线性，矢势就可以写成“电流 $\times$ 一个只依赖位置的形状函数”：$\vb A(\vb r,t)=I(t)\,\vb a(\vb r)$。于是
+\begin{equation}
+\vb B=I\,(\nabla\times\vb a),\qquad -\partial_t\vb A=-\dot I\,\vb a .
+\end{equation}
+线圈电流决定磁场的大小，电流的变化率决定感应电场的大小。“每安培的磁场”单位是 T/A，“每安/秒的感应电场”单位是 $(\mathrm{V/m})/(\mathrm{A/s})$。\chref{ch:tms} 会把这一缩放写成 \eqref{eq:epcoil}，再加上导体中电荷带来的修正，得到 \eqref{eq:tmswaveform}。
+
+\begin{compare}{电流 $I$ 与电流变化率 $\dd I/\dd t$}{电流 $I$}{电流变化率 $\dd I/\dd t$}
+\cmprow{直接缩放}{$\vb B$、$\vb A$、磁链 $\lambda$}{感应电场 $-\partial_t\vb A$、感应电流、端电压 $L\dot I$}
+\cmprow{单位场图}{$\vb b=\vb B/I$，T/A}{$\vb e=\vb E/\dot I$，(V/m)/(A/s)}
+\cmprow{恒定直流时}{$\vb B$ 不为零}{感应电场为零}
+\cmprow{螺线管例子}{$5\,\mathrm A\to6.28\,\mathrm{mT}$}{$10^6\,\mathrm{A/s}\to6.28\,\mathrm{V/m}$（$r=1\,\mathrm{cm}$）}
+\cmpsum{很大的静磁场本身不意味着很大的感应电场；较小的磁场若变化得很快，也能产生可观的电场。}
+\end{compare}
+
+因此，两个峰值电流相同的波形，可以有完全不同的峰值 $\dot I$，也就有不同的电场暴露。不能把一张静态电流的磁场图直接当作电场图使用：中间缺少的正是对时间的求导，以及导体中电荷的修正。
+
+这一节的结论属于“给定源”的单向感应模型：组织或负载对源磁场的反馈可以忽略，也没有容性耦合。导电屏蔽中的涡流会反过来改写磁场，那时上面的简单缩放不再成立（\secref{sec:regimes-oneway}、\chref{ch:eddy}）。
+
+到这里，所有的场都在真空中。把一根铁芯塞进螺线管，管内的磁场会增大上千倍；把一块介质塞进电容器，电场却会变弱。物质为什么这样响应，又怎样写进方程，是下一章的问题。
+
+\begin{takeaways}
+\begin{itemize}
+\item $\vb B$ 由运动电荷受的力 $q\vb v\times\vb B$ 定义；磁力不对点电荷做功。磁通 $\Phi_B=\int_S\vb B\cdot\vb n\dS$ 取决于曲面的朝向，法向按右手规则与边界绕向相联。
+\item $\nabla\cdot\vb B=0$：磁场没有源头，所以穿过一条回路的磁通只由回路本身决定。电流是磁场的涡旋源，$\nabla\times\vb B=\mu_0\vb J$；对称情形用安培定律，任意形状用 Biot–Savart 定律，圆环公式 \eqref{eq:loopaxis} 是检验程序的基准。
+\item 磁矢势的意义在于环量：$\oint_C\vb A\cdot\dd\boldsymbol\ell=\Phi_B$。有对称性时，$A_\theta=\Phi_B(r)/(2\pi r)$ 一步给出 $\vb A$。
+\item 法拉第定律：$\oint_C\vb E\cdot\dd\boldsymbol\ell=-\dd\Phi_B/\dd t$。感应电场绕着变化的磁通闭合，正如磁场绕着电流闭合。
+\item 理想螺线管外 $\vb B=0$，但 $\vb A$ 与 $\vb E$ 都不为零：局部无旋的区域中，绕“洞”一圈的环量可以不为零。
+\item 磁链是各匝磁通之和，$\lambda=N\Phi_B$ 只在各匝相同时成立；$I$ 缩放 $\vb B$ 与 $\lambda$，$\dd I/\dd t$ 缩放感应电场与端电压。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 在均匀磁场中把一个平面线圈从 $\theta=0$ 转到 $\theta=90^\circ$。$\vb B$、线圈处的磁通各怎样变化？
+\item 为什么可以说“回路 $C$ 链接的磁通”而不必指明曲面？换成电场的通量，还能这样说吗？
+\item 长直导线外 $\nabla\times\vb B=0$，为什么绕导线一圈的环量不为零？这与螺线管外的感应电场有什么共同之处？
+\item 在\exref{ex:magnetic-solenoidE} 的螺线管外 $r=10\,\mathrm{cm}$ 处套一圈圆形导线，感应电动势是多少？换成边长 $30\,\mathrm{cm}$、同样套住螺线管的方形线圈呢？如果线圈放在螺线管旁边、没有套住它呢？
+\item 同一个螺线管，情形一：电流恒为 $5\,\mathrm A$；情形二：用 $0.1\,\mathrm{ms}$ 把电流从 0 线性地升到 $5\,\mathrm A$。两种情形下管内的 $B$ 和 $r=1\,\mathrm{cm}$ 处的感应电场各是多少？
+\item 矢势 $(0,\,B_0x,\,0)$ 的箭头全部沿 $y$ 方向，看起来与 $\vb A_{\rm sym}$ 毫不相像。沿半径为 $r$ 的圆周，它的环量是多少？这说明了什么？
+\item 有人用 $\lambda=N\Phi_B$ 计算一个绕得很松的长线圈的磁链，$\Phi_B$ 取中间一匝的磁通。结果会偏大还是偏小？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item $\vb B$ 不变；磁通从 $BA_c$ 按 $\cos\theta$ 减小到零。转动改变的是曲面与场的相对朝向。
+\item 因为 $\nabla\cdot\vb B=0$，以同一条曲线为边界的两个曲面拼成闭合曲面，净磁通为零，两者的磁通相等。电通量不行：两个曲面之间若夹着电荷，穿过它们的电通量就不同。
+\item 回路中套着一个 $\nabla\times\vb B\neq0$ 的区域（导线本身）。局部无旋只约束小回路；套住导线的回路由安培定律给出 $\mu_0I$。螺线管外的电场同样局部无旋，而套住螺线管的回路环量为 $-\pi a^2\dot B_c$。
+\item 都约为 $-1.58\,\mathrm V$：电动势只取决于回路链接的磁通 $\pi a^2B_c$，与回路大小和形状无关。没有套住螺线管时，回路链接的磁通为零，电动势为零。
+\item 两种情形最终 $B$ 都是 $6.28\,\mathrm{mT}$。情形一 $E=0$。情形二升流期间 $\dot I=5\times10^4\,\mathrm{A/s}$，$\dot B_c\approx62.8\,\mathrm{T/s}$，$|E_\theta|=\dot B_cr/2\approx0.31\,\mathrm{V/m}$；升流结束后电场回到零。
+\item 令 $x=r\cos\varphi$，$\dd y=r\cos\varphi\,\dd\varphi$，环量 $=B_0r^2\int_0^{2\pi}\cos^2\varphi\,\dd\varphi=\pi r^2B_0$，与 $\vb A_{\rm sym}$ 相同。两个矢势描述同一个磁场；可观测的是环量（磁通），不是箭头的样子（\secref{sec:potentials-gauge}）。
+\item 偏大。靠近两端的匝链接的磁通比中间少，一部分场线在到达端部之前已从匝间离开（\figref{fig:flux_linkage}）。
+\end{answers}

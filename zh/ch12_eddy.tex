@@ -1,0 +1,243 @@
+\chapter{涡流与耦合 MQS}\label{ch:eddy}
+
+\begin{chapterguide}
+\guidequestion{MRI 梯度线圈外面包着磁体的金属低温容器和导电屏蔽。梯度电流按指令快速上升，成像区里的梯度磁场却慢吞吞地跟上来。金属为什么会“拖慢”梯度？组织里的感应电流可以忽略它对磁场的影响，金属里的为什么不行？}
+\begin{guidegoals}
+\item 判断什么时候必须放弃单向耦合，推导耦合的 $\vb A$--$\phi$ 方程，并说明 TMS 模型是它的哪一种特例；
+\item 区分绞线绕组与实心导体两种源模型，说出各自能、不能描述什么；
+\item 用磁扩散时间和一个可以手算的导电薄壳模型，估计屏蔽涡流的时间常数与孔内磁场的滞后；
+\item 写出线圈端电压 $V=RI+\dd\lambda/\dd t$ 与多线圈电压方程，把屏蔽看成一个短路的次级回路，解释等效电感为什么随频率变化；
+\item 说明半离散系统为什么是微分--代数系统，以及运动导体中 $\vb u\times\vb B$ 何时能、何时不能驱动电流。
+\end{guidegoals}
+\guideprereq{\secref{sec:regimes-mqs}、\secref{sec:regimes-oneway}（MQS 与单向耦合）；\eqref{eq:diffusion}、\eqref{eq:skindepth}（磁扩散与趋肤深度）；\eqref{eq:Etwopotentials}；\secref{sec:magnetic-linkage}（磁链与电感）；\chref{ch:tms}。}
+\end{chapterguide}
+
+\section{金属为什么会拖慢磁场}\label{sec:eddy-scene}
+
+\chref{ch:tms} 能够先算线圈的磁场、再算组织里的电场，靠的是一个假设：组织中的感应电流太弱，它们的磁场改变不了线圈的磁场。\chref{ch:regimes} 用一个数衡量这种反馈的强弱——磁扩散尺度 $\eta_m=\omega\mu\sigma\ell^2$。在 $3\,\mathrm{kHz}$ 下，$\sigma=0.5\,\mathrm{S/m}$、$\ell=0.2\,\mathrm m$ 的导体给出 $\eta_m\approx4.7\times10^{-4}$；同一频率下，$2\,\mathrm{mm}$ 厚的铜却给出 $\eta_m\approx5.5$（\chref{ch:regimes} 的数值对照）。前者的反馈可以忽略，后者不能。
+
+所以同一个 MRI 梯度场，对身体可以用单向耦合，对低温容器、导电屏蔽或磁轭却必须用耦合的涡流模型。金属里感应出的电流——\textbf{涡流}——按楞次定律总是抵抗磁通的变化（\secref{sec:magnetic-faraday}），它的磁场叠加在线圈的磁场上：梯度电流上升时，涡流的场与之相反，成像区里的场就比指令慢；电流停止变化后，涡流因电阻而衰减，场才慢慢到达目标。\figref{fig:eddy_oneway_vs_coupled} 把两种情形并排画了出来。
+
+\fig{eddy_oneway_vs_coupled}{单向感应与耦合涡流（长线圈的截面示意；下方曲线为计算值）。左：线圈内是组织，感应电流很弱，孔内磁场与线圈电流同步。右：线圈外有一层铜屏蔽，电流上升时屏蔽中出现反向涡流，孔内磁场先只到达目标的一部分，再以时间常数 $\tau$ 爬升；电流下降后又以 $\tau$ 衰减。右下曲线来自\secref{sec:eddy-diffusion} 的薄壳模型，耦合系数取 $\kappa=0.69$，时间以 $\tau$ 为单位，电流上升时间远短于 $\tau$。}{fig:eddy_oneway_vs_coupled}
+
+本章先写出耦合问题的方程，再用一个可以手算的薄壳模型看清“拖慢”的来源和时间尺度，然后讨论数值系统、线圈端电压，最后是运动导体。
+
+\section{何时感应电流必须反馈}\label{sec:eddy-coupled}
+
+\subsection{耦合的 A--φ 方程}
+从磁准静态的安培定律 $\nabla\times\vb H=\vb J_f$ \eqref{eq:mqs}出发。导体中的自由电流分成两部分：给定的源电流 $\vb J_s$（例如绕组中的电流），与电场驱动的传导电流 $\sig\vb E$。用磁矢势表示场，$\vb B=\nabla\times\vb A$ \eqref{eq:vectorpotential}，$\vb E=-\partial_t\vb A-\nabla\phi$ \eqref{eq:Etwopotentials}；各向同性可逆的磁材料写成 $\vb H=\nu(\abs{\vb B})\,\vb B$，$\nu$ 是\textbf{磁阻率}（线性时 $\nu=1/\mu$，铁磁材料中随 $\abs{\vb B}$ 变化，\chref{ch:bh}）。代入安培定律，把传导电流移到左边：
+\begin{keyeq}
+\nabla\times\bigl[\nu(\abs{\nabla\times\vb A})\,\nabla\times\vb A\bigr]+\sig\Bigl(\frac{\partial\vb A}{\partial t}+\nabla\phi\Bigr)=\vb J_s .
+\label{eq:av_mqs}
+\end{keyeq}
+在没有外加体电流源的导体中，传导电流还必须不生不灭：
+\begin{keyeq}
+\nabla\cdot\Bigl[\sig\Bigl(\frac{\partial\vb A}{\partial t}+\nabla\phi\Bigr)\Bigr]=0 .
+\label{eq:av_charge}
+\end{keyeq}
+注意符号：真实的传导电流是括号里那个量的\emph{负值}，$\vb J_c=-\sig(\partial_t\vb A+\nabla\phi)$；右端为零时整体变号不改变方程。对 \eqref{eq:av_mqs} 取散度，旋度的散度为零 \eqref{id:zeros}，$\vb J_s$ 本身无散，就得到 \eqref{eq:av_charge}——两条方程是相容的。在数值的混合形式中，第二条通常要单独写出，用来约束导体内的电流连续，并与边界条件一起确定 $\phi$。
+
+两个未知数的“领地”不同。$\vb A$ 要延伸到周围的空气里，因为磁场充满整个空间；$\phi$ 通常只在导电区域里需要。材料界面、导体的端子与绝缘表面（$\vb n\cdot\vb J_c=0$）给出边界条件。$(\vb A,\phi)$ 还有规范自由度（\secref{sec:potentials-gauge}），数值求解时它表现为离散的零空间（\chref{ch:femvector}）。
+
+\subsection{TMS 是它的第一步}
+把 \eqref{eq:av_mqs} 与\chref{ch:tms} 对照。若导体中的传导电流对安培定律的贡献可以忽略，第一条方程就只剩线圈：$\vb A\approx\vb A_p$，可以单独算出来。把这个 $\vb A_p$ 代入第二条方程，
+\begin{equation}
+\nabla\cdot\bigl[\sig(\partial_t\vb A_p+\nabla\phi)\bigr]=0\quad\Longleftrightarrow\quad\nabla\cdot(\sig\nabla\phi)=\nabla\cdot(\sig\vb E_p),
+\end{equation}
+正是 \eqref{eq:tmspde}；绝缘表面上的 $\vb n\cdot\vb J_c=0$ 正是 \eqref{eq:tmsboundary}。
+
+\begin{intuition}[单向耦合丢掉了哪一项]
+单向耦合只丢掉了 \eqref{eq:av_mqs} 中的传导电流项——感应电流对\emph{磁场}的反馈；它保留了 \eqref{eq:av_charge}——感应电流在边界上留下的\emph{电荷}。这正是\chref{ch:tms} 中“两种反馈”的区分：磁反馈小可以丢，电荷反馈不能丢。
+\end{intuition}
+
+\subsection{两种源模型}
+\eqref{eq:av_mqs} 右端的 $\vb J_s$ 是“给定”的电流。一个绕组到底算给定的源，还是要和场一起求解的导体，是一个建模选择。
+
+\textbf{绞线绕组}（stranded）模型规定绕组截面上的电流密度：每根细导线中电流相同，均匀地分布在绕组截面上。它适合由许多相互绝缘、直径远小于趋肤深度的细导线绕成的线圈。\textbf{实心导体}（solid）模型只规定端子上的总电流或电压，导体内的电流分布由 \eqref{eq:av_mqs}--\eqref{eq:av_charge} 求出，可以随频率挤向表面（趋肤效应），也可以被邻近导体推向一侧（邻近效应）。
+
+源路径还必须完整：电流不能凭空出现或消失。几何文件中若绕组路径不闭合、源电流的散度不平衡，需要用端子或外电路把它补全，而不是忽略；Biot--Savart 积分 \eqref{eq:biotsavart} 同样要求完整的回路。
+
+\begin{compare}{绞线绕组与实心导体}{绞线：给定电流密度}{实心：电流分布由场决定}
+\cmprow{给定什么}{截面上的 $\vb J_s$（总电流与分布都给定）}{端子上的总电流或电压}
+\cmprow{适合描述}{多匝细导线线圈，线径远小于趋肤深度}{厚导体、汇流排、金属板与屏蔽}
+\cmprow{趋肤与邻近效应}{被人为抑制}{自然包含}
+\cmprow{需要的未知量}{只需 $\vb A$}{$\vb A$、导体内的 $\phi$，以及端子的电路方程}
+\cmprow{用错的后果}{用在厚导体上：抹掉趋肤与邻近效应}{把绝缘细线绕成的绕组当作一整块实心导体：算出并不存在的跨匝涡流}
+\cmpsum{绞线模型说“电流就在这里，这么分布”；实心模型说“电流从这里进出，怎么分布由场决定”。}
+\end{compare}
+
+\section{用扩散的眼光看涡流}\label{sec:eddy-diffusion}
+
+\subsection{两个时间尺度}
+\chref{ch:regimes} 由 MQS 方程推出，均匀导体中的磁场满足扩散方程 \eqref{eq:diffusion}，扩散系数为 $1/(\mu\sigma)$（单位 $\mathrm{m^2/s}$）。扩散过长度 $\ell$ 所需的时间为
+\begin{equation}
+\tau_m=\mu\sigma\ell^2 ,
+\end{equation}
+它就是 \eqref{eq:scales} 中的磁扩散时间，$\eta_m=\omega\tau_m$。$2\,\mathrm{mm}$ 厚的铜，$\tau_m\approx0.29\,\mathrm{ms}$；$0.2\,\mathrm m$ 尺度、$0.5\,\mathrm{S/m}$ 的组织，$\tau_m\approx25\,\mathrm{ns}$。比 $\tau_m$ 慢得多的变化可以自由地穿过导体；比它快的变化则被挡在表面附近一个趋肤深度 $\delta$ 之内（\eqref{eq:skindepth}；$3\,\mathrm{kHz}$ 时铜的 $\delta\approx1.2\,\mathrm{mm}$）。
+
+但“穿透一块板的厚度要多久”还不是“屏蔽拖慢梯度多久”。一层导电壳是一个闭合的电流回路，它的涡流要绕一整圈；决定它衰减快慢的是这一圈的电感与电阻。下面这个可以手算的模型说明，后者往往长得多。
+
+\subsection{一个导电薄壳}
+取一个很长的、半径为 $a$ 的线圈，单位长度的面电流为 $K_c(t)=n_tI(t)$；同轴地套一层半径为 $R>a$、厚度为 $\Delta\ll R$、电导率为 $\sigma$ 的导电薄壳（\figref{fig:eddy_oneway_vs_coupled} 右）。设壳足够薄，电流在厚度方向上均匀（$\Delta$ 远小于相关频率下的趋肤深度），壳中的涡流可以看成一层环向面电流 $K_s=\sigma\Delta E_\phi(R)$。
+
+\emph{磁场。}每一层环向面电流都像一个理想长螺线管：在自己内部产生均匀的 $H$，等于它的面电流，外部为零 \eqref{eq:solenoidB}。所以线圈内（孔内）$H=K_c+K_s$，线圈与壳之间 $H=K_s$，壳外 $H=0$。
+
+\emph{感应。}沿半径为 $R$ 的圆周用法拉第定律 \eqref{eq:faradayintegral}。圆周内的磁通由两部分组成：线圈内 $\mu_0K_c\cdot\pi a^2$，以及壳电流在整个圆内的 $\mu_0K_s\cdot\pi R^2$：
+\begin{equation}
+2\pi RE_\phi=-\mu_0\frac{\dd}{\dd t}\bigl(\pi a^2K_c+\pi R^2K_s\bigr).
+\end{equation}
+\emph{欧姆定律。}代入 $K_s=\sigma\Delta E_\phi$ 并整理：
+\begin{keyeq*}
+\tau\frac{\dd K_s}{\dd t}+K_s=-\kappa\,\tau\frac{\dd K_c}{\dd t},\qquad \tau=\frac{\mu_0\sigma\Delta R}{2},\qquad\kappa=\frac{a^2}{R^2}.
+\end{keyeq*}
+孔内的磁场是 $H=K_c+K_s$。
+
+这条一阶方程把“拖慢”说清楚了。线圈电流在远短于 $\tau$ 的时间内升到 $K_0$ 时，方程左边第一项占主导，$K_s\approx-\kappa K_c$：壳几乎保持它所包围的磁通不变，抵消了线圈磁通变化中“属于它”的那一份，孔内只剩 $(1-\kappa)K_0$。此后线圈电流保持不变，壳电流因电阻按 $e^{-t/\tau}$ 衰减，孔内磁场以同一时间常数爬向目标：
+\begin{equation}
+H(t)=K_0\bigl(1-\kappa\,e^{-t/\tau}\bigr)\qquad(t\text{ 从上升结束起算}).
+\end{equation}
+电流下降时一切反过来：壳电流反向，孔内磁场滞后地衰减（\figref{fig:eddy_oneway_vs_coupled} 右下）。
+
+\begin{example}{铜屏蔽的时间常数}\label{ex:eddy-shell}
+铜壳 $\sigma=5.8\times10^7\,\mathrm{S/m}$、$\Delta=2\,\mathrm{mm}$、$R=0.3\,\mathrm m$，线圈半径 $a=0.25\,\mathrm m$（教学数值）。求 $\tau$、$\kappa$；线圈电流在 $0.1\,\mathrm{ms}$ 内升到目标值后，孔内磁场是目标的多少？要多久才到达 $99\%$？薄壳假设是否成立？
+\solution
+$\tau=\mu_0\sigma\Delta R/2\approx21.9\,\mathrm{ms}$，$\kappa=(0.25/0.3)^2\approx0.69$。上升时间远短于 $\tau$，上升结束时孔内磁场只有目标的约 $31\%$（精确解 $1-\kappa\,(\tau/T_r)(1-e^{-T_r/\tau})\approx0.307$）。到达 $99\%$ 要求 $\kappa e^{-t/\tau}=0.01$，$t=\tau\ln(100\kappa)\approx93\,\mathrm{ms}$——是上升时间的近千倍。
+
+薄壳假设：响应的主要频率在 $1/(2\pi\tau)\approx7\,\mathrm{Hz}$ 附近，那里铜的趋肤深度约 $2.4\,\mathrm{cm}$，远大于 $2\,\mathrm{mm}$，假设成立。但在上升沿包含的千赫兹成分上，$\delta$ 与 $\Delta$ 可比（$3\,\mathrm{kHz}$ 时 $1.2\,\mathrm{mm}$），电流会挤向壳的内表面，薄壳公式描述不了上升沿的细节，只描述之后的慢过程。
+\end{example}
+
+\begin{pitfall}[“趋肤深度很小，所以涡流很快就消失了”]
+这个例子里有两个时间尺度。磁场扩散穿过壳的厚度只要 $\mu_0\sigma\Delta^2\approx0.29\,\mathrm{ms}$，壳中涡流绕一圈的衰减却要 $\tau=\mu_0\sigma\Delta R/2$，两者之比为 $R/(2\Delta)=75$。趋肤深度描述的是交变场能穿进导体多深；屏蔽拖慢梯度的时间，却由涡流“一整圈”的电感与电阻决定。一层薄而大的导电壳，可以让孔内磁场的“尾巴”拖上几十毫秒。真实梯度线圈的场是横向的，壳有限长，还有多层导体，涡流响应通常包含多个时间常数；它们要由场计算或测量来确定，这里的薄壳公式只用来理解量级与结构。降低耦合（减小 $\kappa$）的设计手段之一是主动屏蔽（\chref{ch:coils}）。
+\end{pitfall}
+
+\section{时域系统与谐波系统}\label{sec:eddy-systems}
+
+把 \eqref{eq:av_mqs}--\eqref{eq:av_charge} 用有限元在空间上离散（\chref{ch:femvector}），线性材料时得到一个只对时间求导的“半离散”系统：
+\begin{equation}
+\vb M_\sigma\dot{\vb a}+\vb K_\nu\vb a+\vb C\boldsymbol\phi=\vb f(t),
+\end{equation}
+另外还有电荷守恒与规范约束。$\vb a$ 是矢势的自由度，$\vb M_\sigma$ 是电导率加权的矩阵，$\vb K_\nu$ 是磁阻率加权的旋度--旋度矩阵，$\vb C$ 把标势耦合进来。空气不导电，在 $\vb M_\sigma$ 中没有贡献，于是 $\vb M_\sigma$ 是奇异的：空气中的自由度没有时间导数，只满足代数方程。这样的系统是\textbf{微分--代数系统}，不是普通的常微分方程组，时间积分方法要能处理这一点。
+
+正弦稳态下把 $\partial_t$ 换成 $\jj\omega$（\secref{sec:regimes-phasor}），得到复数的线性系统 $(\vb K_\nu+\jj\omega\vb M_\sigma)\widetilde{\vb a}+\vb C\widetilde{\boldsymbol\phi}=\widetilde{\vb f}$。它只对线性材料严格成立。非线性材料在有限幅度的正弦驱动下会产生谐波；往单频线性方程里代入一个“有效磁导率”只是近似。围绕直流偏置的小信号线性化是另一种严格定义的方法 \eqref{eq:biaslinearization}。
+
+瞬态仿真还需要正确的初值。已经存在永磁体或直流电磁铁时，零初始矢势一般是错的：应先求出静态工作点，再从这个状态出发计算扰动。
+
+\begin{compare}{时域求解与谐波求解}{时域：$\vb M_\sigma\dot{\vb a}+\vb K_\nu\vb a+\vb C\boldsymbol\phi=\vb f(t)$}{谐波：$(\vb K_\nu+\jj\omega\vb M_\sigma)\widetilde{\vb a}+\dots=\widetilde{\vb f}$}
+\cmprow{未知量}{每个时刻的实数场}{每个频率一个复振幅}
+\cmprow{能处理}{任意波形、启动过程、非线性材料}{单一频率的线性稳态}
+\cmprow{计算方式}{对微分--代数系统做时间步进}{每个频率解一次复线性方程组}
+\cmprow{非线性铁}{可以（配合一致的牛顿迭代）}{只能近似（有效磁导率），或在偏置附近做小信号线性化}
+\cmprow{初值}{必须正确，偏置存在时先求静态工作点}{不需要（稳态）}
+\cmpsum{谐波求解快而干净，但只回答“一个频率、线性”的问题；波形、启动与非线性要回到时域。}
+\end{compare}
+
+\section{线圈端电压、储能与互感}\label{sec:eddy-circuit}
+
+\subsection{一个线圈}
+从端子上看，一个绕组满足
+\begin{keyeq}
+V=RI+\frac{\dd\lambda}{\dd t},
+\label{eq:circuit}
+\end{keyeq}
+$R$ 是绕组电阻，$\lambda$ 是逐匝求和的磁链 \eqref{eq:linkage}。线性且 $L$ 为常数时，$\lambda=LI$，$V=RI+L\dot I$。非线性的 $\lambda(I)$ 中，瞬时的感性系数是 $\dd\lambda/\dd I$，不一定等于 $\lambda/I$（\chref{ch:bh}）。
+
+\begin{example}{一个梯度式线圈的端电压}\label{ex:eddy-voltage}
+教学参数：$L=20\,\mu\mathrm H$，$R=0.1\,\Omega$，电流以 $\dot I=50\,\mathrm{A}/\mu\mathrm{s}$ 线性上升到 $I=5000\,\mathrm A$，保持一段时间后以同样的速率下降。求各阶段的端电压与平台期储能。（这些不是设备规格。）
+\solution
+上升需要 $I/\dot I=100\,\mu\mathrm s$。电感压降 $L\dot I=20\times10^{-6}\times5\times10^7=1000\,\mathrm V$；电阻压降随电流增大，平台期为 $RI=500\,\mathrm V$。所以上升结束时端电压达到 $1500\,\mathrm V$，平台期降为 $500\,\mathrm V$，下降期间从 $-500\,\mathrm V$ 变到 $-1000\,\mathrm V$（\figref{fig:coil_voltage}）。平台期储能 $\tfrac12LI^2=250\,\mathrm J$；同时电阻以 $I^2R=2.5\,\mathrm{MW}$ 的功率发热。
+\end{example}
+
+\fig{coil_voltage}{\exref{ex:eddy-voltage} 的电流与端电压。上升阶段电感压降（蓝色点线）为 $+1000\,\mathrm V$，下降阶段为 $-1000\,\mathrm V$；电阻压降（浅紫色虚线）跟随电流；总电压（深紫色）在上升结束时达到 $1500\,\mathrm V$。}{fig:coil_voltage}
+
+这个例子说明，只优化峰值电流会漏掉电压、储能和发热三项要求。电压由 $L\dot I$ 决定，所以“同样的峰值电流、更快的上升”直接意味着更高的电压。
+
+\subsection{多个线圈与互感}
+几何固定、材料线性时，多个线圈的端电压写成矩阵形式：
+\begin{keyeq}
+\boldsymbol V=\vb R\boldsymbol I+\vb L\dot{\boldsymbol I},
+\label{eq:multicircuit}
+\end{keyeq}
+$\vb L$ 的非对角元是互感（\secref{sec:magnetic-linkage}）。即使各通道的电流指令彼此独立，它们的电压需求仍然通过互感耦合在一起。
+
+\subsection{屏蔽是一个短路的次级回路}
+\secref{sec:eddy-diffusion} 的薄壳也可以用 \eqref{eq:multicircuit} 来描述：把壳看成第 2 个“线圈”：单匝、两端短路，$V_2=0$。取长为 $\ell$ 的一段并忽略端部，由磁链的定义可以算出线圈自感 $L_{11}=\mu_0\pi a^2n_t^2\ell$，壳的自感 $L_{22}=\mu_0\pi R^2/\ell$，互感 $L_{12}=\mu_0\pi a^2n_t$，壳绕一圈的电阻 $R_2=2\pi R/(\sigma\Delta\ell)$。第 2 行方程是
+\begin{equation}
+0=R_2I_2+L_{22}\dot I_2+L_{21}\dot I_1 ,
+\end{equation}
+时间常数 $L_{22}/R_2=\mu_0\sigma\Delta R/2$，正是 $\tau$；耦合系数的平方 $L_{12}^2/(L_{11}L_{22})=a^2/R^2$，正是 $\kappa$。场的语言与电路的语言给出同一个模型。
+
+电路语言立刻给出一个新结论。正弦稳态下消去 $I_2$，从线圈端子看进去的阻抗为
+\begin{equation}
+\frac{\widetilde V_1}{\widetilde I_1}=R_1+\jj\omega L_{11}+\frac{\omega^2L_{12}^2}{R_2+\jj\omega L_{22}} .
+\end{equation}
+低频（$\omega\tau\ll1$）时最后一项可以忽略，等效电感就是 $L_{11}$；高频（$\omega\tau\gg1$）时它趋于 $-\jj\omega L_{12}^2/L_{22}$，等效电感降为 $L_{11}(1-\kappa)$——在\exref{ex:eddy-shell} 中只剩约 $31\%$，同时多出一个由壳电阻带来的损耗。所以导电结构使线圈的电感与电阻\emph{随频率变化}，并带来“记忆”：一个常数电感矩阵未必适合宽频带的描述。
+
+\section{运动导体}\label{sec:eddy-motion}
+
+到目前为止，所有导体都是静止的。导体以局部速度 $\vb u$ 运动时，在非相对论近似下，实验室参考系中的传导电流为
+\begin{keyeq*}
+\vb J_{\rm cond}=\sig\bigl(\vb E+\vb u\times\vb B\bigr).
+\end{keyeq*}
+因此，实验室中\emph{静止不变}的磁场也能在运动导体中产生动生电动势。本书其余各章都假设身体静止，排除了这一项。病人或操作者在 MRI 的静磁场中移动、旋转机械、运动的磁体装配，都需要一致地处理几何、材料速度与参考系。
+
+$\vb u\times\vb B$ 在方程中的位置，与\chref{ch:tms} 的初级场 $\vb E_p$ 完全相同：静磁场中 $\vb E=-\nabla\phi$，电流守恒与绝缘边界给出
+\begin{equation}
+\nabla\cdot(\sig\nabla\phi)=\nabla\cdot\bigl(\sig\,\vb u\times\vb B\bigr),\qquad \vb n\cdot\sig\bigl(\vb u\times\vb B-\nabla\phi\bigr)=0 .
+\end{equation}
+于是\chref{ch:tms} 的投影观点直接适用：只有 $\vb u\times\vb B$ 中\emph{不是梯度}的部分能驱动电流。一块导体在均匀磁场中匀速平移时，$\vb u\times\vb B$ 是一个均匀场，均匀场是梯度（$\nabla[(\vb u\times\vb B)\cdot\vb r]$），投影把它完全减掉：电荷在表面上分离，产生的电场恰好抵消 $\vb u\times\vb B$，导体内没有电流。例如 $u=1\,\mathrm{m/s}$ 垂直穿过 $3\,\mathrm T$ 的均匀磁场，$\abs{\vb u\times\vb B}=3\,\mathrm{V/m}$，却不产生任何稳态电流。
+
+要有电流，$\vb u\times\vb B$ 必须有旋度。由矢量恒等式 $\nabla\times(\vb u\times\vb B)=\vb u(\nabla\cdot\vb B)-\vb B(\nabla\cdot\vb u)+(\vb B\cdot\nabla)\vb u-(\vb u\cdot\nabla)\vb B$~\cite{griffiths}，并用 $\nabla\cdot\vb B=0$：
+\begin{itemize}
+\item 匀速平移（$\vb u$ 为常矢量）时，旋度为 $-(\vb u\cdot\nabla)\vb B$。只有在空间上变化的磁场中运动——例如穿过磁体端部的边缘场——才会感应出电流；运动导体“感受到”的变化率 $(\vb u\cdot\nabla)\vb B$ 起着 $\partial_t\vb B$ 的作用。
+\item 在均匀磁场中以角速度 $\boldsymbol\Omega$ 刚体转动（$\vb u=\boldsymbol\Omega\times\vb r$）时，旋度为 $\boldsymbol\Omega\times\vb B$。转轴与磁场不平行时有涡流；转轴与磁场平行时（法拉第圆盘）旋度为零，孤立的圆盘中没有稳态电流，只在中心与边缘之间出现电压，要通过滑动触点接上外电路才有电流。
+\end{itemize}
+
+\section{对照：单向感应与耦合涡流}\label{sec:eddy-compare}
+
+同一台 MRI 里两种模型往往同时需要：梯度线圈在身体中感应的电场用单向模型，梯度在冷屏中的涡流用耦合模型。两者还通过孔内的磁场联系在一起：身体感受到的是线圈与涡流的\emph{总}磁场。若涡流的场在身体所在区域不可忽略，单向计算所用的源矢势就应包含它，身体中的感应电场也会带上同样的滞后。
+
+\begin{compare}{单向感应与耦合涡流}{单向感应（\chref{ch:tms}）}{耦合涡流（本章）}
+\cmprow{未知量}{只有导体中的 $\phi$；$\vb A_p$ 预先算好}{处处的 $\vb A$，导体中的 $\phi$，以及端子电路}
+\cmprow{方程}{$\nabla\cdot(\sig\nabla\phi)=\nabla\cdot(\sig\vb E_p)$}{\eqref{eq:av_mqs} 与 \eqref{eq:av_charge}}
+\cmprow{适用条件}{$\eta_m\ll1$：弱导体、尺寸小、变化慢}{$\eta_m\gtrsim1$：金属屏蔽、低温容器、实心导体}
+\cmprow{孔内磁场}{与线圈电流同步}{滞后，含一个或多个时间常数}
+\cmprow{电路图景}{一个线圈，常数 $L$}{线圈加若干短路次级，$L$、$R$ 随频率变化}
+\cmprow{波形缩放}{$\vb E\propto\dot I$，一张单位场图}{没有单一场图，需要脉冲响应或频率响应}
+\cmprow{典型例子}{TMS，梯度在身体中感应的电场}{梯度在冷屏、导电屏蔽中的涡流}
+\cmpsum{两者用的是同一条法拉第定律；区别只在于感应电流是否强到足以改写源磁场，而 $\eta_m$ 回答的正是这个问题。}
+\end{compare}
+
+无论单向还是耦合，至今我们都假设磁性材料是线性的，或者干脆不存在。可是磁轭、磁芯和永磁体里的铁并不线性：同一块铁，在不同的磁场下表现出完全不同的“磁导率”。下一章讨论这个问题。
+
+\begin{takeaways}
+\begin{itemize}
+\item 感应电流的磁反馈由 $\eta_m=\omega\mu\sigma\ell^2$ 衡量：组织中约 $10^{-4}$，可以单向耦合；毫米级的铜在千赫兹下可达 5 以上，必须耦合求解。
+\item 耦合 MQS：$\nabla\times(\nu\nabla\times\vb A)+\sig(\partial_t\vb A+\nabla\phi)=\vb J_s$，导体中 $\nabla\cdot[\sig(\partial_t\vb A+\nabla\phi)]=0$。丢掉第一式中的传导项、保留第二式，就是 TMS 模型。
+\item 绞线模型给定电流分布，抑制趋肤与邻近效应；实心导体的电流分布由场决定。
+\item 导电薄壳：$\tau\dot K_s+K_s=-\kappa\tau\dot K_c$，$\tau=\mu_0\sigma\Delta R/2$，$\kappa=a^2/R^2$。快速上升后孔内只剩 $1-\kappa$，再以 $\tau$ 爬升；示例中 $\tau\approx22\,\mathrm{ms}$，远长于穿透厚度的 $0.29\,\mathrm{ms}$。
+\item $V=RI+\dd\lambda/\dd t$；示例 $500\,\mathrm V+1000\,\mathrm V$、$250\,\mathrm J$。屏蔽是短路的次级回路，使等效电感从 $L_{11}$ 降到 $L_{11}(1-\kappa)$，常数电感矩阵不足以描述宽频带。
+\item 半离散系统是微分--代数系统；谐波解只适合线性单频问题；有偏置时先求静态工作点。运动导体中 $\vb u\times\vb B$ 只有非梯度部分驱动电流。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 用 $\eta_m$ 解释：为什么同一个梯度线圈，对身体可以用单向耦合，对附近的铜屏蔽却不行？
+\item 在 \eqref{eq:av_mqs}--\eqref{eq:av_charge} 中，单向耦合的 TMS 模型丢掉了哪一项、保留了哪一项？如果连 \eqref{eq:av_charge} 也丢掉，会算错什么？
+\item 一个用 0.1 mm 漆包线绕成的多匝线圈，与一块 5 mm 厚的铝汇流排，各应该用哪种源模型？为什么？
+\item \exref{ex:eddy-shell} 中把铜壳换成同样尺寸、电导率约为铜一半的材料，$\tau$ 与 $\kappa$ 各怎样变？孔内磁场在快速上升后立刻是目标的多少？
+\item 把\exref{ex:eddy-voltage} 中的上升速率减半，电感压降、上升结束时的端电压、上升时间和平台期储能各是多少？
+\item 从线圈端子测得的电感在 $1\,\mathrm{Hz}$ 与 $1\,\mathrm{kHz}$ 下明显不同。根据短路次级回路模型，哪一个更大？为什么？
+\item 一块孤立的铝板在均匀的静磁场中匀速平移，板内有没有稳态电流？一块铝盘绕自身的轴转动，转轴与磁场平行时呢？转轴垂直于磁场时呢？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item $\eta_m=\omega\mu\sigma\ell^2$ 正比于电导率。组织 $\sigma\sim0.5\,\mathrm{S/m}$，$\eta_m\sim10^{-4}$，感应电流的磁场可以忽略；铜 $\sigma=5.8\times10^7\,\mathrm{S/m}$，即使厚度只有 $2\,\mathrm{mm}$，$3\,\mathrm{kHz}$ 下 $\eta_m\approx5.5$，涡流的磁场与源磁场同量级。
+\item 丢掉 \eqref{eq:av_mqs} 中的传导电流项（感应电流对磁场的反馈），保留 \eqref{eq:av_charge}（电流守恒与边界上的电荷）。再丢掉 \eqref{eq:av_charge} 就只剩 $-\partial_t\vb A_p$，等于忽略了边界与界面电荷的次级场——电流会穿出绝缘边界（\chref{ch:tms}）。
+\item 漆包线线径远小于趋肤深度、各匝串联电流相同，用绞线模型；汇流排厚度可能与趋肤深度可比，电流分布会随频率改变，用实心导体模型。
+\item $\tau$ 正比于 $\sigma$，减半为约 $11\,\mathrm{ms}$；$\kappa=a^2/R^2$ 只取决于几何，不变。快速上升后孔内磁场仍是 $1-\kappa\approx31\%$——电导率只改变恢复的快慢，不改变初始的抵消比例。
+\item 电感压降 $500\,\mathrm V$；上升时间 $200\,\mu\mathrm s$；上升结束时 $500+500=1000\,\mathrm V$；平台期储能不变，仍为 $250\,\mathrm J$。
+\item $1\,\mathrm{Hz}$ 时更大。低频时屏蔽电流来得及衰减，等效电感接近 $L_{11}$；高频时屏蔽电流抵消一部分磁通，等效电感降为 $L_{11}(1-\kappa)$。
+\item 匀速平移：$\vb u\times\vb B$ 均匀，是一个梯度，表面电荷完全抵消它，没有稳态电流。转轴平行于磁场：$\vb u\times\vb B=\Omega B\,(x,y,0)$ 仍是梯度，没有稳态电流，只有中心与边缘之间的电压。转轴垂直于磁场：旋度 $\boldsymbol\Omega\times\vb B\neq0$，盘中有涡流，耗散的能量来自转动（涡流制动）。这时 $\vb u\times\vb B$ 垂直于盘面，涡流在盘的厚度方向上绕行，盘越薄越弱。
+\end{answers}

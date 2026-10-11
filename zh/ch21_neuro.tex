@@ -1,0 +1,371 @@
+\chapter{从场到神经响应}\label{ch:neuro}
+
+\begin{chapterguide}
+\guidequestion{TMS 线圈下方、MRI 梯度线圈附近，组织里的电场已经算好了。电场最强的地方，为什么不一定是神经最先兴奋的地方？从一张场图出发，还需要知道什么，才能说出“在哪里、多强的刺激、多长的脉冲”会让神经兴奋？}
+\begin{guidegoals}
+\item 说出从场解到神经响应之间还隔着哪几层模型：神经路径、电缆、膜动力学与兴奋判据；
+\item 量纲一致地推导被动电缆方程，解释时间常数 $\tau_m$ 与长度常数 $\lambda$ 的物理意义；
+\item 用激活函数判断去极化与超极化的位置，并对感应电场沿神经路径定义有效胞外势；
+\item 用沿路径的链式法则（V9）解释均匀电场为什么能在弯曲处和末端使神经极化；
+\item 区分强度--时程的被动精确解与 Lapicque--Weiss 型双曲线拟合，说明时值为什么不等于膜时间常数。
+\end{guidegoals}
+\guideprereq{\secref{sec:electric-potential}（电势与电场）；\secref{sec:magnetic-faraday}（感应电场没有全局电势）；\secref{sec:electric-ohm} 与\chref{ch:systems}（电阻、电容）；\chref{ch:tms} 的单位场图 \eqref{eq:tmswaveform}。}
+\end{chapterguide}
+
+\section{场解还不是神经响应}\label{sec:neuro-gap}
+
+前面几章已经能算出组织里的电场。TMS 中，线圈电流的变化率乘以单位场图，再加上导体修正，就得到 $\vb E(\vb r,t)$ \eqref{eq:tmswaveform}。MRI 中，梯度线圈每切换一次，身体里同样感应出电场；梯度切换得越快，电场越强，引起\textbf{外周神经刺激}（PNS）的可能就越大，PNS 因此成为限制梯度性能的因素之一~\cite{davids}。两种情形下，人们真正想知道的都不是电场本身，而是：哪里的神经会兴奋，刺激多强、脉冲多长时才会兴奋。
+
+最直接的想法是看电场最强的地方。这一章要说明这个想法为什么常常不对，以及要怎样改。电磁计算在给定的材料假设下给出场和电流；神经是否兴奋，还取决于场以外的许多东西：轴突走的路径，轴突的直径，有没有髓鞘，膜的离子通道动力学，轴突在哪里分支、在哪里终止，以及刺激的波形。许多外周轴突有髓鞘，但并不是所有相关的纤维都有。一个最大 $|\vb E|$ 的数值装不下这么多信息。
+
+从场走到兴奋，要经过下面方框里的四步，本章依次讲解。先考虑一根均匀、细长、不分支的轴突，用沿轴突的弧长 $s$ 作坐标，膜开始时处于静息附近、可以看作被动的；然后再加入主动离子通道~\cite{rattay,davids}。整章都采用一个建模假设：神经模型把场解当作输入，神经自身的电流不反过来改变组织中的场。把采样得到的场变成离散节点上的驱动、并检查离散与阈值搜索的完整流程，放在\chref{ch:projects} 的项目中。
+
+\begin{intuition}[从场到兴奋的四步]
+\begin{enumerate}
+\item \emph{投影}：轴突只“感受”沿自身方向的电场分量 $E_s=\vb E\cdot\vb t$，垂直于它的分量不推动轴向电流。
+\item \emph{求导}：轴向电流只有在沿轴突发生\emph{变化}的地方才被迫穿过细胞膜，所以起作用的是 $E_s$ 的空间变化，而不是 $E_s$ 的大小。
+\item \emph{膜动力学}：膜像一个漏电的电容，电压的建立需要时间，又会沿轴突扩散开；主动离子通道再决定极化能否变成动作电位。
+\item \emph{判据}：“兴奋”必须有一个明确的定义，阈值是满足这个定义的最小刺激幅值。
+\end{enumerate}
+每一步都加入了 $|\vb E|$ 本身没有的信息：方向、空间变化、时间和非线性。
+\end{intuition}
+
+\section{量纲一致地推导电缆方程}\label{sec:neuro-cable}
+
+\subsection{把轴突切成小段}
+轴突是一根细管：管内是导电的轴浆，管壁是很薄的细胞膜，管外是组织液。管内电流沿轴向流动时遇到电阻；膜把内外隔开，既像电容（两侧积累电荷），又像漏电的电阻（离子通道让少量电流穿过）。把轴突切成长 $\Delta s$ 的小段，每一段就是一个小电路（\figref{fig:cable_compartments}）。
+
+\fig{cable_compartments}{把轴突切成长 $\Delta s$ 的小段。上：沿神经路径从场解中读出胞外势，相邻节点之差是电场沿路径的积分。下：每一段的胞内节点之间由轴向电阻 $R_a=r_i\Delta s$ 相连；每个节点经膜电容 $C_n$ 与离子电流 $I_{{\rm ion},n}$ 接到胞外，胞外一侧的电势 $V_{e,n}$ 由场解给定。$\Delta s\to0$ 得到电缆方程，$\Delta s$ 有限就是计算中使用的节点模型。}{fig:cable_compartments}
+
+记胞内电势为 $V_i$，胞外电势为 $V_e$，膜电压取相对于静息值的偏离：
+\begin{equation}
+V_m=V_i-V_e-V_{\rm rest}.
+\end{equation}
+$V_m>0$ 叫\textbf{去极化}，$V_m<0$ 叫\textbf{超极化}。三个材料量都按\emph{单位长度}定义：轴向电阻 $r_i$（$\Omega/\mathrm m$），膜电容 $c_m$（$\mathrm{F/m}$），膜电导 $g_m$（$\mathrm{S/m}$）。$r_i$ 就是导体电阻 $R=\ell/(\sigma A)$（\secref{sec:electric-ohm}）除以长度：轴浆电导率越高、轴突越粗，$r_i$ 越小。$c_m$ 与 $g_m$ 则是单位面积的膜参数乘以轴突周长。
+
+\subsection{三个关系}
+第一，轴向电流 $I_a$ 以 $s$ 增大的方向为正，由欧姆定律，
+\begin{equation}
+I_a=-\frac{1}{r_i}\frac{\partial V_i}{\partial s}=-\frac{1}{r_i}\frac{\partial(V_m+V_e)}{\partial s}.
+\label{eq:neuro-axial}
+\end{equation}
+第二个等号用了 $V_i=V_m+V_e+V_{\rm rest}$，静息值是常数，求导后消失。第二，单位长度上穿出膜的电流由电容电流与漏电流组成：
+\begin{equation}
+i_m=c_m\frac{\partial V_m}{\partial t}+g_mV_m .
+\label{eq:neuro-membrane}
+\end{equation}
+第三，电荷守恒：一小段里轴向电流减少多少，就有多少从膜流出去，$\partial_sI_a=-i_m$。三式合起来，
+\begin{equation}
+c_m\frac{\partial V_m}{\partial t}+g_mV_m=\frac{1}{r_i}\frac{\partial^2(V_m+V_e)}{\partial s^2}.
+\label{eq:cablephysical}
+\end{equation}
+逐项检查单位：左边是 $\mathrm{F/m}\cdot\mathrm{V/s}$ 与 $\mathrm{S/m}\cdot\mathrm V$，右边是 $(\mathrm{m}/\Omega)\cdot\mathrm{V/m^2}$，都是 $\mathrm{A/m}$——单位长度上的电流。
+
+两边除以 $g_m$，引入\textbf{膜时间常数}与\textbf{长度常数}
+\begin{equation}
+\tau_m=\frac{c_m}{g_m},\qquad \lambda=\frac{1}{\sqrt{r_ig_m}},
+\end{equation}
+得到无量纲系数的形式：
+\begin{keyeq}
+\tau_m\frac{\partial V_m}{\partial t}=\lambda^2\frac{\partial^2V_m}{\partial s^2}-V_m+\lambda^2\frac{\partial^2V_e}{\partial s^2}.
+\label{eq:cablenormalized}
+\end{keyeq}
+（膜时间常数 $\tau_m$ 与\secref{sec:regimes-scales} 的磁扩散时间同名；长度常数 $\lambda$ 与磁链、波长也只是同一个字母。本章的 $\tau_m$、$\lambda$ 只指膜的这两个常数。）
+
+右边三项各有含义：$\lambda^2\partial_s^2V_m$ 是膜电压沿轴突的扩散，$-V_m$ 是漏电，$\lambda^2\partial_s^2V_e$ 是外加电场的驱动。两个常数也各有直观意义。$\tau_m$ 就是膜这个“RC 电路”的充电时间。$\lambda$ 是一处局部极化沿轴突传开的距离：没有外加驱动的稳态下 $\lambda^2V_m''=V_m$，解为 $V_m\propto e^{-|s|/\lambda}$。
+
+注意外加场进入方程的方式：只有 $V_e$ 的\emph{二阶}导数出现。给 $V_e$ 加一个常数，或者加一个随 $s$ 线性变化的项，方程都不变。后者正对应一根直轴突上均匀的纵向电场——它对轴突的内部没有驱动。下一节从这里出发。
+
+\begin{pitfall}[“电缆方程就是 $c\,\partial_tV+gV=\partial_s^2V$，电阻可以省略”]
+有量纲的电缆方程里，轴向电阻不能无缘无故消失。若把 \eqref{eq:cablephysical} 写成 $c_m\partial_tV_m+g_mV_m=\partial_s^2(V_m+V_e)$，左边是 $\mathrm{A/m}$，右边是 $\mathrm{V/m^2}$，量纲对不上。$r_i$ 只有在归一化之后才“藏”进了 $\lambda^2$。使用 $R$、$C$、$G$ 这类记号时，必须说清它们是单位长度的量、一个节点的总量（如 $C_n=c_m\Delta s$），还是已经归一化的量。
+\end{pitfall}
+
+\section{激活函数及其符号}\label{sec:neuro-activating}
+
+\subsection{驱动项有一个名字}
+沿一根直轴突，若胞外电场是保守的，纵向电场 $E_s=-\partial_sV_e$。\eqref{eq:cablenormalized} 中驱动项里的那个量常单独写出来，叫\textbf{激活函数}：
+\begin{keyeq}
+f(s,t)=\frac{\partial^2V_e}{\partial s^2}=-\frac{\partial E_s}{\partial s}\qquad[\mathrm{V/m^2}].
+\label{eq:activating}
+\end{keyeq}
+它的符号有明确的意义。设膜开始时处于静息，$V_m\equiv0$。刺激开始的一瞬间，\eqref{eq:cablenormalized} 右边前两项都是零，只剩
+\begin{equation}
+\tau_m\frac{\partial V_m}{\partial t}\Big|_{t=0^+}=\lambda^2f .
+\end{equation}
+所以 $f>0$ 处 $V_m$ 开始上升（去极化），$f<0$ 处开始下降（超极化）。这句话依赖于膜电压的符号约定和静息初态；它说的是“往哪个方向推、推得多快”，本身还不是动作电位的阈值判据。
+
+物理图像是这样的（\figref{fig:activating_function} 顶部）。纵向电场推动轴突内部的轴向电流，开始时 $I_a=E_s/r_i$。$E_s$ 大的地方轴向电流大，$E_s$ 小的地方轴向电流小。在 $E_s$ 沿 $s$ \emph{减小}的地方，流过来的电流比流走的多，多出来的部分只能穿过膜流出去；向外的膜电流给膜电容充电，内侧变正——去极化。在 $E_s$ 沿 $s$ 增大的地方，电流从外面流进来补足——超极化。在 $E_s$ 不变的地方，进多少出多少，膜上没有电流。
+
+\fig{activating_function}{一根直轴突上局域的纵向电场。顶部：轴突内的轴向电流随 $E_s$ 变化，在 $E_s$ 减小处向外穿出膜（橙色），在 $E_s$ 增大处向内流入（蓝色）。下面四行自上而下：胞外势 $V_e$，对 $s$ 求一次负导数得到纵向电场 $E_s$，再求一次得到激活函数 $f$，最后是被动电缆方程给出的膜电压（矩形刺激开始后 $0.1\tau_m$、$0.3\tau_m$ 与稳态，取 $\ell=\lambda$）。$|\vb E|$ 最大的 $s=0$ 处 $f=0$；去极化最强处在 $s\approx\ell$ 一带。各量按 $E_0$、$\ell$、$\lambda$ 归一化。}{fig:activating_function}
+
+\begin{example}[label=ex:neuro-gauss]{局域电场下的直轴突}
+一根直轴突沿 $s$ 方向，电场与它平行，$E_s(s)=E_0\exp\bigl(-s^2/2\ell^2\bigr)$：场在 $s=0$ 处最强，向两侧衰减，$\ell$ 是场的空间尺度。（例如轴突从线圈正下方平行穿过的情形。）激活函数在哪里最大？膜电压如何响应？
+\solution
+由 \eqref{eq:activating}，
+\begin{equation*}
+f(s)=-\frac{\dd E_s}{\dd s}=\frac{s}{\ell^2}\,E_0\exp\Bigl(-\frac{s^2}{2\ell^2}\Bigr).
+\end{equation*}
+在 $|\vb E|$ 最大的 $s=0$ 处，$f=0$：那里膜上没有净电流。$f$ 的极值在 $s=\pm\ell$，大小为 $E_0/(\ell\sqrt e)\approx0.607\,E_0/\ell$。$s>0$ 一侧（电场指向、并在那里减弱的一侧）去极化，$s<0$ 一侧超极化。
+
+\figref{fig:activating_function} 最下一行是取 $\ell=\lambda$ 时数值求解 \eqref{eq:cablenormalized} 的结果。刺激开始后不久，$V_m$ 的形状就是 $f$ 的形状，增长速率为 $\lambda^2f/\tau_m$。随后膜电压沿轴突扩散并漏电，稳态时去极化的峰值为 $0.267\,E_0\lambda$，位置移到 $s\approx1.30\lambda$——比 $f$ 的峰值更靠外，因为膜电压沿轴突扩散，按长度常数 $\lambda$ 的尺度把极化抹开了。把电场反向，$f$ 和 $V_m$ 都变号：去极化与超极化的位置互换。
+\end{example}
+
+这个例子已经回答了直轴突上的核心问题：去极化发生在纵向电场\emph{变弱}的地方，而不是电场\emph{最强}的地方。
+
+\begin{compare}{电场模长与激活函数}{$|\vb E|$：场有多强}{$f=-\partial_sE_s$：电流在哪里被迫穿出膜}
+\cmprow{是什么}{空间一点上场的大小}{纵向场沿神经路径的变化率}
+\cmprow{与神经方向}{无关}{只用切向分量 $E_s=\vb E\cdot\vb t$，并依赖路径本身}
+\cmprow{单位}{V/m}{V/m$^2$}
+\cmprow{符号}{非负}{正：去极化；负：超极化（被动膜、静息初态）}
+\cmprow{\exref{ex:neuro-gauss} 中的极值}{$s=0$}{$s=\pm\ell$；$s=0$ 处恰为零}
+\cmprow{能否单独判定兴奋}{不能}{也不能：它给出初始驱动，阈值还取决于膜动力学、波形与末端}
+\cmpsum{$|\vb E|$ 回答“场多强”，激活函数回答“轴向电流在哪里不得不离开轴突”。推动膜电压的是后者。}
+\end{compare}
+
+\subsection{感应电场：沿路径定义有效胞外势}
+TMS 和梯度线圈的总电场含有感应部分，它不是某个全局标量势的梯度：沿闭合回路 $\oint\vb E\cdot\dd\boldsymbol\ell=-\dd\Phi_B/\dd t\ne0$（\secref{sec:magnetic-faraday}）。那么电缆方程里的 $V_e$ 从哪里来？
+
+电缆方程只需要沿\emph{这一根}轴突的纵向电场。设神经路径为 $\vb r(s)$，单位切向量 $\vb t=\dd\vb r/\dd s$，沿路径定义\textbf{有效胞外势}
+\begin{equation}
+V_e^{\rm eff}(s,t)=-\int_{s_0}^{s}\vb E(\vb r(s'),t)\cdot\vb t(s')\,\dd s'.
+\label{eq:neuro-veff}
+\end{equation}
+它满足 $\partial_sV_e^{\rm eff}=-E_s$，所以把它代入 \eqref{eq:cablenormalized} 与 \eqref{eq:activating}，得到的正是电缆需要的纵向驱动；起点 $s_0$ 只改变一个常数，不影响结果。但 $V_e^{\rm eff}$ 只是\emph{沿这条路径}的量，不是全局的三维静电势：存在感应时，连接同样两点的两条不同路径会给出不同的积分。离散计算中，相邻节点之间的差就是一段路径积分（\figref{fig:cable_compartments}；\chref{ch:projects} 的 \eqref{eq:nervedifference}）。
+
+TMS 中还有一个方便之处。由 \eqref{eq:tmswaveform}，$\vb E(\vb r,t)=\dot I(t)\,\vb e(\vb r)$，所以 $V_e^{\rm eff}$ 与 $f$ 也分解成“时间因子乘以空间分布”：空间分布由线圈和解剖决定，时间变化跟随 $\dot I$。
+
+\section{弯曲与末端}\label{sec:neuro-bends}
+
+\subsection{一个反直觉的事实}
+离线圈较远、或线圈很大时，一小段神经附近的电场近似均匀。按上一节，均匀场中的直轴突没有激活函数，似乎不会被刺激。可是真实的神经会转弯，会分支，会终止。在这些地方，同一个均匀场可以使神经强烈地极化。要看清楚原因，需要一个新的恒等式。
+
+\subsection{沿路径的链式法则}
+沿路径 $\vb r(s)$ 行走，看到的场值 $\vb F(\vb r(s))$ 随 $s$ 变化。它的变化率是场沿切向的方向导数：
+\begin{equation}
+\frac{\dd}{\dd s}\vb F(\vb r(s))
+=(\vb t\cdot\nabla)\vb F,
+\qquad \vb t=\frac{\dd\vb r}{\dd s},\quad \abs{\vb t}=1.
+\tag{V9}\label{id:path}
+\end{equation}
+这是\textbf{沿路径的链式法则}，$s$ 为弧长，$\vb t$ 为单位切向量。逐分量看，它就是多元函数的链式法则 $\dd F_i/\dd s=\sum_j(\partial F_i/\partial x_j)(\dd x_j/\dd s)$。若路径发生弯曲，对投影 $\vb F\cdot\vb t$ 求导时，还必须对 $\vb t$ 求导。
+
+\subsection{激活函数的两个来源}
+纵向电场是一个投影，$E_s=\vb E(\vb r(s))\cdot\vb t(s)$。用 \eqref{id:path} 与乘积法则，
+\begin{keyeq}
+\frac{\dd E_s}{\dd s}
+=\vb t^{\mathsf T}(\nabla\vb E)\,\vb t+\vb E\cdot\frac{\dd\vb t}{\dd s},
+\label{eq:curvatureAF}
+\end{keyeq}
+其中 $(\nabla\vb E)_{ij}=\partial E_i/\partial x_j$。第一项是 $\vb t\cdot[(\vb t\cdot\nabla)\vb E]$，来自场在空间中的变化；第二项来自轴突自身方向的变化。对平面曲线，$\dd\vb t/\dd s=\kappa\vb n$，$\kappa=1/R$ 是曲率（$R$ 为曲率半径），$\vb n$ 是指向曲率中心的单位法向量。于是
+\begin{equation}
+f=-\vb t^{\mathsf T}(\nabla\vb E)\,\vb t-\frac{\vb E\cdot\vb n}{R}.
+\label{eq:neuro-curvature}
+\end{equation}
+均匀场中第一项为零，第二项却不为零：轴突在场中转弯时，它“看到”的纵向分量在变，哪怕场本身处处一样。转得越急（$R$ 越小），驱动越强。
+
+\subsection{末端：轴向电流无处可去}
+有限长轴突的末端是封闭的，轴向电流不能从端面流出：$I_a=0$。由 \eqref{eq:neuro-axial}，
+\begin{equation}
+\frac{\partial V_m}{\partial s}=-\frac{\partial V_e}{\partial s}=E_s\qquad\text{（封闭的末端）}.
+\label{eq:neuro-endbc}
+\end{equation}
+只要末端处 $E_s\ne0$，这个边界条件就会驱动膜电压，即使轴突内部的 $f$ 处处为零。在节点模型中看得更清楚：在均匀场中的直段上，内部节点两侧的驱动 $(V_{e,n-1}-V_{e,n})$ 与 $(V_{e,n+1}-V_{e,n})$ 正好抵消；末端节点只有一个邻居，剩下的那一项大小约为 $|E_s|\Delta s$，抵消不掉——它相当于一个集中在末端的源。
+
+一根长 $L$ 的直轴突处在均匀纵向场 $E_0$ 中，$s$ 从 $-L/2$ 量到 $L/2$。内部 $f=0$，稳态方程为 $\lambda^2V_m''=V_m$；两端条件 $V_m'=E_0$。解为
+\begin{equation}
+V_m(s)=E_0\lambda\,\frac{\sinh(s/\lambda)}{\cosh\bigl(L/2\lambda\bigr)} .
+\end{equation}
+电场指向的那一端去极化，另一端超极化；$L=6\lambda$ 时两端为 $\pm0.995\,E_0\lambda$，长轴突的末端极化接近 $E_0\lambda$。内部离末端越远，极化按 $e^{-|s|/\lambda}$ 消失。
+
+\begin{example}[label=ex:neuro-bend]{均匀场中的弯曲轴突}
+均匀电场 $\vb E=E_0\vb e_x$。一根轴突从末端出发，沿 $+x$ 走 $3\lambda$，然后以半径 $R=0.5\lambda$ 转 $90^\circ$，再沿 $+y$ 一直延伸到很远（远端垂直于电场，$E_s=0$）。哪里极化？（几何与归一化都是教学输入。）
+\solution
+沿 $x$ 的直段 $E_s=E_0$，沿 $y$ 的直段 $E_s=0$；弯曲段从 $s_1=3\lambda$ 开始，切向量转过的角度为 $\theta=(s-s_1)/R$，$E_s=E_0\cos\theta$。由 \eqref{eq:neuro-curvature}，直段上 $f=0$，弯曲段上
+\begin{equation*}
+f=\frac{E_0\sin\theta}{R},
+\end{equation*}
+在弯曲段出口处达到 $E_0/R=2E_0/\lambda$。末端处 $f=0$，但 $E_s=E_0\ne0$，\eqref{eq:neuro-endbc} 在那里起作用。
+
+\figref{fig:curved_axon} 是用节点模型（\secref{sec:neuro-active}，被动膜、封闭末端）算出的稳态膜电压：弯曲处去极化，峰值 $+0.40\,E_0\lambda$；末端超极化，$-0.97\,E_0\lambda$；远端不极化。作为对照，若 $E_s$ 在一点突然从 $E_0$ 跳到零（相当于 $R\to0$ 的急弯），无限长轴突在该点的稳态去极化是 $E_0\lambda/2$；有限的弯曲半径把驱动分摊到一段长度上，峰值略低。整个过程中 $|\vb E|$ 处处相同——没有任何一处是“电场最强的地方”。
+\end{example}
+
+\fig{curved_axon}{均匀电场中的弯曲轴突（\exref{ex:neuro-bend}）。(a) 场处处相同；轴突按稳态膜电压着色，弯曲处去极化（橙），末端超极化（蓝）。(b) 纵向场 $E_s$ 只在弯曲段变化，激活函数只在那里不为零，峰值 $E_0/R$ 在弯曲段出口；末端处 $f=0$，但封闭末端的边界条件相当于一个集中的源。(c) 矩形刺激开始后 $0.1\tau_m$、$0.5\tau_m$ 与稳态的膜电压。长度以 $\lambda$、场以 $E_0$ 归一化；电场反向时所有符号反转。}{fig:curved_axon}
+
+这个例子还显示了一条一般规律。对稳态的 \eqref{eq:cablenormalized} 沿整根封闭的轴突积分，$\lambda^2\partial_s^2(V_m+V_e)$ 的积分只剩两端的 $\partial_s(V_m+V_e)$，而它们都是零，于是
+\begin{equation}
+\int V_m\,\dd s=0\qquad\text{（被动、封闭、稳态）}.
+\end{equation}
+膜上的净电流为零：一处去极化，必有别处超极化。在\exref{ex:neuro-bend} 中，弯曲处的去极化与末端的超极化正好互相抵消；检查脚本对数值解核对了这一点。
+
+\begin{compare}{均匀场中的直轴突与弯曲、有末端的轴突}{理想无限长直轴突}{弯曲或有末端的轴突}
+\cmprow{内部激活函数}{处处为零}{弯曲处 $-\vb E\cdot\vb n/R\ne0$}
+\cmprow{末端}{没有末端}{封闭末端 $\partial_sV_m=E_s$，相当于集中的源}
+\cmprow{稳态膜电压}{处处为零}{弯曲处与末端极化（例：$+0.40$、$-0.97\,E_0\lambda$）}
+\cmprow{$|\vb E|$ 最大处}{处处相同}{处处相同}
+\cmprow{电场反向}{仍为零}{所有极化变号}
+\cmpsum{均匀纵向场对理想无限长直电缆的内部没有驱动；纤维一旦转弯或终止，同一个均匀场就能使它极化。}
+\end{compare}
+
+\begin{pitfall}[“均匀电场不会刺激神经”]
+正确而有限定的说法是：均匀的纵向电场对理想的、无限长的、直的、均匀的电缆\emph{内部}没有激活函数驱动。把它推广到所有神经、弯曲处、末梢或分支的神经元，就错了。
+\end{pitfall}
+
+数值上还有一个提醒。激活函数是场的空间导数，若先由带噪声的体素场构造电势、再对它求两次空间导数，数值误差会被放大：一阶导数把误差放大约 $1/h$ 倍，二阶导数放大约 $1/h^2$ 倍（$h$ 为采样间距）。沿路径逐段积分电场 \eqref{eq:neuro-veff}通常更容易控制，但插值方式、网格分辨率与纤维几何仍要相互匹配，并做加密检查。
+
+\section{主动膜与阈值搜索}\label{sec:neuro-active}
+
+\subsection{节点方程}
+被动电缆是线性的：刺激加倍，$V_m$ 也加倍，永远产生不了动作电位。真实的膜含有电压门控的离子通道，计算时又总是把轴突离散成节点。把\figref{fig:cable_compartments} 的每个节点 $n$ 写成电流平衡：膜电容 $C_n$，向外的离子电流 $I_{{\rm ion},n}$，到相邻节点 $k$ 的轴向电导 $G_{nk}$，向内注入的电流 $I_{{\rm inj},n}$，
+\begin{multline}
+C_n\frac{\dd V_{m,n}}{\dd t}=-I_{{\rm ion},n}
++\sum_{k\sim n}G_{nk}\bigl[(V_{m,k}+V_{e,k})-(V_{m,n}+V_{e,n})\bigr]\\
++I_{{\rm inj},n}.
+\label{eq:neuro-nodal}
+\end{multline}
+每一项的单位都是安培。方括号里是相邻两个胞内节点的电势差（静息值相互抵消），所以胞外场只通过相邻节点的 $V_e$ 之\emph{差}进入——正是 \eqref{eq:neuro-veff} 的路径积分。
+
+这个方程与电缆方程是一致的。取被动膜 $I_{{\rm ion},n}=g_m\Delta s\,V_{m,n}$，$C_n=c_m\Delta s$，$G_{nk}=1/(r_i\Delta s)$，$I_{{\rm inj},n}=0$，两边除以 $\Delta s$：求和项变成 $(V_m+V_e)$ 的二阶差分除以 $r_i\Delta s^2$，$\Delta s\to0$ 时回到 \eqref{eq:cablephysical}。封闭的末端也不需要另写边界条件：末端节点只有一个邻居，\eqref{eq:neuro-endbc} 自动包含在内。\figref{fig:curved_axon} 就是这样算出来的；检查脚本还把它与有限直轴突的解析解对照，节点间距从 $0.02\lambda$ 减半时，误差约减为原来的四分之一。
+
+\subsection{主动膜}
+主动通道模型在 $I_{{\rm ion},n}$ 中加入门控变量和非线性的离子电流，门控变量各自满足一个随膜电压变化的微分方程。有髓轴突的模型还要区分郎飞结与节间段的结构。这些参数决定了空间上的极化能否、以怎样的方式变成一个传播的动作电位~\cite{rattay}。模型的选择与参数化超出了本书的范围；这里关心的是它怎样与场解衔接。
+
+\subsection{一条完整的计算流程}
+\begin{enumerate}
+\item 计算源与组织中的场（\chref{ch:tes}、\chref{ch:tms}，或梯度线圈的 MQS 模型）；
+\item 沿建模的神经路径计算纵向场与路径积分；
+\item 按实际波形构造随时间变化的胞外驱动（如 \eqref{eq:tmswaveform}）；
+\item 积分膜方程 \eqref{eq:neuro-nodal}；
+\item 搜索满足明确兴奋判据的最小刺激幅值。
+\end{enumerate}
+Davids 等人用这样的电磁--神经动力学耦合模型预测 MRI 梯度线圈的 PNS 阈值~\cite{davids}。与“由最大 $|\vb E|$ 或 $\dd B/\dd t$ 直接换算兴奋”的通用规则相比，它包含了路径、方向、空间变化与时间这些信息。
+
+\subsection{阈值搜索}
+兴奋判据必须先写清，例如“动作电位传到某个远处节点”。之后常用二分法：先找到一个不兴奋的幅值 $A_{\rm lo}$ 和一个兴奋的幅值 $A_{\rm hi}$，取中点试算，按结果替换其中一端，重复直到区间足够小。
+
+二分法隐含一个假设：在搜索区间里，“是否兴奋”随幅值只切换一次。这个单调性不能默认对整个幅值范围成立。若在某些幅值下出现非单调的响应，例如强刺激下的传导阻滞，未经检查的二分法可能收敛到一个错误的边界。稳妥的做法是先在粗网格上扫描幅值，确认区间里只有一次切换，再在区间内细化；同时检查结果对时间步长、节点间距和场插值的敏感性。
+
+\begin{compare}{被动线性模型与主动膜模型}{被动线性模型}{主动膜模型}
+\cmprow{对幅值}{线性：$V_m$ 与刺激成正比}{非线性：有阈值，动作电位“全或无”}
+\cmprow{阈值怎样求}{一次求解：$A_{\rm th}=V_*/V_m^{\max}(\text{单位幅值})$，$V_*$ 是选定的电压判据}{反复积分，再搜索}
+\cmprow{单调性}{自动成立}{需要检查（传导阻滞等）}
+\cmprow{能回答}{哪里先被推动、推得多快、时间常数的作用}{会不会产生并传播动作电位}
+\cmprow{用途}{理解空间驱动；检验代码与离散}{预测阈值；仍需与实验对照}
+\cmpsum{被动模型告诉你“推在哪里、推多快”；只有主动模型能回答“会不会兴奋”。}
+\end{compare}
+
+\begin{pitfall}[“最大 $|\vb E|$（或 $\dd B/\dd t$）超过某个数就会兴奋”]
+\exref{ex:neuro-gauss} 中最大 $|\vb E|$ 处恰好没有驱动；\exref{ex:neuro-bend} 中 $|\vb E|$ 处处相同，极化却集中在弯曲处与末端。$\dd B/\dd t$ 离神经响应更远一步：它还要经过导体修正、投影到神经路径与求导。这类单一数值的规则，只能在得到它的那一组线圈、解剖与波形条件下使用。
+\end{pitfall}
+
+\section{强度--时程：被动精确解与经验拟合}\label{sec:neuro-sd}
+
+\subsection{一个可以手算的模型}
+脉冲越短，需要的幅值越大。最简单的定量模型是把膜看成一个集总的被动 RC 电路。设矩形刺激的幅值为 $A$、持续时间为 $T$，膜满足
+\begin{equation*}
+C\dot V+GV=\kappa A,\qquad V(0)=0,
+\end{equation*}
+$C$ 为电容，$G$ 为电导，$\kappa$ 把刺激幅值换算成注入电流。这是一阶线性方程，解为
+\begin{equation}
+V(T)=\frac{\kappa A}{G}\bigl(1-e^{-T/\tau_m}\bigr),\qquad \tau_m=\frac CG .
+\label{eq:neuro-passivevt}
+\end{equation}
+取一个固定的电压判据 $V_*$：$V(T)$ 达到 $V_*$ 就算兴奋。无限长的脉冲所需的最小幅值叫\textbf{基强度}，$A_{\rm rh}=GV_*/\kappa$。于是阈值为
+\begin{keyeq}
+A_{\rm th}(T)=\frac{A_{\rm rh}}{1-e^{-T/\tau_m}} .
+\label{eq:exactsd}
+\end{keyeq}
+阈值等于两倍基强度时的脉宽叫\textbf{时值}（chronaxie）。令 $A_{\rm th}=2A_{\rm rh}$，得 $e^{-T/\tau_m}=1/2$：
+\begin{equation}
+\tau_{\rm ch}=\tau_m\ln2\approx0.693\,\tau_m .
+\label{eq:neuro-chronaxie}
+\end{equation}
+即使在这个最简单的模型里，时值也不等于膜时间常数。这个关系只属于该被动模型。
+
+\subsection{双曲线拟合}
+测量得到的阈值常用另一个函数概括：
+\begin{keyeq}
+A_{\rm th}(T)=A_{\rm rh}\Bigl(1+\frac{\tau_{\rm ch}}{T}\Bigr).
+\label{eq:lapicque}
+\end{keyeq}
+两边乘以 $T$，就是阈值电荷随脉宽线性增长：
+\begin{equation}
+Q_{\rm th}=A_{\rm th}T=A_{\rm rh}\,(T+\tau_{\rm ch}).
+\label{eq:neuro-weiss}
+\end{equation}
+文献中这条双曲线常以 Lapicque 或 Weiss 的名字称呼，命名并不统一；本书称它为 Lapicque--Weiss 型拟合。它的两个参数与精确解同名、定义也相同——$T\to\infty$ 时趋于 $A_{\rm rh}$，$T=\tau_{\rm ch}$ 时等于 $2A_{\rm rh}$——但它不是指数精确解 \eqref{eq:exactsd}。
+
+\fig{strength_duration}{强度--时程曲线。(a) 被动膜的精确解与基强度、时值都相同的双曲线拟合；空心圆是时值点，两条曲线在这里都等于基强度的两倍。(b) 阈值电荷 $Q=A_{\rm th}T$：拟合是一条直线，精确解是一条曲线，二者在 $T\to0$ 处的截距相差 $\ln2$ 倍。横轴按膜时间常数、纵轴按基强度归一化。}{fig:strength_duration}
+
+\begin{example}[label=ex:neuro-sd]{两条曲线差多少}
+设精确解与拟合取相同的 $A_{\rm rh}$，且 $\tau_{\rm ch}=\tau_m\ln2$。比较 $T=0.1\tau_m$、$\tau_m$、$3\tau_m$ 时的阈值，以及极短脉冲下的阈值电荷。
+\solution
+由 \eqref{eq:exactsd} 与 \eqref{eq:lapicque}，$A_{\rm th}/A_{\rm rh}$ 分别为：
+\begin{center}\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+& $T=0.1\tau_m$ & $T=\tau_m$ & $T=3\tau_m$\\\midrule
+精确解 & $10.51$ & $1.582$ & $1.052$\\
+拟合 & $7.93$ & $1.693$ & $1.231$\\
+\bottomrule
+\end{tabular}
+\end{center}
+短于时值时，精确解高于拟合；长于时值时，拟合高于精确解，最大高出 $17\%$，出现在 $T\approx2.6\tau_m$。原因在两端的渐近行为。$T\to0$ 时 $1-e^{-T/\tau_m}\approx T/\tau_m$，精确解的阈值电荷趋于 $A_{\rm rh}\tau_m$，拟合趋于 $A_{\rm rh}\tau_{\rm ch}$，二者之比 $1/\ln2\approx1.44$。$T$ 很大时，精确解以 $e^{-T/\tau_m}$ 的速度贴近基强度，拟合却只按 $1/T$ 缓慢接近。两条曲线在定义它们的两个点上一致，并不意味着它们是同一个函数（\figref{fig:strength_duration}）。
+\end{example}
+
+\begin{compare}{被动精确解与双曲线拟合}{被动精确解 \eqref{eq:exactsd}}{Lapicque--Weiss 型拟合 \eqref{eq:lapicque}}
+\cmprow{来自}{一个明确模型（被动 RC 膜加固定电压判据）的推导}{一个经验函数，用来概括测得的阈值}
+\cmprow{参数}{$\tau_m$、$V_*$、$\kappa$ 给出 $A_{\rm rh}$；$\tau_{\rm ch}=\tau_m\ln2$ 是推出来的}{$A_{\rm rh}$ 与 $\tau_{\rm ch}$ 都由数据拟合}
+\cmprow{阈值电荷}{曲线，$T\to0$ 时趋于 $A_{\rm rh}\tau_m$}{直线 $A_{\rm rh}(T+\tau_{\rm ch})$}
+\cmprow{长脉冲}{指数地趋近 $A_{\rm rh}$}{按 $1/T$ 趋近，$T\approx2.6\tau_m$ 时高出 $17\%$}
+\cmprow{能外推吗}{在模型假设内可以}{只在拟合数据的脉宽范围内可信}
+\cmpsum{两条曲线共享基强度与时值两个参数、在两点重合，却是两个不同的函数：一个是模型的推论，一个是数据的摘要。}
+\end{compare}
+
+真实的主动轴突，以及双相或非矩形的波形，需要各自的模型或拟合。被动模型对任意波形的推广是直接的：
+
+\begin{deeper}[任意波形下的被动膜]
+线性方程 $C\dot V+GV=\kappa A(t)$、$V(0)=0$ 的解是一个卷积：
+\begin{equation*}
+V(t)=\frac{\kappa}{C}\int_0^te^{-(t-t')/\tau_m}A(t')\,\dd t' .
+\end{equation*}
+被动膜对刺激做一阶低通滤波：比 $\tau_m$ 快得多的变化被平均掉，正负交替的部分相互抵消。对 TMS，$A(t)$ 正比于 $\dot I(t)$ \eqref{eq:tmswaveform}，双相脉冲的两个半周在被动膜上部分抵消。这只说明被动 RC 环节的作用；主动通道对两种极性的响应并不对称，双相脉冲的阈值要用主动模型或实验来定。
+\end{deeper}
+
+\begin{pitfall}[“这条强度--时程曲线可以搬到另一个线圈上用”]
+必须先说清刺激幅值 $A$ 是什么：电极电流、纵向电场的尺度、线圈电流的变化率，还是一个明确定义的磁场变化率。它们之间的换算要经过与几何有关的传递算子——单位场图 \eqref{eq:tmswaveform} 投影到神经路径、再求导。两个线圈都产生变化的磁场，并不意味着同一条拟合的强度--时程曲线对二者都成立；单位场图的单位（每 A/s 还是每 A/$\mu$s）也要先核对（\chref{ch:tms}）。
+\end{pitfall}
+
+本章的场都是准静态的：电场的空间形状固定，时间上跟随 $\dot I$，神经关心的是它沿路径的变化。MRI 的射频场频率高出几个数量级，它在组织中引起的主要是发热；而且在那么高的频率下，准静态近似本身开始失效。下一章回到 Maxwell 方程，看哪些项要放回来。
+
+\begin{takeaways}
+\begin{itemize}
+\item 场解不等于神经响应：中间还隔着神经路径（投影）、电缆（空间变化）、膜动力学（时间与非线性）和兴奋判据。单个最大 $|\vb E|$ 装不下这些信息。
+\item 被动电缆方程 $c_m\partial_tV_m+g_mV_m=r_i^{-1}\partial_s^2(V_m+V_e)$，每项单位 A/m；归一化后 $\tau_m=c_m/g_m$ 是充电时间，$\lambda=1/\sqrt{r_ig_m}$ 是极化沿轴突传开的距离。
+\item 激活函数 $f=\partial_s^2V_e=-\partial_sE_s$：$f>0$ 处初始去极化。去极化发生在纵向场\emph{变弱}的地方；高斯型局域场中 $|\vb E|$ 最大处 $f=0$。感应电场沿路径用 $V_e^{\rm eff}=-\int\vb E\cdot\vb t\,\dd s$。
+\item 沿路径的链式法则（V9）给出 $\dd E_s/\dd s=\vb t^{\mathsf T}(\nabla\vb E)\vb t+\vb E\cdot\dd\vb t/\dd s$：均匀场在弯曲处产生 $f=-\vb E\cdot\vb n/R$；封闭末端 $\partial_sV_m=E_s$ 相当于集中的源。被动封闭轴突稳态下 $\int V_m\,\dd s=0$。
+\item 主动膜模型用节点方程 \eqref{eq:neuro-nodal} 积分；阈值搜索前要写清判据，并检查响应在搜索区间内是否单调。
+\item 被动精确解 $A_{\rm th}=A_{\rm rh}/(1-e^{-T/\tau_m})$ 给出 $\tau_{\rm ch}=\tau_m\ln2$；双曲线拟合 $A_{\rm rh}(1+\tau_{\rm ch}/T)$ 与它共享两个参数却不是同一个函数。刺激幅值的定义与传递算子决定了曲线能否在设备之间搬用。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 一段直轴突沿电场方向，电场在轴突中点最强，向两侧对称衰减。中点的激活函数是多少？哪一侧去极化？
+\item 有人把 \eqref{eq:cablephysical} 写成 $c_m\partial_tV_m+g_mV_m=\partial_s^2(V_m+V_e)$。用单位说明错在哪里。
+\item 把\exref{ex:neuro-bend} 的电场反向，弯曲处与末端的稳态膜电压各变为多少？为什么可以不重新计算？
+\item 一根长 $6\lambda$ 的直轴突处在均匀纵向场 $E_0$ 中。内部的激活函数是多少？两端的稳态膜电压是多少？
+\item 为什么在 TMS 中不能把整个三维电场写成 $-\nabla V_e$，却仍然可以在电缆模型中使用 $V_e^{\rm eff}$？
+\item 被动模型中 $\tau_m=0.5\,\mathrm{ms}$（教学输入）。时值是多少？若某人报告的“时值”恰好等于 $0.5\,\mathrm{ms}$，这说明了什么？
+\item 用二分法搜索阈值之前，为什么要先在粗网格上扫描幅值？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item 零（中点处 $E_s$ 取极大，$\partial_sE_s=0$）。电场所指向、并且在那里减弱的一侧去极化，另一侧超极化（\exref{ex:neuro-gauss}）。
+\item 左边是 $\mathrm{A/m}$，右边是 $\mathrm{V/m^2}$。缺了 $1/r_i$（单位 $\mathrm{m}/\Omega$），它把电势的二阶导数换成单位长度的电流。
+\item 弯曲处 $-0.40\,E_0\lambda$，末端 $+0.97\,E_0\lambda$。电缆方程对 $V_e$ 是线性的，场反向时 $V_e$、$f$ 与 $V_m$ 全部变号。
+\item 内部 $f=0$。稳态解 $V_m=E_0\lambda\sinh(s/\lambda)/\cosh(3)$，两端为 $\pm E_0\lambda\tanh3=\pm0.995\,E_0\lambda$；电场指向的一端去极化。
+\item 感应电场有环量，不存在全局标量势。电缆只需要沿这一根轴突的纵向场，$V_e^{\rm eff}$ 是沿该路径的积分，满足 $\partial_sV_e^{\rm eff}=-E_s$；它依赖路径，加一个常数也不影响结果。
+\item $\tau_{\rm ch}=0.5\,\mathrm{ms}\times\ln2=0.347\,\mathrm{ms}$。报告的时值等于 $\tau_m$，说明它不是由这个被动模型得出的（或者把两个量混为一谈了）：在被动模型中二者相差 $\ln2$ 倍。
+\item 二分法假设“是否兴奋”在区间内只切换一次。若响应非单调（例如强刺激下的传导阻滞），未经检查的二分法可能收敛到错误的边界；先扫描可以确认区间里只有一次切换。
+\end{answers}

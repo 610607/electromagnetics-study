@@ -1,0 +1,344 @@
+\chapter{矢量有限元与非线性求解}\label{ch:femvector}
+
+\begin{chapterguide}
+\guidequestion{标量电势在每个节点上放一个数就够了。磁矢势有三个分量，为什么不能在每个节点上放三个数、当作三个独立的标量问题来解？非线性的铁又怎样进入矩阵——为什么同一个永磁磁路，一种迭代四步就收敛，另一种却永远在两个答案之间来回跳？}
+\begin{guidegoals}
+\item 说明三维磁场为什么用棱单元：自由度是棱上的环量，场的切向分量连续、法向分量可以跳变；写出 Whitney 函数并验证它的性质；
+\item 用旋度分部积分（V8）推导磁弱形式，读懂边界项的符号与两种人工边界，把永磁体的剩磁写进右端；
+\item 把规范自由度认作离散系统的梯度零空间，并检查源电流的相容条件；
+\item 推导一致的牛顿切线——增量磁阻率张量，用它解释 Picard 迭代何时变慢、何时失效；
+\item 在非线性偏置附近定义小信号响应，并用一串步长的中心差分检验它。
+\end{guidegoals}
+\guideprereq{\chref{ch:femscalar}；\secref{sec:potentials-gauge} 与\secref{sec:potentials-2d}（规范、二维矢势）；\eqref{eq:curlcurlA}；\eqref{eq:permeabilities}、\eqref{eq:bh-inc}、\eqref{eq:HofB}（几种磁导率与矢量本构）；\eqref{eq:pmconstitutive}；\eqref{eq:nonlinearmagcircuit}（永磁磁路）。}
+\end{chapterguide}
+
+\section{为什么需要棱单元}\label{sec:femvector-edge}
+
+\subsection{三个分量并不独立}
+静磁问题的出发点是 \eqref{eq:curlcurlA}：
+\begin{equation*}
+\nabla\times(\nu\nabla\times\vb A)=\vb J_s,\qquad \nu=1/\mu .
+\end{equation*}
+\secref{sec:potentials-biot} 中，$\mu$ 处处相同、又选了库仑规范，它才化成三个互不相干的 Poisson 方程。磁体和磁轭里恰好不是这样：$\nu$ 在铁与空气之间相差上千倍。由乘积法则 \eqref{id:product}，$\nabla\times(\nu\nabla\times\vb A)=\nu\nabla\times\nabla\times\vb A+\nabla\nu\times(\nabla\times\vb A)$，第二项把三个分量搅在一起。核心算子是旋度，不是三个分量各自的拉普拉斯算子。
+
+再看界面上什么连续。\chref{ch:interfaces} 说：$\vb E$、$\vb H$ 的切向分量连续，法向分量跳变；$\vb B$、$\vb J$ 的法向分量连续。对矢势，$\vb B=\nabla\times\vb A$ 不出现面上的集中项，只要求 $\vb A$ 的切向分量连续。如果在每个节点上放一个完整的矢量、让三个分量都连续变化（\textbf{节点矢量单元}），就额外规定了法向分量也连续。对 $\vb E$ 或 $\vb H$ 这样的场，这一条与物理相抵触。
+
+\figref{fig:edge_vs_nodal} 下排是一个具体例子。两个三角形共用一条边，上面 $\sigma_1$、下面 $\sigma_2=4\sigma_1$，电流垂直穿过界面。由 \eqref{eq:einterface}，两侧的切向电场相同（取 $0.6$），法向电场相差 4 倍：低电导一侧为 $1$，高电导一侧为 $0.25$（任意单位）。节点矢量插值在共享节点上只能取一个矢量；取两侧的平均，界面上的法向分量被迫等于 $0.625$，跳变被抹成了一段斜坡。网格加密只能把斜坡变窄，却永远不能让它变成跳变。
+
+\fig{edge_vs_nodal}{节点单元与棱单元（按 Whitney 函数精确计算）。(a) 一个三角形上的三个棱基函数：每个函数沿自己那条有向棱（粗线）的切向积分为 1，沿另两条棱为 0。(b)(c)(d) 两个三角形共用一条边，上面电导率为 $\sigma_1$，下面为 $4\sigma_1$；精确场在每个三角形内为常矢量，切向分量相同、法向分量相差 4 倍。(b) 节点矢量插值：每个节点一个矢量（橙色），共享节点只能取两侧的平均。(c) 棱单元表示：自由度是五条有向棱（箭头标出方向）上的线积分，由它们重建的场与精确场完全相同。(d) 沿虚线的法向分量：棱单元保留了跳变，节点插值把它抹成了斜坡。}{fig:edge_vs_nodal}
+
+\subsection{自由度放在棱上}
+解决办法是换一种自由度。不在节点上放矢量，而在每条\emph{有向}棱上放一个数：
+\begin{equation*}
+a_{ij}=\int_{i\to j}\vb A\cdot\dd\boldsymbol\ell\qquad[\mathrm{Wb}] .
+\end{equation*}
+棱的方向反过来，这个数就变号。由 \eqref{eq:Aflux}，$\vb A$ 沿闭合回路的环量是磁通，所以棱上的线积分是磁通的“零件”：一个三角形面上的磁通，正好是围成它的三条棱上的 $a_{ij}$ 按方向相加。这种单元叫\textbf{棱单元}（最低阶 Nédélec 单元\cite{nedelec}）。与它配套的基函数，是在一个单元内由重心函数（\secref{sec:femscalar-basis}）拼成的\textbf{Whitney 函数}：
+\begin{keyeq}
+\vb W_{ij}=N_i\nabla N_j-N_j\nabla N_i .
+\label{eq:edgebasis}
+\end{keyeq}
+近似的矢势是 $\vb A_h=\sum a_{ij}\vb W_{ij}$，对所有棱求和。
+
+$\vb W_{ij}$ 有三条性质，每一条都可以直接验证（\figref{fig:edge_vs_nodal}a、\figref{fig:edge_element_3d}）：
+\begin{enumerate}
+\item \textbf{沿自己的棱环量为 1，沿别的棱为 0。}在棱 $i\to j$ 上 $N_i+N_j=1$，积分恰好为 1。在任何别的棱上，$N_i$ 与 $N_j$ 至少有一个处处为零；剩下的一项（比如 $N_i\nabla N_j$）沿这条棱的分量，正比于 $N_j$ 在棱两端的值之差，而 $N_j$ 在两端都为零。所以系数 $a_{ij}$ 正是 $\vb A_h$ 沿棱 $ij$ 的线积分。
+\item \textbf{切向连续、法向自由。}在两个单元的公共面上，$\vb A_h$ 的切向分量只由这个面上的几条棱决定，两侧相同；法向分量不受约束，可以跳变。\figref{fig:edge_vs_nodal}c 中，五个棱自由度精确地再现了那个法向跳变 4 倍的场。
+\item \textbf{旋度是常矢量。}由乘积法则 \eqref{id:product} 与“梯度的旋度为零” \eqref{id:zeros}，$\nabla\times(N_i\nabla N_j)=\nabla N_i\times\nabla N_j$，于是
+\begin{equation*}
+\nabla\times\vb W_{ij}=2\,\nabla N_i\times\nabla N_j .
+\end{equation*}
+每个单元内的离散 $\vb B_h=\nabla\times\vb A_h$ 是常矢量。
+\end{enumerate}
+棱的方向是数学的一部分：同一条棱在相邻单元里必须按同一个全局方向计数，否则相邻单元的切向分量就对不上。它不是网格显示上的装饰~\cite{mfem}。
+
+\fig[.85]{edge_element_3d}{同一个四面体上的节点基函数与棱基函数。左：节点函数 $N_0$ 在四面体表面上的取值，颜色越深值越大；它在顶点 0 处为 1，在对面的面上为 0，其间线性变化。右：棱函数 $\vb W_{01}=N_0\nabla N_1-N_1\nabla N_0$ 在四面体内部与表面的规则格点上的箭头（长度正比于大小）；粗箭头是有向棱 $0\to1$，$\vb W_{01}$ 沿它的切向积分为 1，沿其余五条棱的切向分量都为零。离开这条棱越远，箭头越短；在对面的棱 2--3 上，$\vb W_{01}$ 处处为零。}{fig:edge_element_3d}
+
+\subsection{精确序列：四种空间，一条链}
+\fig{exact_sequence}{有限元的精确序列。四种空间各有自己的自由度：节点上的值、棱上的线积分、面上的通量、单元上的积分；各自要求跨单元面连续的分量不同。下方一行是落在各空间里的物理量。箭头上的 $\vb G$、$\vb C$、$\vb D$ 是只含 $\pm1$ 的关联矩阵，它们满足 $\vb C\vb G=0$、$\vb D\vb C=0$：连续的恒等式在网格上精确成立。}{fig:exact_sequence}
+
+节点函数的梯度恰好落在棱空间里：利用 $\sum_jN_j=1$，
+\begin{equation*}
+\nabla N_i=\sum_{j}\vb W_{ji}\qquad(\text{对与节点 }i\text{ 相连的所有棱求和}) .
+\end{equation*}
+一个节点电势场 $\phi_h$ 的梯度，在棱空间里的系数就是各条棱两端的电势差。这个“节点到棱”的映射是一个只含 $\pm1$ 的\textbf{关联矩阵} $\vb G$。同样，每个面上的磁通等于它的三条棱上环量的有向和，“棱到面”的关联矩阵记作 $\vb C$；每个四面体的净流出等于它四个面上通量的和，“面到体”的关联矩阵记作 $\vb D$。四个空间连成一条链（\figref{fig:exact_sequence}）：
+\begin{equation*}
+H^1\xrightarrow{\ \nabla\ }H(\mathrm{curl})\xrightarrow{\ \nabla\times\ }H(\mathrm{div})\xrightarrow{\ \nabla\cdot\ }L^2 .
+\end{equation*}
+$H(\mathrm{curl})$ 中的场及其旋度平方可积，跨面切向连续；$H(\mathrm{div})$ 中的场及其散度平方可积，跨面法向连续。“梯度的旋度为零、旋度的散度为零” \eqref{id:zeros} 在网格上变成两条代数恒等式：
+\begin{equation*}
+\vb C\vb G=0,\qquad \vb D\vb C=0 .
+\end{equation*}
+它们是精确的，不含离散误差：每个面上，$\vb B_h$ 的通量严格等于周边棱上 $\vb A_h$ 的环量（离散的 Stokes 定理），所以每个四面体的净磁通严格为零，$\nabla\cdot\vb B_h=0$ 在离散层面自动成立。电场一侧也一样：若 $\vb E_h=-\partial_t\vb A_h-\nabla\phi_h$ 也用棱单元表示，它沿网格上任何一个闭合棱回路的环量都精确等于 $-\dd\Phi/\dd t$，离散的法拉第定律精确成立。检查脚本在一个四面体上逐面验证了这一点。在含有“洞”的区域里（例如导体环、线圈中间的孔），还会出现局部恒等式消除不了的全局回路，那是拓扑带来的额外自由度（\secref{sec:potentials-scalar}）。
+
+\begin{compare}{节点单元与棱单元}{节点单元（$H^1$）}{棱单元（$H(\mathrm{curl})$）}
+\cmprow{自由度}{节点上的值；矢量就每个节点三个分量}{每条有向棱一个数：$\int\vb A\cdot\dd\boldsymbol\ell$，单位 Wb}
+\cmprow{跨单元面连续的}{全部分量}{只有切向分量；法向分量可以跳变}
+\cmprow{适合的未知量}{$\phi$、$\psi$、二维的 $A_z$}{三维的 $\vb A$、$\vb E$、$\vb H$}
+\cmprow{求导后落在}{$\nabla N_i$：恰好在棱空间里}{$\nabla\times\vb W_{ij}=2\nabla N_i\times\nabla N_j$：在面空间里}
+\cmprow{刚度矩阵的零空间}{常数，每个连通区一个}{全部离散梯度，维数为节点数减一}
+\cmprow{方向}{没有}{棱有方向，反向时系数变号}
+\cmpsum{节点单元记“点上的值”，适合势；棱单元记“沿线的环量”，适合要取旋度的矢量场。二者由 $\nabla N_i=\sum_j\vb W_{ji}$ 精确地接在一起。}
+\end{compare}
+
+\section{磁弱形式与边界符号}\label{sec:femvector-weak}
+
+\subsection{旋度分部积分}
+标量问题靠 \eqref{id:scalaribp} 把导数挪到测试函数上；矢量问题需要它的旋度版本。把散度定理 \eqref{id:div} 用于 $\vb F\times\vb G$，再用 \eqref{id:crossdiv} 展开 $\nabla\cdot(\vb F\times\vb G)=\vb G\cdot\nabla\times\vb F-\vb F\cdot\nabla\times\vb G$，并注意 $\vb n\cdot(\vb F\times\vb G)=(\vb n\times\vb F)\cdot\vb G$：
+\begin{equation}
+\int_V(\nabla\times\vb F)\cdot\vb G\dV
+=\int_V\vb F\cdot(\nabla\times\vb G)\dV
++\oint_{\partial V}(\vb n\times\vb F)\cdot\vb G\dS.
+\tag{V8}\label{id:curlibp}
+\end{equation}
+这是\textbf{旋度分部积分}：旋度从 $\vb F$ 挪到 $\vb G$ 上，代价是一个边界项。边界项的符号取决于叉积的次序，$\vb n\times\vb F$ 与 $\vb F\times\vb n$ 互为相反数——这一项的符号要从恒等式推出来，不要凭记忆。
+
+\subsection{弱形式}
+静磁问题由 $\nabla\times\vb H=\vb J_s$、$\vb B=\nabla\times\vb A$ 与材料关系 $\vb H=\vb H(\vb B)$ 组成。用矢量测试函数 $\vb v$ 点乘安培定律，在 $\Omega$ 上积分，再用 \eqref{id:curlibp}（取 $\vb F=\vb H$、$\vb G=\vb v$）：
+\begin{keyeq}
+\int_\Omega(\nabla\times\vb v)\cdot\vb H\dV
+=\int_\Omega\vb v\cdot\vb J_s\dV
+-\oint_{\partial\Omega}\vb v\cdot(\vb n\times\vb H)\dS .
+\label{eq:magweak}
+\end{keyeq}
+它与标量弱形式 \eqref{eq:scalarweak} 同构：导数挪到测试函数上；边界项里出现的是“流”——这里是切向的 $\vb H$，也就是边界上的面电流 $\vb n\times\vb H$。取 $\vb v=\vb W_i$、$\vb A_h=\sum_ja_j\vb W_j$，线性材料时得到 $\vb K\vb a=\vb f$，
+\begin{equation*}
+K_{ij}=\int_\Omega(\nabla\times\vb W_i)^{\mathsf T}\boldsymbol\nu\,(\nabla\times\vb W_j)\dV ,
+\end{equation*}
+形式与 \eqref{eq:elementmatrix} 完全相同：$\nabla N$ 换成 $\nabla\times\vb W$，$\sig$ 换成 $\boldsymbol\nu$。
+
+\subsection{两种边界：规定 $\vb A$ 的切向，还是规定 $\vb H$ 的切向}
+与标量问题一样，边界条件分两类。\emph{本质}条件规定切向的 $\vb A$，写进未知量：边界棱上的自由度直接给定。齐次的 $\vb n\times\vb A=0$ 意味着 $\vb n\cdot\vb B=0$——边界上一小块面积的磁通等于沿其边沿的 $\vb A$ 的环量，而那里切向的 $\vb A$ 为零。磁力线与边界平行，磁通不能穿出。\emph{自然}条件规定切向的 $\vb H$，进入 \eqref{eq:magweak} 的边界项；齐次的 $\vb n\times\vb H=0$ 什么都不用做，它意味着磁力线垂直地穿过边界。
+
+\begin{compare}{两种齐次磁边界}{本质：$\vb n\times\vb A=0$}{自然：$\vb n\times\vb H=0$}
+\cmprow{场的含义}{$\vb n\cdot\vb B=0$：磁力线平行于边界，磁通不穿出}{切向 $\vb H$ 为零：磁力线垂直穿过边界}
+\cmprow{在离散系统中}{边界棱的自由度取零，不参与求解}{边界项消失，什么都不用设}
+\cmprow{像什么}{平行于 $\vb B$ 的对称面；远处的“磁绝缘”截断面}{垂直于 $\vb B$ 的对称面；磁导率极高的铁壁}
+\cmprow{作为截断边界}{都是对“外面还有空间”的近似，结果要靠扩大空气域来检验}{同左}
+\cmpsum{两种条件都合法，却描述了两个不同的外部世界。它们不是“区域外没有东西”的两种等价说法。}
+\end{compare}
+
+\chref{ch:magnets} 的四分之一磁体模型正好用了这两种：在平行于磁化方向的对称面上取 $A_z=0$，在垂直于磁化方向的中面上什么都不设；外边界从 $1.5\,\mathrm m$ 扩大到 $6\,\mathrm m$，气隙磁场变化不到 $0.1\%$，说明截断位置足够远。
+
+\subsection{永磁体：剩磁进入右端}
+永磁体由 \eqref{eq:pmconstitutive} 描述，$\vb B=\mu_0\boldsymbol\mu_{\rm rec}\vb H+\vb B_r$，即 $\vb H=\boldsymbol\nu_{\rm rec}(\vb B-\vb B_r)$，$\boldsymbol\nu_{\rm rec}=(\mu_0\boldsymbol\mu_{\rm rec})^{-1}$。代入 \eqref{eq:magweak}，含 $\vb B_r$ 的那一项与未知量无关，移到右端：
+\begin{equation}
+\int_\Omega(\nabla\times\vb v)\cdot\boldsymbol\nu\,\nabla\times\vb A\dV
+=\int_\Omega\vb v\cdot\vb J_s\dV
++\int_{\Omega_m}(\nabla\times\vb v)\cdot\boldsymbol\nu_{\rm rec}\vb B_r\dV
+-\oint_{\partial\Omega}\vb v\cdot(\vb n\times\vb H)\dS ,
+\label{eq:femvector-pm}
+\end{equation}
+$\Omega_m$ 是磁体区域，$\boldsymbol\nu$ 在磁体里是 $\boldsymbol\nu_{\rm rec}$，在空气里是 $1/\mu_0$。
+
+这一项的含义可以再用一次 \eqref{id:curlibp} 看出来：对均匀的 $\vb B_r$，它等于 $\oint_{\partial\Omega_m}\vb v\cdot(\boldsymbol\nu_{\rm rec}\vb B_r\times\vb n)\dS$，即磁体表面上的一层面电流 $\vb K=H_c\,\vb e\times\vb n$（各向同性时 $H_c=B_r/(\mu_0\mu_{\rm rec})$）。这正是\secref{sec:lumped-pm} 中“看不见的线圈”，也是\tabref{tab:magnets-conventions} 的等效面电流写法。弱形式自动把这层电流放在正确的位置，既不需要单独建模，也不需要对不连续的 $\vb B_r$ 求导。软磁轭则在每个积分点上使用自己的非线性关系 \eqref{eq:HofB}，这是\secref{sec:femvector-newton} 的话题。
+
+\section{规范自由度就是离散零空间}\label{sec:femvector-gauge}
+
+\subsection{一个有 26 个零特征值的矩阵}
+\secref{sec:potentials-gauge} 说，$\vb A$ 加上任何梯度 $\nabla\chi$，$\vb B$ 不变。离散后同样如此：节点值为 $\boldsymbol\chi$ 的标量场，其梯度在棱空间里的系数是 $\vb G\boldsymbol\chi$，旋度精确为零，所以
+\begin{equation*}
+\vb K\vb G=0 .
+\end{equation*}
+旋度--旋度矩阵是奇异的，零空间由全部离散梯度组成，维数为节点数减一（常数的梯度为零）。检查脚本把单位立方体剖成 48 个四面体（27 个节点、98 条棱、120 个面）：组装出的 $98\times98$ 矩阵恰好有 26 个零特征值；剖得更细（64 个节点）时有 63 个。标量问题的零空间只有一维（常数）；这里是一整个子空间——这就是规范自由度在矩阵里的样子。若在整个外边界上施加 $\vb n\times\vb A=0$，边界节点的梯度被排除，零空间缩小为内部节点的梯度，但并不消失（两套网格上分别剩 1 维和 8 维，等于内部节点数）。
+
+\subsection{源必须相容}
+奇异的方程 $\vb K\vb a=\vb f$ 有解，当且仅当右端与零空间正交：$\vb G^{\mathsf T}\vb f=0$。它的第 $j$ 个分量是
+\begin{equation*}
+(\vb G^{\mathsf T}\vb f)_j=\int_\Omega\nabla N_j\cdot\vb J_s\dV=-\int_\Omega N_j\,\nabla\cdot\vb J_s\dV+\oint_{\partial\Omega}N_j\,\vb J_s\cdot\vb n\dS .
+\end{equation*}
+所以相容条件是：源电流在离散意义下无散，并且不从求解区边界穿出——电流路径必须闭合，包括回流（\secref{sec:potentials-biot}）。检查脚本里，若把源写成某个棱场的旋度（线圈电流由流函数或电流矢势生成时就是这样），$\vb G^{\mathsf T}\vb f$ 在舍入误差内为零；若让一个均匀电流 $\vb J_s=J\vb e_x$ 充满整个立方体，电流从一个面进、对面出，回路不在模型里，$\vb G^{\mathsf T}\vb f\neq0$。
+
+\subsection{处理零空间的办法}
+常用的有三类~\cite{mfem,getdp}：
+\begin{itemize}
+\item \textbf{树--余树规范}：在棱组成的图上选一棵生成树（$N_v-1$ 条棱，$N_v$ 为节点数），令树上的自由度为零。检查脚本中，去掉 26 条树棱后剩下的矩阵非奇异。
+\item \textbf{混合形式}：用一个 Lagrange 乘子在相容的空间里施加库仑规范 $\nabla\cdot\vb A=0$。
+\item \textbf{显式处理零空间的求解器}。
+\end{itemize}
+不能想当然地给棱单元场加一个散度罚项：棱单元场的法向分量在单元面上可以跳变，它的散度在面上含有集中项，逐单元计算的 $\nabla\cdot\vb A_h$ 看不到这些面上的跳变。对最低阶棱单元更是如此：$\nabla\cdot\vb W_{ij}=\nabla N_i\cdot\nabla N_j-\nabla N_j\cdot\nabla N_i=0$，单元内部的散度恒为零，散度全在面上。有限元空间、规范方程、边界条件与求解器必须彼此一致。
+
+无论哪一种办法，都要先检查源的相容性。规范固定与\chref{ch:femscalar} 中的固定参考一样，只消去零空间，不修复不相容的源：对那个均匀电流，树规范的方程照样能解出一个结果，可是被去掉的那些树棱方程不再满足，整个系统的相对残差约为 2.6——与\exref{ex:femscalar-twolayer} 中被参考节点吞掉的 $0.1\,\mathrm{mA}$ 如出一辙。
+
+最后，规范不是材料性质。两种正确的规范给出不同的 $\vb A$ 系数，却给出相同的 $\vb B$、磁链、能量与力。不先统一规范和边界约定，就拿两个软件的原始 $\vb A$ 逐点比较，得到的误差指标没有意义（\secref{sec:potentials-gauge}）。\chref{ch:eddy} 的 $(\vb A,\phi)$ 形式有同样的零空间，处理方式相同。
+
+\section{二维与轴对称问题可以用节点单元}\label{sec:femvector-2d}
+
+\subsection{平面问题}
+场沿 $z$ 不变时，取 $\vb A=A_z(x,y)\vb e_z$，源电流 $J_z\vb e_z$。由\secref{sec:potentials-2d}，$\vb B=(\partial_yA_z,\,-\partial_xA_z,\,0)$。各向同性的磁阻率 $\nu$、没有永磁体时，安培定律的 $z$ 分量化为
+\begin{equation}
+-\nabla_{xy}\cdot(\nu\nabla_{xy}A_z)=J_z .
+\label{eq:femvector-az}
+\end{equation}
+这是一个标量的散度形式方程，与电导问题 $-\nabla\cdot(\sigma\nabla\phi)=0$ 同形：$\sigma\to\nu$，$\phi\to A_z$。\chref{ch:femscalar} 的一切——帐篷函数、单元矩阵 \eqref{eq:elementmatrix}、组装、边界——原样适用。这里也没有规范的麻烦：$A_z\vb e_z$ 不随 $z$ 变化，散度自动为零；剩下的自由只是给 $A_z$ 加一个常数（\secref{sec:potentials-2d} 的 $\chi=cz$），一个本质边界就把它固定了。
+
+节点的 $A_z$ 有一个漂亮的性质。$\vb B=\nabla A_z\times\vb e_z$，所以单元边上的法向磁通 $\vb B\cdot\vb n=\nabla A_z\cdot(\vb e_z\times\vb n)$ 正是 $A_z$ 沿这条边的切向导数。$A_z$ 连续，切向导数在边的两侧相同：\emph{节点 $A_z$ 在每条单元边上精确地保持法向磁通连续}，切向的 $\vb B$ 才会跳变。这恰好是\secref{sec:femscalar-conservation} 的镜像：那里节点电势的切向电场连续、法向电流跳变。用精确序列的话说，二维里把梯度转 $90^\circ$，就把 $H^1$ 送进了 $H(\mathrm{div})$。
+
+\chref{ch:lumped} 的边缘效应与对照标定（\figref{fig:fringing_leakage}、\figref{fig:lumped_validation}）、\chref{ch:magnets} 的磁体截面，都是这样的二维节点 $A_z$ 计算。这并不意味着一般的三维磁场问题等于三个独立的节点标量问题。
+
+\subsection{轴对称问题}
+绕 $z$ 轴旋转对称时，用环向分量 $A_\theta(r,z)$：
+\begin{equation*}
+B_r=-\frac{\partial A_\theta}{\partial z},\qquad B_z=\frac1r\frac{\partial(rA_\theta)}{\partial r} .
+\end{equation*}
+$rA_\theta$ 是磁通函数 \eqref{eq:Afromflux}，它的等值线是磁力线。弱形式在 $(r,z)$ 半平面上积分，体积元带有权重 $2\pi r$；方程里也多出 $1/r$ 项，不再与平面问题同形。光滑的场在轴上要求 $A_\theta=O(r)$。
+
+\begin{compare}{平面模型与轴对称模型}{平面：$A_z(x,y)$}{轴对称：$A_\theta(r,z)$}
+\cmprow{代表的几何}{沿 $z$ 无限长的截面}{绕轴的旋转体}
+\cmprow{磁力线}{$A_z$ 的等值线}{$rA_\theta$ 的等值线}
+\cmprow{源电流}{沿 $z$ 的电流（直导线，回流在截面别处）}{绕轴的环流（圆环线圈、螺线管）}
+\cmprow{体积分}{每单位深度：$\dd x\,\dd y$}{整个旋转体：$2\pi r\,\dd r\,\dd z$}
+\cmprow{轴上}{无特殊}{$A_\theta=O(r)$}
+\cmprow{磁通、能量、力}{每米深度的值}{整个装置的值}
+\cmpsum{二者都只有一个标量未知量、都可以用节点单元，但几何算子、电流和力的含义各不相同。先问装置的对称性是什么，再选模型。}
+\end{compare}
+
+\section{推导一致的牛顿切线}\label{sec:femvector-newton}
+
+\subsection{残差与 Jacobian}
+磁轭的铁是非线性的：$\vb H=\vb H(\vb B)$。把 $\vb A_h=\sum_ja_j\vb W_j$ 代入 \eqref{eq:magweak}，为简单起见设自然边界项为零，定义残差
+\begin{equation*}
+R_i(\vb a)=\int_\Omega(\nabla\times\vb W_i)\cdot\vb H\bigl(\vb B(\vb a)\bigr)\dV-\int_\Omega\vb W_i\cdot\vb J_s\dV .
+\end{equation*}
+要找使 $\vb R(\vb a)=0$ 的 $\vb a$。牛顿法每一步解一个线性方程 $\vb J_N\,\delta\vb a=-\vb R$，再令 $\vb a\leftarrow\vb a+\delta\vb a$，必要时加阻尼。这里 $\vb J_N$ 是 Jacobian 矩阵，不是电流密度。由链式法则，$\partial\vb B/\partial a_j=\nabla\times\vb W_j$：
+\begin{keyeq}
+(J_N)_{ij}=\frac{\partial R_i}{\partial a_j}=\int_\Omega(\nabla\times\vb W_i)^{\mathsf T}\,\boldsymbol\nu_{\rm inc}(\vb B)\,(\nabla\times\vb W_j)\dV,\qquad
+\boldsymbol\nu_{\rm inc}=\frac{\partial\vb H}{\partial\vb B} .
+\label{eq:newtonK}
+\end{keyeq}
+它与线性问题的 $\vb K$ 同形，只是磁阻率换成了\textbf{增量磁阻率张量} $\boldsymbol\nu_{\rm inc}$。剩下的问题是：对各向同性的非线性材料，这个张量是什么？
+
+\subsection{对 \texorpdfstring{$h(b)\hat{\vb b}$}{h(b) b} 求导}
+由 \eqref{eq:HofB}，$\vb H=h(b)\,\hat{\vb b}$，其中 $b=\abs{\vb B}$，$\hat{\vb b}=\vb B/b$，$h$ 是 B--H 曲线的反函数。分别对大小与方向求微分：
+\begin{equation*}
+\delta b=\hat{\vb b}\cdot\delta\vb B,\qquad
+\delta\hat{\vb b}=\frac{\mathbf I-\hat{\vb b}\hat{\vb b}^{\mathsf T}}{b}\,\delta\vb B .
+\end{equation*}
+第一式说，只有沿 $\hat{\vb b}$ 的分量改变大小；第二式说，垂直分量只改变方向。对乘积 $h(b)\hat{\vb b}$ 用乘积法则，$\delta\vb H=h'(b)\,\delta b\,\hat{\vb b}+h(b)\,\delta\hat{\vb b}=\bigl[h'\hat{\vb b}\hat{\vb b}^{\mathsf T}+(h/b)(\mathbf I-\hat{\vb b}\hat{\vb b}^{\mathsf T})\bigr]\delta\vb B$。记 $\nu_{\rm sec}=h(b)/b$ \eqref{eq:HofB}，$\nu_{\rm diff}=h'(b)=1/\mu_{\rm diff}$ \eqref{eq:permeabilities}，整理得
+\begin{keyeq}
+\boldsymbol\nu_{\rm inc}=\nu_{\rm sec}\,\mathbf I+\bigl(\nu_{\rm diff}-\nu_{\rm sec}\bigr)\,\hat{\vb b}\hat{\vb b}^{\mathsf T},\qquad
+\nu_{\rm sec}=\frac{h(b)}{b},\quad \nu_{\rm diff}=h'(b)=\frac1{\mu_{\rm diff}} .
+\label{eq:inctensor}
+\end{keyeq}
+这正是\chref{ch:bh} 预告过的张量 \eqref{eq:bh-inc}，现在从 \eqref{eq:HofB} 推了出来。它沿 $\hat{\vb b}$ 的特征值是 $\nu_{\rm diff}$，两个横向特征值是 $\nu_{\rm sec}$：平行扰动改变 $\abs{\vb B}$，工作点沿曲线移动，看到切线斜率；横向扰动只让 $\vb B$ 转动，看到割线斜率。材料本身各向同性，增量响应却是各向异性的~\cite{comsolbh}。零场处取连续的各向同性极限 $\nu_{\rm sec}(0)=\nu_{\rm diff}(0)=1/\mu_{\rm diff}(0)$。
+
+在合成曲线 \eqref{eq:syntheticbh} 上取 $H_0=1600\,\mathrm{A/m}$（\tabref{tab:bh-permeabilities} 的工作点）：$B_0=1.544\,\mathrm T$，$\mu_{\rm sec}/\mu_0=768$，$\mu_{\rm diff}/\mu_0=113$。检查脚本在这个偏置下用中心差分直接对 \eqref{eq:HofB} 求 Jacobian，与 \eqref{eq:inctensor} 的差别在 $10^{-5}$ 以内。
+
+\subsection{“一致”是什么意思}
+一致的切线，是\emph{同一个离散残差}的精确导数：同样的积分规则，同样的边界条件，同样的 B--H 插值——包括插值函数的导数。如果残差里用的曲线是一条会过冲、局部斜率为负的样条（\figref{fig:bh_interpolation}），切线就会出错甚至失去正定性，牛顿法可能失败。单调的插值（\chref{ch:bh}）不只是让曲线好看，也是让切线可用。
+
+用错切线会怎样？设每一步用的是一个近似矩阵 $\tilde{\vb K}$，而不是 $\vb J_N$。在根附近，误差按 $\vb e_{k+1}\approx(\mathbf I-\tilde{\vb K}^{-1}\vb J_N)\,\vb e_k$ 传播。在单个材料点上逐个方向看，误差因子是 $1-\nu_{\rm true}/\nu_{\rm used}$。在上面的工作点：
+\begin{itemize}
+\item 沿 $\vb B$ 的方向用割线值代替微分值，因子为 $1-\mu_{\rm sec}/\mu_{\rm diff}=-5.8$：绝对值大于 1，误差每步放大并改变符号；
+\item 横向用微分值代替割线值，因子为 $1-\mu_{\rm diff}/\mu_{\rm sec}=0.853$：仍然收敛，但每步只消掉 15\% 的误差。
+\end{itemize}
+这是单点的估计。在整个网格里，空气和未饱和的铁会“稀释”这个因子——下一节的磁路里，气隙与磁体的磁阻正起这个作用——但方向是一样的：哪个方向用错了斜率，哪个方向就慢或者发散。\chref{ch:magnets} 的二维磁体模型用的就是 \eqref{eq:inctensor} 的二维形式，加上以磁能为判据的回溯线搜索，12 次牛顿迭代把相对残差降到 $10^{-11}$ 以下。
+
+\section{Picard、延拓与收敛证据}\label{sec:femvector-picard}
+
+\subsection{两种迭代}
+\textbf{Picard 迭代}把上一步的割线磁阻率冻结，解一个线性问题：$\vb K_{\rm sec}(\vb a_k)\,\vb a_{k+1}=\vb f$，其中 $\vb K_{\rm sec}$ 用 $\nu_{\rm sec}(\abs{\vb B_k})$ 组装。由 \eqref{eq:HofB}，$\vb H=\nu_{\rm sec}\vb B$，所以残差可以写成 $\vb R(\vb a)=\vb K_{\rm sec}(\vb a)\,\vb a-\vb f$，于是
+\begin{equation*}
+\vb a_{k+1}=\vb a_k-\vb K_{\rm sec}(\vb a_k)^{-1}\vb R(\vb a_k) .
+\end{equation*}
+Picard 迭代就是用割线矩阵代替切线矩阵的“牛顿法”。它实现简单，每一步看起来都像一个线性静磁问题；代价是收敛只有线性速度，因子就是上一节的 $1-(\text{真切线})/(\text{割线})$。
+
+\subsection{一个能算到底的比较}
+把整个比较放到\chref{ch:lumped} 的永磁磁路上，一切都可以算到舍入误差。未知量取磁通 $\Phi$——它是 $\vb A$ 沿回路的环量，扮演棱自由度的角色。由 \eqref{eq:nonlinearmagcircuit} 的戴维南形式，记 $\mathcal R_0=\mathcal R_m+\mathcal R_g$，残差为
+\begin{equation*}
+f(\Phi)=\mathcal R_0\Phi+\ell_y\,h\Bigl(\frac{\Phi}{A_y}\Bigr)-\mathcal F_c .
+\end{equation*}
+牛顿法用 $f'(\Phi)=\mathcal R_0+\mathcal R_{\rm diff}$，$\mathcal R_{\rm diff}=\ell_y/(\mu_{\rm diff}A_y)$；Picard 迭代把磁轭当成割线磁阻 $\mathcal R_{\rm sec}=\ell_y/(\mu_{\rm sec}A_y)$ 的线性元件，$\Phi_{k+1}=\mathcal F_c/(\mathcal R_0+\mathcal R_{\rm sec}(\Phi_k))$。
+
+\begin{example}[label=ex:femvector-picard]{同一个永磁磁路，两种迭代}
+用\exref{ex:lumped-pm} 的磁路（$\mathcal F_c=4.55\times10^4\,\mathrm A$，$\mathcal R_m=1.89\times10^7\,\mathrm{A/Wb}$，$\mathcal R_g=7.96\times10^6\,\mathrm{A/Wb}$，磁轭用合成曲线），都从 $\Phi=0$ 出发，比较牛顿迭代、Picard 迭代与带阻尼的 Picard 迭代。
+\solution
+\emph{牛顿。}原点处割线与微分磁导率相同，第一步把磁轭当作线性铁，得到 $B_y=1.678\,\mathrm T$，残差 $|f|/\mathcal F_c=0.536$。此后残差依次为 $1.9\times10^{-5}$、$2.3\times10^{-10}$，第四步降到 $10^{-14}$ 以下，有效数字每步翻倍。结果 $\Phi=1.60702\times10^{-3}\,\mathrm{Wb}$、$B_y=1.607023\,\mathrm T$，与\exref{ex:lumped-pm} 完全一致。
+
+\emph{Picard。}第一步与牛顿相同（$1.678\,\mathrm T$），第二步却跳到 $1.092\,\mathrm T$，此后在 $1.675$ 与 $1.106\,\mathrm T$ 之间来回跳，残差交替为 $0.51$ 与 $0.34$ 个 $\mathcal F_c$，永不收敛（\figref{fig:picard_newton}）。
+
+\emph{原因。}解处的磁轭已越过合成曲线的拐点（$B_s=1.6\,\mathrm T$）：$\mu_{\rm sec}/\mu_0=229$，$\mu_{\rm diff}/\mu_0$ 却只有 $1.005$，$\mathcal R_{\rm sec}=1.39\times10^6\,\mathrm{A/Wb}$，$\mathcal R_{\rm diff}=3.17\times10^8\,\mathrm{A/Wb}$。Picard 映射 $P(\Phi)=\mathcal F_c/(\mathcal R_0+\mathcal R_{\rm sec})$ 在解处的导数是
+\begin{equation*}
+P'=1-\frac{\mathcal R_0+\mathcal R_{\rm diff}}{\mathcal R_0+\mathcal R_{\rm sec}}=-11.1 .
+\end{equation*}
+推导时用到 $\ell_yH_y=\mathcal R_{\rm sec}\Phi$ 与 $\dd(\ell_yH_y)/\dd\Phi=\mathcal R_{\rm diff}$。$P'$ 的绝对值大于 1：解附近的误差每一步放大 11 倍并改变符号，迭代被推开，最后落进一个两点循环。
+
+\emph{阻尼。}取 $\Phi_{k+1}=\Phi_k+\omega(P(\Phi_k)-\Phi_k)$，局部因子变为 $1+\omega(P'-1)$，收敛要求 $\omega<2/(1-P')=0.165$。$\omega=0.05$ 时收敛，但要 77 步才使 $|f|/\mathcal F_c<10^{-6}$。$\omega=0.02$ 时更慢：第 78 步的相对更新量只有 $5.1\times10^{-3}$，残差却仍有 $0.21\,\mathcal F_c$。
+\end{example}
+
+\fig{picard_newton}{\exref{ex:femvector-picard} 的迭代历史。(a) 磁轭磁通密度的迭代值：牛顿迭代第一步越过解，随后迅速回到 $1.607\,\mathrm T$；不加阻尼的 Picard 迭代陷入 $1.675$ 与 $1.106\,\mathrm T$ 之间的两点循环；$\omega=0.05$ 的 Picard 迭代缓慢爬升。(b) 残差（实线，按 $\mathcal F_c$ 归一化）与 $\omega=0.02$ 时的相对更新量（虚线）。竖线标出第 78 步：更新量已降到 $5\times10^{-3}$，残差还在 $0.2$。}{fig:picard_newton}
+
+Picard 并不总是这么糟。它的局部因子取决于工作点在曲线上走了多深：在这个磁路里，磁轭 $B_y=1.55\,\mathrm T$ 时因子约为 $-0.10$，$1.598\,\mathrm T$ 时达到 $-1$，$1.60\,\mathrm T$ 时已是 $-1.45$。把剩磁减为 $0.5$ 或 $0.8$ 倍（$B_y=0.84$、$1.34\,\mathrm T$），因子的绝对值不到 $0.02$，Picard 几步就收敛。磁轭未饱和时它完全够用，一旦工作点越过拐点，就可能突然失效——而为了省铁，设计往往把磁轭推向拐点附近（\exref{ex:lumped-pillars} 及其后的误区）。
+
+\subsection{延拓与线搜索}
+\textbf{载荷延拓}把电流或剩磁从容易的问题逐步加到目标值，每一级用上一级的解作初值；\textbf{线搜索}或阻尼让一步不至于跨过 B--H 拐点太远。它们提高的是数值稳健性。对上面的 Picard 迭代，延拓也帮不上忙：在全载荷下，解本身对 Picard 映射是排斥的（因子 $-11.1$），初值再好也会被推开；延拓给的只是好的初值，改变不了局部收敛因子。对牛顿法，延拓与线搜索则能把初值送进二次收敛的范围。还要记住，这些手段不能补上模型里没有的磁滞，也不能修复超出数据范围的无效外推（\chref{ch:bh}）。
+
+\subsection{什么算收敛的证据}
+一份可信的非线性收敛记录应当同时监控：按问题尺度归一化的残差；场或能量在相邻两步之间的变化；最终关心的观测量（例如气隙磁场）；以及有没有积分点的 $\abs{\vb B}$ 超出了材料数据的范围。强阻尼造成的小更新量，不能单独作为“残差方程已经解出”的证据——$\omega=0.02$ 的例子里，相对更新量已降到千分之五，解却还差得很远。
+
+\begin{compare}{Picard 迭代与牛顿迭代}{Picard（割线）}{牛顿（一致切线）}
+\cmprow{每步的线性系统}{冻结的割线磁阻率 $\nu_{\rm sec}(\vb B_k)$，形同线性静磁问题}{增量磁阻率张量 $\boldsymbol\nu_{\rm inc}(\vb B_k)$，沿 $\vb B$ 用微分值}
+\cmprow{需要的材料数据}{$h(b)/b$}{还需要 $h'(b)$，并与残差中的插值一致}
+\cmprow{收敛速度}{线性，局部因子 $1-(\text{真切线})/(\text{割线})$}{根附近二次：有效数字每步翻倍}
+\cmprow{深度饱和时}{因子可以超过 1：振荡或循环，只能靠强阻尼}{仍然收敛；离根较远时靠线搜索或延拓保护}
+\cmprow{本例（$B_y=1.607\,\mathrm T$）}{$\omega=1$ 两点循环；$\omega=0.05$ 需 77 步}{4 步降到舍入误差}
+\cmprow{副产品}{冻结割线的“小信号响应”是错的}{切线矩阵就是偏置附近的小信号算子}
+\cmpsum{Picard 用“总量之比”去回答“变化量”的问题。线性区里二者一样；过了拐点，一个可能发散，一个照样收敛。}
+\end{compare}
+
+\section{偏置附近的线性源响应}\label{sec:femvector-bias}
+
+永磁 MRI 磁体里，梯度线圈和匀场线圈工作在一个已经被磁体强烈偏置的磁轭旁边。设 $\vb a_0$ 是偏置源 $\vb i_0$（包括永磁体）下完整非线性问题的解。再加一个小的附加源 $\delta\vb i$，对非线性残差求微分，得到
+\begin{keyeq}
+\vb J_N(\vb a_0)\,\delta\vb a=\vb F\,\delta\vb i ,
+\label{eq:biaslinearization}
+\end{keyeq}
+$\vb F$ 把源电流映射为弱形式的载荷（第 $k$ 个线圈单位电流的电流分布为 $\vb j_k$ 时，$F_{ik}=\int_\Omega\vb W_i\cdot\vb j_k\dV$）。这是\emph{实际偏置状态附近}的局部线性线圈响应，对 $\delta\vb i$ 是线性的，可以像\chref{ch:tms} 那样做叠加与单位场图——但只在这个偏置附近。它不是把整个磁轭换成一个标量割线磁导率得到的响应。
+
+\subsection{冻结割线会差多少}
+在\exref{ex:femvector-picard} 的磁路上加一个绕在回路上的小线圈，附加磁动势为 $\delta\mathcal F$。一致切线给出
+\begin{equation*}
+\frac{\dd\Phi}{\dd\mathcal F}=\frac1{\mathcal R_0+\mathcal R_{\rm diff}}=2.91\times10^{-9}\,\mathrm{Wb/A};
+\end{equation*}
+若冻结割线，把磁轭当成 $\mathcal R_{\rm sec}$ 的线性元件，得到 $1/(\mathcal R_0+\mathcal R_{\rm sec})=3.53\times10^{-8}\,\mathrm{Wb/A}$，高估 12.1 倍。饱和的磁轭对沿 $\vb B$ 方向的增量几乎像空气，冻结割线却把它当成相对磁导率 229 的铁。三维中要用张量 \eqref{eq:inctensor}：横向扰动看到的恰好是割线值，冻结割线在横向是对的，沿偏置方向却错了——一个标量无论取什么值，都不能同时对两个方向正确。
+
+\subsection{用中心差分检验}
+切线预测是否正确，最直接的检验是与两次完整的非线性求解比较：
+\begin{equation*}
+\frac{\Phi(\mathcal F_0+\epsilon)-\Phi(\mathcal F_0-\epsilon)}{2\epsilon}\quad\text{与}\quad\frac{\dd\Phi}{\dd\mathcal F} .
+\end{equation*}
+步长 $\epsilon$ 要取一串。本例中，$\epsilon=1000\,\mathrm A$ 时相对差别为 $11.7\%$——扰动已经大到离开了线性范围；$100\,\mathrm A$ 时为 $2.8\times10^{-4}$，$10\,\mathrm A$ 时为 $2.7\times10^{-6}$，$0.1\,\mathrm A$ 时小于 $10^{-8}$；再小到 $10^{-6}\,\mathrm A$，舍入误差又把差别抬到约 $3\times10^{-5}$。差别随 $\epsilon$ 先大致按 $\epsilon^2$ 减小、再因舍入而增大，中间有一段平台；切线与平台上的差分一致，才算通过检验（\eqref{eq:biascheck} 是同一检验在项目中的写法）。较大的变化需要更新工作点和切线。冻结磁导率的分解可以用来记账，但只有一致的增量形式，才是非线性解映射的导数。\chref{ch:eddy} 中偏置磁轭附近的小信号涡流问题，也应当建立在这个切线之上。
+
+到这里，从方程到矩阵的路已经走完：标量电势与矢量磁势怎样离散，边界与规范怎样处理，非线性怎样迭代，结果怎样检验。下一部分回到应用：TES、TMS、MRI 梯度与磁体，用的是同一组方程，到底哪些是共同的，哪些是各自特有的？
+
+\begin{takeaways}
+\begin{itemize}
+\item 三维磁矢势用棱单元：自由度是有向棱上的环量 $\int\vb A\cdot\dd\boldsymbol\ell$，场的切向连续、法向可跳；Whitney 函数的旋度是常矢量 $2\nabla N_i\times\nabla N_j$。
+\item $\vb C\vb G=0$、$\vb D\vb C=0$ 精确成立：离散的 $\vb B_h$ 自动无散，节点函数的梯度恰好在棱空间里。
+\item 磁弱形式 \eqref{eq:magweak} 来自 \eqref{id:curlibp}。$\vb n\times\vb A=0$ 与 $\vb n\times\vb H=0$ 是两种不同的人工边界；剩磁进入右端，等效面电流自动出现。
+\item 规范自由度就是梯度零空间。先查 $\vb G^{\mathsf T}\vb f=0$；规范固定只消零空间，不修复不相容的源。二维 $A_z$ 与轴对称 $rA_\theta$ 可以用节点单元。
+\item 牛顿切线是增量磁阻率张量 \eqref{eq:inctensor}；Picard 用割线矩阵代替切线，深度饱和时会循环或发散。收敛的证据是残差与观测量，不是被阻尼压小的更新量。
+\item 偏置附近的小信号响应用一致切线 \eqref{eq:biaslinearization}，并用一串步长的中心差分检验。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 有人把三维矢势的三个分量分别用节点单元离散，算出的 $\vb H$ 在铁与空气的界面上平滑过渡。为什么这本身就值得怀疑？
+\item 把网格中一条棱的方向反过来，它的自由度和基函数各怎样变？刚度矩阵中哪些元素会变号，哪些不变？
+\item 27 个节点的立方体网格上，旋度--旋度矩阵有多少个零特征值？外边界施加 $\vb n\times\vb A=0$ 后呢？为什么不是零？
+\item 线圈电流在模型里是一段直导线，两端止于求解区的边界。棱单元求解器报告不收敛，或者给出与网格有关的奇怪结果。首先应该检查什么？
+\item 在 $H_0=1600\,\mathrm{A/m}$ 的偏置下，Picard 式的割线矩阵对沿 $\vb B$ 的扰动与横向扰动，局部误差因子各是多少？
+\item \exref{ex:femvector-picard} 中，$\omega=0.02$ 的 Picard 迭代在第 78 步的相对更新量为 $5\times10^{-3}$。可以停止迭代吗？应该看什么？
+\item 用中心差分检验小信号响应，$\epsilon=1000\,\mathrm A$ 时差别为 $12\%$，$\epsilon=10^{-6}\,\mathrm A$ 时为 $3\times10^{-5}$。哪一个说明切线错了？应当怎样报告检验结果？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item 界面上 $\vb H$ 的切向分量连续，法向分量却应跳变约 $\mu_r$ 倍（\eqref{eq:normalbc}、\eqref{eq:tangentbc}）。三个分量都连续的节点表示做不出这个跳变，平滑过渡说明界面附近的场被抹平了。
+\item 自由度 $a_{ij}=\int\vb A\cdot\dd\boldsymbol\ell$ 与基函数 $\vb W_{ij}$ 同时变号，$\vb A_h$ 本身不变。矩阵中这条棱所在的行与列变号，对角元不变（变两次号）。
+\item 26 个（节点数减一）。施加 $\vb n\times\vb A=0$ 后，边界节点的梯度被排除，但唯一的内部节点的梯度在边界上切向分量为零，仍满足边界条件，所以还剩 1 个零特征值。
+\item 源的相容性：$\vb G^{\mathsf T}\vb f$ 是否为零。电流从边界进出、回流不在模型里，等于源有散度，奇异的旋度--旋度方程没有解。应把回流路径放进模型，或把源写成一个闭合电流（例如某个棱场的旋度）。
+\item 沿 $\vb B$：$1-\mu_{\rm sec}/\mu_{\rm diff}=1-768/113\approx-5.8$，误差放大并变号；横向：割线值就是正确的切线值，因子为 0。
+\item 不能。相对残差还有 $0.21$。应当看按 $\mathcal F_c$ 归一化的残差和关心的观测量（例如 $B_g$）是否已经稳定；小更新量只是强阻尼的结果。
+\item 都不说明。$1000\,\mathrm A$ 的扰动已超出线性范围（截断误差），$10^{-6}\,\mathrm A$ 的差别来自舍入误差。应报告一串 $\epsilon$ 上的差别，指出平台（本例 $0.1$--$10\,\mathrm A$，差别不超过 $3\times10^{-6}$）与切线一致。
+\end{answers}

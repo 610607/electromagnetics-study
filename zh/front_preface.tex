@@ -1,0 +1,142 @@
+% =====================================================================
+%  Front matter (unnumbered): how to use the notes; roadmap and checkpoints
+% =====================================================================
+\chapter*{前言：怎样使用这本讲义}
+\phantomsection\addcontentsline{toc}{chapter}{前言：怎样使用这本讲义}
+\markboth{前言：怎样使用这本讲义}{前言：怎样使用这本讲义}
+
+\subsection*{写给谁}
+这本讲义写给需要\emph{计算}准静态电磁场的人：做经颅磁刺激（TMS）与经颅电刺激（TES）仿真的人，设计 MRI 梯度线圈、匀场线圈、永磁体与磁轭的人，以及希望读懂这些仿真结果的人。读者需要熟悉微积分、矢量和线性代数，但不需要事先具备电磁学直觉——每个物理量都从一个具体问题、一幅图或一次简单的测量引入。
+
+数学在这里是理解的支架，而不是目的。每个重要公式都配有它的物理含义、成立的假设、需要的边界条件，以及它在仿真中意味着什么。重点是准静态模型，而不是天线工程；不过准静态与全波电磁学之间的边界会被明确推导出来（\chref{ch:regimes}、\chref{ch:rf}）。
+
+\subsection*{每一章的节奏}
+本书的目的是让你\emph{学会}，而不是记住一张清单。所以每一章都按同一个节奏展开：
+\begin{center}\sffamily\small
+核心问题 \;$\rightarrow$\; 直觉 \;$\rightarrow$\; 推导 \;$\rightarrow$\; 例题 \;$\rightarrow$\; 误区 \;$\rightarrow$\; 对照 \;$\rightarrow$\; 要点与自测
+\end{center}
+先提出一个具体的、通常有点出人意料的问题；再用图像或类比给出答案的轮廓；然后一步一步推导，每一步都说明理由；用带单位的数字算一遍；指出最容易犯的错误；把容易混淆的概念并排比较；最后用要点和自测题检查自己是否真的掌握了。新概念只在故事需要它时才出现，几个简单算例——电容器、双层导体、长螺线管、带气隙的铁芯、含夹杂的导电方块、两单元导电棒——在全书中反复使用。
+
+\subsection*{版式图例}
+正文中的彩色框各有固定的用途。下面每个框都用它自己的格式说明它是做什么的。
+
+\begin{chapterguide}
+\guidequestion{每章开头的导引框：这一章要回答什么具体问题？}
+\begin{guidegoals}
+\item 学完以后应当具备的能力，都可以自我检验（“推导……”“区分……”“计算……”）。
+\end{guidegoals}
+\guideprereq{需要先读的章节或小节。}
+\end{chapterguide}
+
+\begin{intuition}
+在推导之前，用一幅图或一个类比说出答案大概长什么样。例如：电势像海拔，电场像坡度。
+\end{intuition}
+
+\begin{keyeq*}
+\vb F=q\bigl(\vb E+\vb v\times\vb B\bigr)\qquad\text{（每章最重要的少数几个公式放在这样的框里）}
+\end{keyeq*}
+
+\begin{example}[before upper={{\sffamily\bfseries\color{exmp!90!black}\ZE{例}{Example}\quad 例题框（按章编号）}\par\vspace{3pt}}]{例题框}
+先给出题目，再给出完整解答。
+\solution
+数字都带单位，其来源要么是前一版讲义，要么由配套脚本计算并检验。
+\end{example}
+
+\begin{pitfall}[标题写出一个看似合理的错误说法]
+正文解释它错在哪里、在什么条件下又是对的。
+\end{pitfall}
+
+\begin{comparebox}{对照框}\small\renewcommand{\arraystretch}{1.3}%
+\begin{tabularx}{\linewidth}{@{}>{\leavevmode\sffamily\bfseries\color{muted}\raggedright\arraybackslash}p{.15\linewidth}YY@{}}
+\arrayrulecolor{cmp!45}\toprule
+& {\sffamily\bfseries\color{cmp}概念 A} & {\sffamily\bfseries\color{cmp}概念 B}\\\midrule
+用途 & 把两个容易混淆或互为类比的概念并排放 & 逐行比较它们的定义、单位、适用条件\\
+\midrule\multicolumn{3}{@{}p{\linewidth}@{}}{{\sffamily\bfseries\color{cmp}一句话}\enspace 最后一行用一句话说出最关键的区别。全书的对照框汇总在\appref{app:compare}。}\\
+\bottomrule\end{tabularx}
+\end{comparebox}
+
+\begin{deeper}
+初读可以跳过的内容：软件约定的差异、函数空间、推导的技术细节。跳过它们不影响后面的主线。
+\end{deeper}
+
+\begin{takeaways}
+\begin{itemize}
+\item 章末的 4 到 6 条要点，适合复习时快速回顾。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 章末的自测题。先自己做，再看紧随其后的提示与答案。
+\end{enumerate}
+\end{selfcheck}
+
+\subsection*{图中颜色的含义}\label{front:colours}
+全书插图使用同一套颜色，颜色本身就携带物理含义：
+\begin{center}\small
+\begin{tabular}{@{}l l l@{}}
+{\color{elec}\rule{1.6em}{0.8em}} & \textcolor{elec}{\sffamily\bfseries 蓝色} & 电学量：$\vb E$、$\vb D$、$\vb P$，电场线\\
+{\color{magn}\rule{1.6em}{0.8em}} & \textcolor{magn}{\sffamily\bfseries 朱红} & 磁学量：$\vb B$、$\vb H$、$\vb M$，磁场线与磁通\\
+{\color{curr}\rule{1.6em}{0.8em}} & \textcolor{curr}{\sffamily\bfseries 绿色} & 电流与电荷的流动：$\vb J$、$\vb K$、$I$，线圈绕组\\
+{\color{pot}\rule{1.6em}{0.8em}} & \textcolor{pot}{\sffamily\bfseries 紫色} & 势函数：$\phi$、$\vb A$、$\psi$、$\psi_s$，等势线\\
+\fcolorbox{matl}{matl!22}{\rule{0pt}{0.55em}\hspace{1.25em}} & \textcolor{matl}{\sffamily\bfseries 暖灰填充} & 材料区域：沙色表示组织，灰色表示铁与磁轭\\
+\end{tabular}
+\end{center}
+正文中的彩色框则使用另一组颜色（琥珀、砖红、靛蓝等），与物理量的颜色互不重叠。
+
+\subsection*{记号与约定}\label{front:notation}
+\begin{itemize}
+\item \textbf{矢量与张量。}黑体罗马字母表示空间矢量，如 $\vb E$、$\vb B$、$\vb A$；黑体希腊字母表示材料张量，如 $\sig$、$\eps$、$\boldsymbol\mu$。普通斜体 $E$、$B$ 表示分量或大小，具体含义在当地说明。$\rho_f$ 是自由电荷密度，$\rho_m$ 是质量密度；$\vb D$ 专指电位移，TMS 的初级电场记作 $\vb E_p$。
+\item \textbf{单位。}全书使用 SI 单位。
+\item \textbf{时间谐波。}正弦稳态的场写成峰值相量乘以 $e^{\jj\omega t}$ 后取实部：$\vb E(t)=\mathrm{Re}\{\widetilde{\vb E}\,e^{\jj\omega t}\}$，$\jj^2=-1$，$\omega$ 是角频率。因此二次量的周期平均会出现因子 $\tfrac12$，例如 $\langle\vb E\cdot\vb J\rangle=\tfrac12\mathrm{Re}\{\widetilde{\vb E}\cdot\widetilde{\vb J}^{*}\}$。使用均方根值时会明确说明（\secref{sec:regimes-phasor}）。
+\item \textbf{矢量恒等式。}推导中用到的九个恒等式编号为 V1 到 V9，在第一次用到的地方引入（V1--V4 在\chref{ch:calculus}，V5 在\chref{ch:systems}，V6 在\chref{ch:regimes}，V7 在\chref{ch:tms}，V8 在\chref{ch:femvector}，V9 在\chref{ch:neuro}），并汇总在\appref{app:identities}；引用时印作“(V1)”这样的形式。
+\item \textbf{推导的默认假设。}除非另有说明，介质与几何静止不动，材料关系在空间上是局部的，界面上没有另外指定的理想偶极层。运动导体需要额外的运动项（\chref{ch:eddy}）。
+\item \textbf{导航。}章节、公式、图表的引用都可以点击。页脚提供“目录”“对照索引”“返回”；“返回”调用 PDF 阅读器的浏览历史，部分浏览器内置的阅读器不支持，这时请使用阅读器自身的后退功能。
+\end{itemize}
+
+\subsection*{插图与数值检查}
+所有插图都是原创的示意图或计算结果；场线由精确公式或数值解得到，归一化方式写在图注里。合成的 B--H 曲线、磁路尺寸、电导率等都是\emph{教学输入}，不是厂商数据，也不是经过验证的解剖模型。
+
+配套的 NumPy/SciPy 脚本复现了正文中的数值。旧版沿用的脚本检查了：合成的标量有限元收敛序列、归一化的感应场夹杂算例、非线性单回路磁路、规范与磁通恒等式、电容器与导体算例、两单元导电棒、旋转相量约定，以及 SAR 的干涉与平均。此外，每章的 \texttt{checks/check\_chNN.py} 重新计算该章出现的每个数字，并用断言检验。正文中的数值来自实际计算，而不是根据理想收敛阶推测出来的。本书也不自创算法或经验公式：当模型需要修正系数时（例如气隙的边缘效应），书中会说明它必须用场解或测量来标定。
+
+\subsection*{适用范围}
+本讲义提供的是建模基础，不构成临床刺激方案、器械认证或 MRI 安全评估。场解收敛本身并不能证明安全；与应用相关的暴露评估还需要经过验证的模型、波形信息、不确定性分析以及适用的标准。
+
+% ---------------------------------------------------------------------
+\chapter*{学习路线与能力检查点}
+\phantomsection\addcontentsline{toc}{chapter}{学习路线与能力检查点}
+\markboth{学习路线与能力检查点}{学习路线与能力检查点}
+
+学完这本讲义，你应当能够：把一个新的电磁问题表述清楚，选择有依据的近似，完成求解，并解释应用指标为什么可信。全书 24 章分为七个部分（\figref{fig:roadmap}）。实心的章节构成主线，建议按顺序读；虚线框的章节按应用选读，初学者不必先掌握所有高级内容，就可以开始处理简单的导体或线圈问题。
+
+\fig{roadmap}{全书路线。每一行是一个部分；实心框为主线章节，虚线框为按需深入的章节；琥珀色圆点标出下面的四个能力检查点。}{fig:roadmap}
+
+按应用目标，可以在主线之外这样选读：
+\begin{itemize}
+\item \textbf{神经刺激（TES、TMS）}：主线之外加读\chref{ch:neuro}（从场到神经响应）。
+\item \textbf{MRI 梯度与匀场线圈}：加读\chref{ch:eddy}、\chref{ch:femvector}、\chref{ch:mri}、\chref{ch:coils}；外周神经刺激问题再读\chref{ch:neuro}，射频线圈再读\chref{ch:rf}。
+\item \textbf{磁体与磁轭}：加读\chref{ch:bh}、\chref{ch:lumped}、\chref{ch:magnets} 与\chref{ch:femvector}。
+\end{itemize}
+
+下面四个检查点帮助你判断能否进入下一阶段。每个检查点描述的都是“能做什么”，而不是“读过什么”。
+
+\subsection*{检查点 1：理解场的含义（第一、二部分之后）}
+能区分矢量场与它的大小、势与场、电流与电荷、本构关系与 Maxwell 方程、$\vb E$ 与 $\vb D$、$\vb B$ 与 $\vb H$。能独立完成电容器、双层导体和长螺线管三个算例，说清每一步用了哪条定律。做到这些之后，再去解读组织中的场图或 B--H 曲线。
+
+\subsection*{检查点 2：建立边值问题（第三、四部分之后）}
+面对给定的几何和波形，能说明忽略了什么（\chref{ch:regimes}）、源在哪里指定、未知量是什么、哪些边界条件使问题闭合。关键的转变，是从 $\vb J=\sig\vb E$ 这样的局部关系走向受空间约束的全局解。频率、源的尺度或材料改变时，回到\chref{ch:regimes} 重新检查近似是否仍然成立。
+
+\subsection*{检查点 3：看懂数值问题的内部结构（第五部分之后）}
+亲手完成\secref{sec:femscalar-bar} 的两单元导电棒：组装小型矩阵，消除电势参考带来的零空间，由节点解重建电场，解释界面上的跳变，并区分代数残差与离散误差。做到这些之后，再处理大型的头部或磁体网格。
+
+\subsection*{检查点 4：计算并比较应用结果（第六、七部分之后）}
+始终写明源的归一化方式和观测量。MRI 梯度与 TMS 共享感应机制；外周神经刺激（PNS）与 SAR 不共享响应规律；MRI 射频线圈可能要求恢复完整的 Maxwell 算子。综合项目把这些区别落实为具体的模型输出（\chref{ch:projects}），验证一章则说明怎样让结果经得起追问（\chref{ch:practice}）。
+
+\begin{pitfall}[“单位场图就是单位场图，含义都一样”]
+不同模型里的“每单位源的场”含义不同。不含频率依赖的单向感应模型中，线圈的 $\vb B$ 与电流成正比，组织中的 $\vb E$ 与电流的变化率成正比；电阻性电极模型中，$\vb E$ 与电极电流成正比；射频模型中，比例系数是给定频率和端口归一化下的复振幅；在非线性磁偏置附近，“线性”只指经过检验的局部切线。读出方式也各不相同：场的大小、空间导数、质量平均的损耗、磁通积分、膜的阈值是不同的运算——一个指标正确，不能证明其他指标也正确。
+\end{pitfall}
+
+\begin{chapterguide}\begin{minipage}{\linewidth}
+{\sffamily\bfseries\color{accent}最后的能力检查}\par\vspace{2pt}
+接受一个仿真结果之前，不借助软件模块的名称，说明它的单位、源的缩放方式、保留了哪些物理机制、用了什么规范或参考、边界条件与材料假设是什么、验证的目标是什么；然后在同一套实现中，至少给出一项解析对照或守恒检查。
+\end{minipage}\end{chapterguide}

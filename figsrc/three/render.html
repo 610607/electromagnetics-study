@@ -1,0 +1,167 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>em_v5 3-D renderer</title>
+<style>html,body{margin:0;padding:0;background:#ffffff;overflow:hidden}</style>
+</head>
+<body>
+<script type="module">
+// Generic scene renderer for the book's 3-D figures.
+// Python (figsrc/render3d.py) computes all geometry and sends a JSON scene;
+// this page only draws it and reports where labelled 3-D points land on screen.
+import * as THREE from './three.module.js';
+
+function v3(a) { return new THREE.Vector3(a[0], a[1], a[2]); }
+function col(c) { return new THREE.Color(c); }
+
+function material(o, fallback = '#888888') {
+  const opacity = o.opacity ?? 1.0;
+  const params = {
+    color: col(o.color ?? fallback),
+    roughness: o.roughness ?? 0.55,
+    metalness: o.metalness ?? 0.0,
+    transparent: opacity < 1.0,
+    opacity: opacity,
+    side: o.double_sided === false ? THREE.FrontSide : THREE.DoubleSide,
+    depthWrite: opacity >= 0.999,
+    flatShading: !!o.flat,
+  };
+  if (o.vertex_colors) { params.vertexColors = true; params.color = col('#ffffff'); }
+  if (o.unlit) {
+    return new THREE.MeshBasicMaterial({color: params.color, transparent: params.transparent,
+      opacity: params.opacity, side: params.side, depthWrite: params.depthWrite,
+      vertexColors: !!o.vertex_colors});
+  }
+  return new THREE.MeshStandardMaterial(params);
+}
+
+function addArrowHead(group, p, dir, o) {
+  const len = o.head_len ?? 0.18, rad = o.head_radius ?? 0.07;
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(rad, len, 24), material(o));
+  const d = dir.clone().normalize();
+  cone.position.copy(p.clone().add(d.clone().multiplyScalar(len * 0.5)));
+  cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d);
+  group.add(cone);
+}
+
+function build(scene, o) {
+  const g = new THREE.Group();
+  if (o.type === 'tube') {
+    const pts = o.points.map(v3);
+    const curve = new THREE.CatmullRomCurve3(pts, !!o.closed, 'centripetal');
+    const seg = Math.max(16, Math.min(4000, pts.length * 3));
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, seg, o.radius ?? 0.02, o.radial ?? 10, !!o.closed), material(o)));
+    for (const f of (o.arrows ?? [])) {
+      const p = curve.getPointAt(f), t = curve.getTangentAt(f);
+      addArrowHead(g, p.clone().sub(t.clone().multiplyScalar((o.head_len ?? 0.18) * 0.5)), t, o);
+    }
+  } else if (o.type === 'arrow') {
+    const a = v3(o.from), b = v3(o.to);
+    const d = b.clone().sub(a); const L = d.length();
+    const hl = Math.min(o.head_len ?? 0.18, 0.6 * L);
+    const shaftEnd = a.clone().add(d.clone().normalize().multiplyScalar(L - hl));
+    const r = o.radius ?? 0.025;
+    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(r, r, Math.max(L - hl, 1e-6), 16), material(o));
+    cyl.position.copy(a.clone().add(shaftEnd).multiplyScalar(0.5));
+    cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize());
+    g.add(cyl);
+    addArrowHead(g, shaftEnd, d, {...o, head_len: hl});
+  } else if (o.type === 'sphere') {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(o.radius, 64, 48), material(o));
+    m.position.copy(v3(o.center)); g.add(m);
+  } else if (o.type === 'box') {
+    const s = o.size;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(s[0], s[1], s[2]), material(o));
+    m.position.copy(v3(o.center)); g.add(m);
+    if (o.edges) {
+      const e = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),
+        new THREE.LineBasicMaterial({color: col(o.edge_color ?? '#333333')}));
+      e.position.copy(m.position); g.add(e);
+    }
+  } else if (o.type === 'cylinder') {
+    const a = v3(o.from), b = v3(o.to), d = b.clone().sub(a);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(o.radius, o.radius_top ?? o.radius, d.length(), o.radial ?? 64, 1, !!o.open), material(o));
+    m.position.copy(a.clone().add(b).multiplyScalar(0.5));
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize());
+    g.add(m);
+  } else if (o.type === 'torus') {
+    const m = new THREE.Mesh(new THREE.TorusGeometry(o.radius, o.tube ?? 0.03, 16, 160), material(o));
+    m.position.copy(v3(o.center ?? [0, 0, 0]));
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), v3(o.normal ?? [0, 0, 1]).normalize());
+    g.add(m);
+  } else if (o.type === 'mesh') {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(o.vertices.flat(), 3));
+    geo.setIndex(o.faces.flat());
+    if (o.vertex_colors) {
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(o.vertex_colors.flat(), 3));
+    }
+    geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, material(o));
+    g.add(m);
+    if (o.edges) {
+      const e = new THREE.LineSegments(new THREE.EdgesGeometry(geo, o.edge_angle ?? 30),
+        new THREE.LineBasicMaterial({color: col(o.edge_color ?? '#333333'), transparent: true, opacity: o.edge_opacity ?? 1}));
+      g.add(e);
+    }
+  } else if (o.type === 'polyline') {   // hairline, unlit (1 px); for grids and outlines
+    const geo = new THREE.BufferGeometry().setFromPoints(o.points.map(v3));
+    const mat = o.dashed
+      ? new THREE.LineDashedMaterial({color: col(o.color ?? '#666666'), dashSize: o.dash ?? 0.08, gapSize: o.gap ?? 0.06, transparent: true, opacity: o.opacity ?? 1})
+      : new THREE.LineBasicMaterial({color: col(o.color ?? '#666666'), transparent: true, opacity: o.opacity ?? 1});
+    const line = new THREE.Line(geo, mat);
+    if (o.dashed) line.computeLineDistances();
+    g.add(line);
+  }
+  if (o.render_order !== undefined) g.traverse(c => { c.renderOrder = o.render_order; });
+  scene.add(g);
+}
+
+window.renderScene = function (S) {
+  const W = S.width, H = S.height;
+  const renderer = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true, alpha: false});
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(W, H);
+  renderer.setClearColor(col(S.background ?? '#ffffff'), 1);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.NoToneMapping;
+  renderer.sortObjects = true;
+  document.body.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const c = S.camera;
+  let cam;
+  if (c.ortho) {
+    const h = c.height ?? 4, w = h * W / H;
+    cam = new THREE.OrthographicCamera(-w / 2, w / 2, h / 2, -h / 2, 0.01, 1000);
+  } else {
+    cam = new THREE.PerspectiveCamera(c.fov ?? 30, W / H, 0.01, 1000);
+  }
+  cam.up.copy(v3(c.up ?? [0, 0, 1]));
+  cam.position.copy(v3(c.position));
+  cam.lookAt(v3(c.target ?? [0, 0, 0]));
+  cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+
+  const PI = Math.PI;  // physically based light units: multiply legacy intensities by pi
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xd9dde3, PI * (S.ambient ?? 0.55)));
+  const key = new THREE.DirectionalLight(0xffffff, PI * (S.key ?? 0.65));
+  key.position.copy(v3(S.key_dir ?? [3, -4, 6])); scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, PI * (S.fill ?? 0.25));
+  fill.position.copy(v3(S.fill_dir ?? [-5, 2, 2])); scene.add(fill);
+
+  for (const o of S.objects) build(scene, o);
+  renderer.render(scene, cam);
+
+  const labels = {};
+  for (const [name, p] of Object.entries(S.labels ?? {})) {
+    const q = v3(p).project(cam);
+    labels[name] = [(q.x + 1) / 2 * W, (1 - q.y) / 2 * H, q.z];
+  }
+  window.LABELS = labels;
+  window.DONE = true;
+};
+window.READY = true;
+</script>
+</body>
+</html>

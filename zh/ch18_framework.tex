@@ -1,0 +1,346 @@
+\chapter{统一框架与共有观测量}\label{ch:framework}
+
+\begin{chapterguide}
+\guidequestion{同一家医院里，TES 电极往头里送电流，TMS 线圈在头里感应电场，MRI 的梯度线圈一边编码一边在病人身体里感应电场，主磁体里的永磁体和磁轭则日夜不停地维持着一个静磁场。它们需要几套“电磁学”？哪些东西是共同的，哪些才是各自特有的？}
+\begin{guidegoals}
+\item 用三族算子和“几何 + 材料 + 源 + 近似 $\to$ 场问题 $\to$ 观测量”的流程，给任何一个应用定位，并说出它与其他应用的相同与不同；
+\item 区分前向、逆向与响应三类任务，知道每一类最容易在哪里出错；
+\item 由本构曲线计算非线性磁能与磁共能，用虚功求力，解释“保持电流”和“保持磁链”为什么给出同一个力；
+\item 由峰值相量计算局部 SAR 与质量平均 SAR，把多通道 SAR 写成二次型，解释交叉项从何而来；
+\item 用互易性把“刺激”与“测量”联系起来，用一次伴随求解得到大量参数的灵敏度。
+\end{guidegoals}
+\guideprereq{\secref{sec:systems-energy}（能量密度与 Poynting 定理）；\secref{sec:tes-leadfield}、\secref{sec:tms-operator}（叠加、导联场与源线性）；\secref{sec:lumped-nonlinear}（非线性铁芯）；\secref{sec:femscalar-bar}（两单元导电棒）。}
+\end{chapterguide}
+
+\section{差异在源与观测量，不在定律}\label{sec:framework-families}
+
+前面各章把 TES、TMS、涡流、铁磁材料、磁路和磁体分开讲，是为了让每个问题都有一个干净的起点。可是一旦回到真实装置，它们总是同时出现。以一台低场 MRI 为例：永磁体与磁轭产生主磁场（\chref{ch:magnets}）；梯度线圈通电时，梯度场叠加在主磁场上；电流切换时，磁轭和极靴里出现涡流（\chref{ch:eddy}），病人身体里出现感应电场（\chref{ch:tms}）；射频线圈还会在组织里沉积热量（\chref{ch:rf}）。这些问题由同一组 Maxwell 方程描述，变化的只有四样东西：
+\begin{equation*}
+\underbrace{\text{几何}+\text{材料}+\text{源}+\text{近似}}_{\text{规定一个场问题}}
+\;\longrightarrow\;\text{场}\;\longrightarrow\;\text{观测量}.
+\end{equation*}
+几何规定导体、组织、空气、磁体与磁轭在哪里；材料规定 $\sig$、$\eps$、$\boldsymbol\mu$ 或非线性的 B--H 关系；源规定电极电流、线圈电流、剩磁或波形；近似（\chref{ch:regimes}）决定保留哪些耦合。四样东西定下来以后，才谈得上电场、SAR、相位、均匀度、电感、力或神经激活。
+
+\begin{intuition}[一台仿真器，三处可换]
+把整个模型想成一条流水线：前端换\emph{源}（电极、线圈、磁体），中段换\emph{近似}（EQS、单向 MQS、耦合 MQS、全波），末端换\emph{读出}（场、热、力、相位、膜电位）。定律那一段从不更换。学会一个新应用，主要是弄清它在这三处各选了什么。
+\end{intuition}
+
+\subsection{三族算子}
+按未知量与源的位置，本书的低频应用可以归成三族（\figref{fig:application_map}）：
+\begin{itemize}
+\item \textbf{电准静态传导}：未知量是电标势 $\phi$，方程是 $\nabla\cdot(\sig\nabla\phi)=0$（必要时换成复导纳率），源是电极注入的电流，全在边界上。TES、接触阻抗和许多低频生物电问题属于这一族（\chref{ch:tes}）。
+\item \textbf{指定源感应}：线圈的变化磁通给出初级场 $\vb E_p=-\partial_t\vb A_p$，再由导体中的标势修正，使电流守恒、界面法向电流连续。源遍布整个导体，只在电导率跳变处“显形”。TMS 和梯度切换在人体中的感应电场属于这一族（\chref{ch:tms}）。
+\item \textbf{静磁与耦合 MQS}：关心的是 $\vb B$、$\vb H$，源是绕组电流或剩磁，本构关系可以是线性的，也可以是非线性的 B--H 曲线；导体足够强时还要保留涡流 $\sig\vb E$ 对磁场的反馈。主磁体、磁轭、梯度与匀场线圈、屏蔽中的涡流都在这里（\chref{ch:eddy}--\chref{ch:magnets}）。
+\end{itemize}
+
+\fig{application_map}{同一条建模流程中的三族算子。上：几何、材料、源与近似共同规定一个场问题，场再被读成观测量。中：三族算子各自的方程、源的位置、读出的量与典型应用。下：三族共同的部分。图中的方程都是同一组 Maxwell 方程在不同近似下的形式，不是三种物理。}{fig:application_map}
+
+有限元在这里的位置也就清楚了：它不是 TES、TMS 或 MRI 的另一套物理理论，而是把边值问题变成矩阵方程的数值语言（\chref{ch:femscalar}、\chref{ch:femvector}）。无论是标量传导方程、非线性磁轭的静磁问题，还是\chref{ch:coils} 中线圈优化的伴随系统，弱形式的逻辑都相同。
+
+\subsection{给流水线的每一段起个名字}
+令 $\vb u$ 收集离散的未知系数（例如节点上的 $\phi$、棱上的 $\vb A$），$\vb c$ 收集驱动幅值，$\vb p$ 收集几何与材料参数。任何一个离散电磁模型都可以写成
+\begin{keyeq}
+\vb R(\vb u;\vb c,\vb p)=\vb 0,\qquad
+(\vb E,\vb B,\vb J)=\mathcal F(\vb u,\vb c,\vb p),\qquad
+y=\mathcal O(\vb E,\vb B,\vb J).
+\label{eq:wholeoperator}
+\end{keyeq}
+残差 $\vb R$ 包含方程、边界条件和规范约束；重建映射 $\mathcal F$ 对势求导并代入本构关系；观测量 $\mathcal O$ 定义了装置要实现的功能。这不是新的物理定律，只是给前面各章已经做过的步骤起了名字：\chref{ch:tms} 的投影算子 \eqref{eq:tmsoperator} 是 $\vb R=\vb 0$ 与 $\mathcal F$ 合在一起的显式形式；\chref{ch:lumped} 的磁路方程是一个只有几个未知量的 $\vb R$。
+
+\subsection{叠加：对什么线性}
+材料线性、几何固定时，$\vb R$ 对 $\vb u$ 与 $\vb c$ 都是线性的，场可以叠加。但“对源线性”要说清是对哪个量线性：
+\begin{equation}
+\begin{gathered}
+\vb B(\vb r,t)=\sum_kI_k(t)\,\vb b_k(\vb r),\qquad
+\vb E(\vb r,t)=\sum_k\dot I_k(t)\,\vb e_k(\vb r)\quad\text{（线圈：指定源感应）},\\
+\vb E(\vb r,t)=\sum_ki_k(t)\,\vb e_k(\vb r)\quad\text{（电极：电准静态传导）}.
+\end{gathered}
+\label{eq:framework-superposition}
+\end{equation}
+线圈的磁场对电流线性，感应电场对电流的变化率线性（\eqref{eq:tmswaveform}，其中的 $\vb e_k$ 已含导体修正）；电极的场对电极电流本身线性 \eqref{eq:tesleadfield}。三者只是统一框架中不同的源参数化。至于观测量 $\mathcal O$ 是否线性，那是另一个问题，\secref{sec:framework-readouts} 会专门讨论。
+
+\section{前向、逆向与响应}\label{sec:framework-tasks}
+
+有了场算子，实际工作中反复出现三类任务（\tabref{tab:framework-tasks}）。
+
+\begin{table}[htbp]\centering\small
+\caption{同一个场算子上的三类任务。}\label{tab:framework-tasks}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{.12\linewidth} Y Y >{\raggedright\arraybackslash}p{.27\linewidth}@{}}
+\toprule
+任务 & 已知与所求 & 例子 & 最容易出错的地方\\\midrule
+前向分析 & 已知装置与几何，求场及派生量 & 四柱磁体的气隙场与漏磁（\chref{ch:magnets}）；TMS 线圈在头中的电场 & 源归一化、单位、网格与外边界未收敛\\
+逆向设计 & 已知想要的场与约束，求源或几何 & 梯度线圈的电流分布（\chref{ch:coils}）；多电极 TES 的电流组合 & 目标本身违反 Maxwell 方程；优化器专找模型失效之处\\
+响应模型 & 已知场，求下游结果 & MRI 相位与 k 空间（\chref{ch:mri}）；神经膜的去极化（\chref{ch:neuro}） & 把场的指标（如峰值 $|\vb E|$）当作响应本身\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+三类任务对模型的要求不同。前向分析只要模型在一个设计点上可信。逆向设计会主动搜索整个设计空间，并且偏爱模型最乐观的方向——\chref{ch:lumped} 的误区框已经看到，未经验证的磁路模型会被优化器推到饱和拐点上。响应模型则在 Maxwell 方程之外又加入了新的物理：自旋的进动、神经膜的离子通道。场求解器再准确，也不等于成像模型或阈值模型。
+
+\section{非线性磁能与磁共能}\label{sec:framework-energy}
+
+\secref{sec:systems-energy} 的能量密度 $\tfrac12\vb B\cdot\vb H$ 只对线性材料成立。磁轭一旦饱和，这个式子就不再对了。那么饱和铁中的磁能是多少？
+
+\subsection{沿本构曲线积分}
+\eqref{eq:bh-work} 已经给出：$B$ 改变 $\dd B$ 时，每单位体积输入的能量为 $H\,\dd B$。对可逆（无磁滞）的本构关系，把它从零积分到当前状态，就得到\textbf{磁能密度}；把 $B$ 与 $H$ 的角色对调，得到\textbf{磁共能密度}：
+\begin{keyeq}
+w_m(\vb B)=\int_{\vb 0}^{\vb B}\vb H(\vb B')\cdot\dd\vb B',\qquad
+w_m'(\vb H)=\int_{\vb 0}^{\vb H}\vb B(\vb H')\cdot\dd\vb H',\qquad
+w_m+w_m'=\vb B\cdot\vb H .
+\label{eq:framework-wm}
+\end{keyeq}
+积分与路径无关，要求本构关系“可积”；各向同性、单调的 $\vb H=h(b)\,\widehat{\vb b}$ \eqref{eq:HofB}满足这一点，此时 $w_m=\int_0^bh(s)\,\dd s$。第三式来自分部积分：在 B--H 平面上，$w_m$ 是曲线与 $B$ 轴之间的面积，$w_m'$ 是曲线与 $H$ 轴之间的面积，两者拼成边长为 $H$、$B$ 的矩形。只有直线（线性材料）才把矩形平分，各得 $BH/2$。
+
+磁滞材料没有这样的单值能量函数：沿回线走一圈，输入的能量 $\oint H\,\dd B$ 变成了热（\secref{sec:bh-hysteresis}）。
+
+\subsection{线圈端子上的同一件事}
+对整个装置，场的积分变成端子量的积分。一个线圈的磁链 $\lambda$ 与电流 $i$ 有确定的关系 $\lambda(i)$ 时，
+\begin{equation}
+W=\int_0^{\lambda}i\,\dd\lambda',\qquad W'=\int_0^{i}\lambda\,\dd i',\qquad W+W'=\lambda i .
+\label{eq:framework-coenergy}
+\end{equation}
+线性时 $\lambda=Li$，两者都等于 $\tfrac12Li^2$；饱和时它们分开。
+
+\begin{example}[label=ex:framework-coenergy]{饱和 C 形铁芯的能量与共能}
+取\secref{sec:lumped-nonlinear} 的 C 形铁芯：$N=200$ 匝，铁中路径 $0.30\,\mathrm m$，截面 $A=4\,\mathrm{cm^2}$，气隙 $g=1\,\mathrm{mm}$，铁按合成曲线 \eqref{eq:syntheticbh}。求 $Ni=2000\,\mathrm A$ 时铁中的能量密度、整个装置的 $W$ 与 $W'$，并与“$BH/2$”比较。
+\solution
+\emph{工作点。}由回路方程得铁中 $H=2434\,\mathrm{A/m}$，$B=1.596\,\mathrm T$（与\chref{ch:lumped} 的 $1.60\,\mathrm T$ 相同）。
+
+\emph{铁中的密度。}合成曲线的共能可以直接积分：$w_m'=\mu_0H^2/2+B_sH_s\ln\cosh(H/H_s)=3013\,\mathrm{J/m^3}$，于是 $w_m=BH-w_m'=870\,\mathrm{J/m^3}$。而 $BH/2=1942\,\mathrm{J/m^3}$，比真实的能量密度大一倍多。原因一眼就能看出：曲线在饱和区几乎是水平的，曲线左边（$w_m$）是一条窄带，右下方（$w_m'$）却是一大块。
+
+\emph{整个装置。}$\lambda=0.1277\,\mathrm{Wb}$，$i=10\,\mathrm A$。数值积分 \eqref{eq:framework-coenergy} 得 $W=0.510\,\mathrm J$，$W'=0.767\,\mathrm J$，二者之和恰为 $\lambda i=1.277\,\mathrm J$；“线性公式” $\lambda i/2=0.638\,\mathrm J$ 两个都不是。逐段看：气隙（线性）储能 $B^2Ag/(2\mu_0)=0.405\,\mathrm J$，铁中储能只有 $0.104\,\mathrm J$；可是铁中的共能有 $0.362\,\mathrm J$——饱和的铁在共能里占了将近一半（\figref{fig:energy_coenergy}a）。
+\end{example}
+
+\begin{deeper}[永磁体的能量要选参考状态]
+永磁体的 B--H 关系不过原点，$\int\vb H\cdot\dd\vb B$ 从哪里积起就成了问题。对直线回复线（矢量形式 \eqref{eq:pmconstitutive}），一种可逆的写法是 $\tfrac12(\vb B-\vb B_r)^{\mathsf T}(\mu_0\boldsymbol\mu_{\rm rec})^{-1}(\vb B-\vb B_r)$ 加一个参考常数：它对 $\vb B$ 求导正好给出 $\vb H$。比较能量差或对位置求导时常数会消掉，但在磁体区域里盲目积分 $BH/2$ 会给出错误的能量与力。磁体问题求力，更清楚的独立检查是在周围空气中积分 Maxwell 应力 \eqref{eq:maxwellstress}。
+\end{deeper}
+
+\section{电感、互易性与电路能量}\label{sec:framework-inductance}
+
+\subsection{电感矩阵来自磁能}
+在固定的线性磁环境中放 $m$ 个线圈，令 $\vb b_k$ 为第 $k$ 个线圈每安培产生的磁通密度。叠加给出 $\vb B=\sum_kI_k\vb b_k$，代入线性磁能 $\tfrac12\int\vb B\cdot\vb H\dV$：
+\begin{keyeq}
+W_m=\tfrac12\,\vb I^{\mathsf T}\vb L\,\vb I,\qquad
+L_{ij}=\int_{\text{全空间}}\vb b_i\cdot\boldsymbol\mu^{-1}\vb b_j\dV .
+\label{eq:framework-Lij}
+\end{keyeq}
+$\vb L$ 的对角元是自感，非对角元是互感，单位亨利。只要 $\boldsymbol\mu$ 对称，$L_{ij}=L_{ji}$：线圈 1 对线圈 2 的互感等于线圈 2 对线圈 1 的互感，这就是磁的\textbf{互易性}。\chref{ch:lumped} 在三柱铁芯的网络里验证过 $L_{12}=L_{21}$。磁链 $\boldsymbol\lambda=\vb L\vb I$，线性静止电路满足 \eqref{eq:multicircuit}。附近有导电屏蔽时，涡流使有效电感随频率变化（\secref{sec:eddy-circuit}），一个常数 $\vb L$ 就不足以描述宽频带。
+
+\subsection{虚功：力是能量对位置的导数}
+设可动部分的位置为 $x$（例如\exref{ex:framework-coenergy} 的气隙长度），场对它施加的力为 $F$。忽略绕组电阻，电源输入的能量 $i\,\dd\lambda$ 一部分变成磁能，一部分做机械功：
+\begin{equation}
+i\,\dd\lambda=\dd W+F\,\dd x .
+\end{equation}
+$W$ 是状态 $(\lambda,x)$ 的函数，所以 $i=\partial W/\partial\lambda$，$F=-\partial W/\partial x|_\lambda$。改用共能 $W'=\lambda i-W$，$\dd W'=\lambda\,\dd i+F\,\dd x$，于是
+\begin{keyeq}
+F=-\frac{\partial W(\lambda,x)}{\partial x}\bigg|_{\lambda}=+\frac{\partial W'(i,x)}{\partial x}\bigg|_{i}.
+\label{eq:framework-virtualwork}
+\end{keyeq}
+推导里没有用到线性，所以它对饱和铁同样成立~\cite{fitzgerald,haus}。符号不同反映的是“假想移动时谁保持不变、电源是否做功”，不是力学定律冲突。
+
+\begin{example}[label=ex:framework-force]{饱和铁芯气隙的吸力：几种算法}
+\exref{ex:framework-coenergy} 的铁芯在 $Ni=2000\,\mathrm A$ 时，气隙两侧受多大的吸力？分别用 (1) 共能对 $g$ 求导，(2) 能量对 $g$ 求导，(3) 气隙极面上的 Maxwell 应力，(4) 有人把割线电感 $L_{\rm sec}=\lambda/i$ 代入线性公式 $\tfrac12i^2\,\dd L_{\rm sec}/\dd g$。
+\solution
+(1) 在固定 $i$ 下数值地对 $g$ 求 $W'$ 的导数，得 $F=-405\,\mathrm N$（负号表示使气隙缩小，即吸力）。(2) 在固定 $\lambda$ 下对 $W$ 求导，得到同一个数，有效数字全部一致。(3) 磁力线垂直穿过极面，磁拉力 $B^2A/(2\mu_0)=405\,\mathrm N$ \eqref{eq:maxwellstress}，也等于气隙储能除以 $g$。三种正确的算法完全一致。
+
+(4) 却只得到 $31.2\,\mathrm N$，不到正确值的 $8\%$。原因是 $W'\ne\tfrac12L_{\rm sec}i^2$：铁饱和以后，$\lambda$ 几乎不再随 $g$ 变化，$\dd L_{\rm sec}/\dd g$ 很小；而真正的力来自共能，共能是对整个充磁过程的积分，其中低电流、未饱和阶段对 $g$ 很敏感。$Ni=400\,\mathrm A$ 时铁还没有饱和，同一个误用公式给出的结果是正确值（$28.3\,\mathrm N$）的 $99.2\%$，所以这个错误在小电流的测试中根本发现不了。反过来，若把铁当作线性 $\mu_r=2000$，$2000\,\mathrm A$ 时会算出 $760\,\mathrm N$，高估近一倍（\figref{fig:energy_coenergy}b）。
+\end{example}
+
+\fig{energy_coenergy}{饱和铁芯的能量、共能与力（\exref{ex:framework-coenergy}、\exref{ex:framework-force}）。(a) $\lambda$--$i$ 曲线：曲线与 $\lambda$ 轴之间是能量 $W$（灰），与 $i$ 轴之间是共能 $W'$（橙），二者拼成 $\lambda i$ 的矩形；只有线性时（虚线）才各占一半。(b) 气隙吸力随磁动势的变化：非线性共能求导与应力张量给出同一条实线；线性铁模型在饱和后高估；把割线电感代入线性公式（蓝色虚线）在饱和后几乎降到零。}{fig:energy_coenergy}
+
+\begin{compare}{恒电流与恒磁链的虚功}{保持电流 $i$ 不变}{保持磁链 $\lambda$ 不变}
+\cmprow{电源做功}{$i\,\dd\lambda$，不为零}{零：$v=\dd\lambda/\dd t=0$}
+\cmprow{对哪个函数求导}{共能 $W'(i,x)=\int_0^i\lambda\,\dd i'$}{能量 $W(\lambda,x)=\int_0^\lambda i\,\dd\lambda'$}
+\cmprow{力的公式}{$F=+\partial W'/\partial x|_i$}{$F=-\partial W/\partial x|_\lambda$}
+\cmprow{线性时}{$\tfrac12i^2\,\dd L/\dd x$}{$-\tfrac12\lambda^2\,\dd(1/L)/\dd x$}
+\cmprow{非线性时}{必须先对整个 $\lambda(i)$ 积分，再求导}{同左；不能用割线电感代入线性公式}
+\cmprow{数值实践}{扫描电流的 FEM 结果直接给出 $\lambda(i,x)$}{需要在固定磁链下求解，较少直接使用}
+\cmpsum{同一个状态只有一个力；两种写法只是“假想移动时谁不变”的不同记账。错误几乎总是来自把线性公式用在了非线性的 $\lambda(i)$ 上。}
+\end{compare}
+
+\begin{pitfall}[“有了 $L(x)$，力就是 $\tfrac12I^2\,\dd L/\dd x$”]
+只有在 $\lambda$ 对 $i$ 线性时成立。饱和铁、带偏置的磁轭、永磁体附近的线圈，都要用 \eqref{eq:framework-virtualwork} 与真实的非线性 $\lambda(i,x)$，或者用空气中的 Maxwell 应力独立核对。带偏置的装配中，线性的电感矩阵只能用于正确建立的增量（小信号）模型 \eqref{eq:biaslinearization}，完整的能量、力和有限幅值响应必须来自非线性本构关系，不能随意取一个常数磁导率。
+\end{pitfall}
+
+\section{从局部损耗到 SAR}\label{sec:framework-sar}
+
+能量的另一半是耗散。\secref{sec:systems-energy} 的 Poynting 定理告诉我们，电场对电流做的功 $\vb E\cdot\vb J$ 在导体中变成热；本节把它变成生物电磁中最常用的加热观测量。
+
+\subsection{瞬时损耗与周期平均}
+实电导率张量中的瞬时损耗密度为 $p(\vb r,t)=\vb E^{\mathsf T}\sig\vb E$ \eqref{eq:lossdensity}，单位 $(\mathrm{V/m})(\mathrm{A/m^2})=\mathrm{W/m^3}$。正弦稳态用峰值相量 $\widetilde{\vb E}$ \eqref{eq:phasor}时，两个实谐波量乘积的周期平均等于相应相量乘积实部的一半：
+\begin{equation}
+\overline p=\tfrac12\operatorname{Re}\bigl(\widetilde{\vb E}^{\dagger}\sig\widetilde{\vb E}\bigr),
+\label{eq:framework-pavg}
+\end{equation}
+$\dagger$ 表示共轭转置。若材料用复导纳率 $\boldsymbol Y$ \eqref{eq:admittivity}描述，耗散来自它的 Hermite 部分 $\boldsymbol Y_H=(\boldsymbol Y+\boldsymbol Y^\dagger)/2$，$\overline p=\tfrac12\widetilde{\vb E}^\dagger\boldsymbol Y_H\widetilde{\vb E}$。这样介电损耗只被计入一次，不会既算在 $\sigma$ 里又算在 $\varepsilon$ 的虚部里。
+
+\subsection{比吸收率}
+令 $\rho_m$ 为质量密度（$\mathrm{kg/m^3}$），局部\textbf{比吸收率}（specific absorption rate, SAR）定义为
+\begin{keyeq}
+\operatorname{SAR}(\vb r)=\frac{\overline p(\vb r)}{\rho_m(\vb r)}\qquad[\mathrm{W/kg}].
+\label{eq:localsar}
+\end{keyeq}
+标量 $\sigma$、峰值相量时，它等于 $\sigma|\widetilde{\vb E}|^2/(2\rho_m)$；若 $|\widetilde{\vb E}|$ 是有效值，就没有因子 $\tfrac12$。教学值 $\sigma=0.5\,\mathrm{S/m}$、$E=100\,\mathrm{V/m}$、$\rho_m=1000\,\mathrm{kg/m^3}$：峰值约定给出 $2.5\,\mathrm{W/kg}$（即\secref{sec:systems-energy} 的 $2500\,\mathrm{W/m^3}$ 除以密度）；同样的数字若标为有效值，得到 $5\,\mathrm{W/kg}$。这些都只是教学数字，不是暴露限值。
+
+\begin{compare}{峰值约定与有效值约定}{峰值相量 $\widetilde E_{\rm pk}$}{有效值 $E_{\rm rms}=\widetilde E_{\rm pk}/\sqrt2$}
+\cmprow{局部 SAR}{$\sigma|\widetilde E_{\rm pk}|^2/(2\rho_m)$}{$\sigma E_{\rm rms}^2/\rho_m$}
+\cmprow{“$100\,\mathrm{V/m}$”给出}{$2.5\,\mathrm{W/kg}$}{$5\,\mathrm{W/kg}$}
+\cmprow{常见于}{本书、多数频域求解器的复数场}{测量仪器、暴露标准的场强}
+\cmprow{混用的后果}{加热差一倍，方向取决于把谁当成了谁}{同左}
+\cmprow{不变的是}{物理的周期平均功率}{同左}
+\cmpsum{SAR 只有一个物理值；“$\tfrac12$”属于幅值的约定，不属于物理。读入任何场数据之前，先问它是峰值还是有效值。}
+\end{compare}
+
+\subsection{质量平均}
+暴露评估和设备比较常用某个区域 $V_a$ 上的质量平均：
+\begin{equation}
+\operatorname{SAR}_{V_a}=\frac{\int_{V_a}\overline p\dV}{\int_{V_a}\rho_m\dV}.
+\label{eq:framework-sarmass}
+\end{equation}
+它一般不等于体素 SAR 的算术平均：体素大小不同、密度不同，都会让无权平均偏离。报告平均 SAR 时，必须写明区域怎样构造、空气怎样处理、质量怎样加权、时间上怎样平均，以及采用的是哪一个暴露定义（\secref{sec:rf-averages}）。“场强低”本身不能代替对射频线圈与负载电场的计算~\cite{rf}。对低频脉冲刺激，应直接在规定时段内平均 $\vb E(t)^{\mathsf T}\sig\vb E(t)$，不能把任意波形的峰值代入单频公式而略去与波形有关的平均系数。
+
+\section{线性场，二次加热}\label{sec:framework-quadratic}
+
+\exref{ex:regimes-phasorsum} 已经算过：两个线圈通道在同一点产生同向、各 $100\,\mathrm{V/m}$（峰值）的电场时，损耗随相位差在零到四倍单通道之间变化。现在把这个现象写成一般形式。
+
+\subsection{SAR 是驱动幅值的二次型}
+设 $\sig$ 为实对称张量，各通道的复幅值为 $c_k$，按一致方式归一化的单位通道场为 $\vb e_k$，总场 $\widetilde{\vb E}=\sum_kc_k\vb e_k$。代入质量平均 \eqref{eq:framework-sarmass}：
+\begin{keyeq}
+\operatorname{SAR}_{V_a}=\vb c^{\dagger}\vb Q\,\vb c,\qquad
+Q_{ij}=\frac{\int_{V_a}\vb e_i^{\dagger}\sig\,\vb e_j\dV}{2\int_{V_a}\rho_m\dV}.
+\label{eq:sarQ}
+\end{keyeq}
+$\vb Q$ 是 Hermite 半正定矩阵：任何驱动下 SAR 都不为负。对角元是各通道单独工作时的 SAR，非对角元是\textbf{交叉项}，记录两个通道的场在 $V_a$ 中相长还是相消。$\vb Q$ 的最大、最小特征值给出单位范数驱动下 SAR 的上下界，相应的特征向量就是最“热”与最“冷”的驱动组合。
+
+\begin{example}[label=ex:framework-twochannel]{两通道的 Q 矩阵}
+(1) 取\exref{ex:regimes-phasorsum} 的那一点（两通道单位驱动的场同向、各 $100\,\mathrm{V/m}$ 峰值，$\sigma=0.5\,\mathrm{S/m}$，$\rho_m=1000\,\mathrm{kg/m^3}$），写出该点的 $\vb Q$。(2) 沿一条直线 $-1\le x\le1$，两通道的场同向，大小为 $e_1=E_0\cos u$、$e_2=E_0\sin u$，$u=\pi(x+1)/4$，$E_0=100\sqrt2\,\mathrm{V/m}$（教学分布，中点处各为 $100\,\mathrm{V/m}$）。比较“把两张单通道 SAR 图相加”与真实的 SAR，并求整条线的质量平均（密度均匀）。
+\solution
+(1) 每个元素都是 $\sigma\cdot100^2/(2\rho_m)=2.5\,\mathrm{W/kg}$，即 $\vb Q=2.5\bigl(\begin{smallmatrix}1&1\\1&1\end{smallmatrix}\bigr)\,\mathrm{W/kg}$。驱动 $\vb c=(1,e^{\jj\theta})$ 时 $\operatorname{SAR}=5(1+\cos\theta)\,\mathrm{W/kg}$：同相 $10$，相差 $90^\circ$ 时 $5$，反相 $0$。特征值为 $5$ 与 $0$：反相组合在这一点完全不发热。
+
+(2) 单通道 SAR 分别为 $5\cos^2u$ 与 $5\sin^2u\,\mathrm{W/kg}$，两张图相加处处等于 $5\,\mathrm{W/kg}$，是一条平线。真实的 SAR 却是 $5(1+\sin2u\cos\theta)$：同相时中点达到 $10$，两端仍是 $5$；反相时中点为零（\figref{fig:sar_cross_terms}a）。整条线平均后，$Q_{11}=Q_{22}=2.5\,\mathrm{W/kg}$，$Q_{12}=5/\pi=1.59\,\mathrm{W/kg}$，于是同相 $8.18$、反相 $1.82$、正交 $5\,\mathrm{W/kg}$。平均削弱了交叉项，却没有消除它；平均后的 $\vb Q$ 满秩，没有任何驱动能让整条线都不发热。
+\end{example}
+
+\fig{sar_cross_terms}{两个相干通道的加热（\exref{ex:framework-twochannel}，教学分布）。(a) 上：两个通道单位驱动的场；下：沿线的 SAR。灰色虚线是单通道的 SAR，它们相加得到一条平线（黑色点线），只在相位差恰为 $90^\circ$ 时与真实结果相同；同相时中部加倍，反相时中部为零。(b) SAR 随相位差的变化：中点处为 $5(1+\cos\theta)\,\mathrm{W/kg}$；整条线的质量平均变化较小（$1.82$--$8.18\,\mathrm{W/kg}$），但交叉项仍在。}{fig:sar_cross_terms}
+
+\begin{pitfall}[“每个通道算一张 SAR 图，相加就是同时发射时的 SAR”]
+只有当各通道互不相干（例如在不同时间工作，或频率不同而在长时间平均中交叉项平均为零），或者恰好处处正交时才成立。相干的同时发射必须先把复数场相加，再求平方；或者等价地，保存每对通道的 $Q_{ij}$。这个道理与\chref{ch:tes} 的结论完全相同：场对源线性，$|\vb E|$ 不线性，加热是二次型。力、图像强度、激活概率等观测量同样不能逐通道相加。
+\end{pitfall}
+
+色散材料同样要用导纳率的 Hermite 部分 $\boldsymbol Y_H$ 代替 $\sig$（\eqref{eq:framework-pavg} 之后的说明）；源的归一化、射频周期平均与脉冲列平均的区别留到\secref{sec:rf-normalization} 与\secref{sec:rf-averages}。
+
+\section{互易性与伴随灵敏度}\label{sec:framework-reciprocity}
+
+\chref{ch:tes} 说过一句话：用同一对电极测量体内电流源时，测得电压对源位置的灵敏度分布，就是这对电极刺激时的场（\secref{sec:tes-leadfield}）。为什么刺激和测量会用同一张场图？答案是互易性。
+
+\subsection{电的互易性}
+对同一个线性、互易（$\sig$ 对称）的导体做两次求解：第一次的电极电流为 $I_l^{(1)}$、电极电压为 $U_l^{(1)}$，第二次为 $I_l^{(2)}$、$U_l^{(2)}$。把两次解分别当作对方弱形式中的测试函数 \eqref{eq:cemweak}，体积项 $\int\nabla\phi^{(1)}\cdot\sig\nabla\phi^{(2)}\dV$ 和接触层项对两个解是对称的，交换后不变，于是
+\begin{keyeq}
+\sum_lU_l^{(1)}I_l^{(2)}=\sum_lU_l^{(2)}I_l^{(1)} .
+\label{eq:framework-reciprocity}
+\end{keyeq}
+离散后更直接：刚度矩阵 $\vb K$ 对称，$\vb K\boldsymbol\phi_1=\vb b_1$、$\vb K\boldsymbol\phi_2=\vb b_2$，所以 $\vb b_1^{\mathsf T}\boldsymbol\phi_2=\boldsymbol\phi_1^{\mathsf T}\vb K\boldsymbol\phi_2=\vb b_2^{\mathsf T}\boldsymbol\phi_1$。
+
+\subsection{刺激场就是测量的导联场}
+让第一次求解是“刺激”：一对电极通以单位电流，得到电势 $\phi_1$ 与场 $\vb E_1=-\nabla\phi_1$（每单位电流）。让第二次求解是“测量”：体内 $\vb r_0$ 处有一个电流偶极子 $\vb p$（单位 $\mathrm{A\,m}$，例如一小团同步活动的神经元），电极上没有电流，只测电压。把偶极子看成相距 $\vb d$ 的一对“端子”：一处注入 $I_d$，一处抽出 $I_d$，$\vb p=I_d\vb d$。在 \eqref{eq:framework-reciprocity} 中把这对端子也算进求和：左边只剩偶极子两端的 $\phi_1$ 之差乘以 $I_d$（刺激时偶极子端子上没有电流，测量时电极上没有电流），右边只剩测量时两电极之间的电压 $V$：
+\begin{equation}
+V=\nabla\phi_1(\vb r_0)\cdot\vb p=-\vb E_1(\vb r_0)\cdot\vb p .
+\label{eq:framework-leadfield}
+\end{equation}
+于是，$\vb E_1(\vb r)$ 这一张图同时回答了两个问题：这对电极刺激时每处的场多大；体内每处、每个方向的源被这对电极“听到”多少。符号只取决于电压与偶极子方向的约定。测量 $N$ 个可能的源位置，不需要做 $N$ 次求解，一次刺激求解就够了。
+
+在\figref{fig:tes_setup} 的含夹杂方块上（$128\times128$ 网格的 P1 有限元），我们把偶极子放在 $(0.40,0.45)$，两种算法——直接求解偶极子问题再读电极电压，或者读刺激场再与 $\vb p$ 点乘——给出的电压在舍入误差内相同（相对差小于 $10^{-13}$）。这里没有近似：\eqref{eq:framework-leadfield} 在离散层面也精确成立。
+
+互易性要求两次求解用\emph{同一个}线性模型：相同的电导率、相同的接触模型、相同的网格。不同的非线性状态之间不能交换。
+
+\subsection{伴随：一个目标，一次额外求解}
+互易性的一般形式是伴随方法。设离散模型 $\vb K(p)\vb u(p)=\vb f(p)$，$p$ 是某个材料或设计参数，关心的标量目标为 $Q=\vb q^{\mathsf T}\vb u$。对矩阵方程求导：
+\begin{equation*}
+\vb K\frac{\dd\vb u}{\dd p}=\frac{\dd\vb f}{\dd p}-\frac{\dd\vb K}{\dd p}\vb u .
+\end{equation*}
+直接法要为每个参数解一次这个方程。伴随法先解一次\textbf{伴随方程} $\vb K^{\mathsf T}\vb z=\vb q$，再左乘 $\vb z^{\mathsf T}$：
+\begin{keyeq}
+\frac{\dd Q}{\dd p}=\vb z^{\mathsf T}\Bigl(\frac{\dd\vb f}{\dd p}-\frac{\dd\vb K}{\dd p}\vb u\Bigr),\qquad \vb K^{\mathsf T}\vb z=\vb q ,
+\label{eq:framework-adjoint}
+\end{keyeq}
+若目标本身显含 $p$，还要加上它的显式导数。一个目标只需一次伴随求解，就能得到对成千上万个参数（例如每个单元的电导率）的灵敏度，不需要形成稠密的逆矩阵。非线性问题用一致的雅可比矩阵代替 $\vb K$ \eqref{eq:newtonK}；复数场配实值目标时，要一致地推导共轭与取实部的约定。
+
+\begin{intuition}[伴随场 = 把测量当作源]
+$\vb q$ 描述的是“在哪里、怎样读出”。伴随方程把这个读出方式当作源去求解：要读某个节点的电势，就在那个节点注入单位电流。灵敏度于是是“正向场”与“伴随场”的重叠：哪里两者都大，哪里的参数就最重要。
+\end{intuition}
+
+\begin{example}[label=ex:framework-adjoint]{两单元导电棒的伴随灵敏度}
+\secref{sec:femscalar-bar} 的导电棒：两个单元各长 $h=1\,\mathrm{cm}$、截面 $A=1\,\mathrm{cm^2}$、$\sigma_1=\sigma_2=0.5\,\mathrm{S/m}$；节点 0 注入 $I=1\,\mathrm{mA}$，节点 2 接地，节点电势为 $(0.4,0.2,0)\,\mathrm V$。求中间节点电势 $Q=\phi_1$ 对两个电导率的灵敏度。
+\solution
+去掉接地节点，未知量为 $\vb u=(\phi_0,\phi_1)^{\mathsf T}$，
+\begin{equation*}
+\vb K=\frac{A}{h}\begin{pmatrix}\sigma_1&-\sigma_1\\-\sigma_1&\sigma_1+\sigma_2\end{pmatrix},\qquad
+\frac{\dd\vb K}{\dd\sigma_1}=\frac{A}{h}\begin{pmatrix}1&-1\\-1&1\end{pmatrix},\qquad
+\frac{\dd\vb K}{\dd\sigma_2}=\frac{A}{h}\begin{pmatrix}0&0\\0&1\end{pmatrix},
+\end{equation*}
+目标向量 $\vb q=(0,1)^{\mathsf T}$。伴随方程 $\vb K^{\mathsf T}\vb z=\vb q$ 的解是 $\vb z=(200,200)\,\Omega$——它正是在节点 1 注入 $1\,\mathrm A$ 时的电势：电流只流过单元 2，单元 1 中没有电流，两端电势相同。
+
+$\vb f$ 不依赖 $\sigma$。$(\dd\vb K/\dd\sigma_1)\vb u$ 作用在 $\vb u=(0.4,0.2)\,\mathrm V$ 上得到大小相等、符号相反的两个分量，与 $\vb z=(200,200)$ 点乘为零；$\dd\vb K/\dd\sigma_2$ 只剩一个元素。于是
+\begin{equation*}
+\frac{\dd\phi_1}{\dd\sigma_1}=0,\qquad \frac{\dd\phi_1}{\dd\sigma_2}=-\vb z^{\mathsf T}\frac{\dd\vb K}{\dd\sigma_2}\vb u=-0.4\,\mathrm{V/(S/m)} .
+\end{equation*}
+场的语言更直观：单元 2 中正向场 $E=20\,\mathrm{V/m}$，伴随场为每安培 $2\times10^4\,\mathrm{V/m}$，体积 $10^{-6}\,\mathrm{m^3}$，灵敏度 $-\int\vb E_{\rm fwd}\cdot\vb E_{\rm adj}\dV=-0.4$；单元 1 中伴随场为零，所以灵敏度为零。与解析式 $\phi_1=Ih/(\sigma_2A)$ 求导的结果相同，有限差分也给出同样的数。若目标改为 $\phi_0$，两个灵敏度都是 $-0.4\,\mathrm{V/(S/m)}$。
+\end{example}
+
+\begin{compare}{直接灵敏度与伴随灵敏度}{直接法（每个参数一次）}{伴随法（每个目标一次）}
+\cmprow{要解的方程}{$\vb K\,\dd\vb u/\dd p=\dd\vb f/\dd p-(\dd\vb K/\dd p)\vb u$}{$\vb K^{\mathsf T}\vb z=\vb q$}
+\cmprow{求解次数}{参数个数}{目标个数}
+\cmprow{划算的场合}{参数少、目标多（例如整张场图对一个线圈位置）}{参数多、目标少（例如一个读出对每个单元的电导率）}
+\cmprow{副产品}{$\dd\vb u/\dd p$：整场的变化}{$\vb z$：读出方式的“伴随场”}
+\cmprow{要求}{同一个线性化的 $\vb K$}{同上，加上一致的转置（复数时注意共轭）}
+\cmpsum{两者给出同一个导数；选哪一个只看“参数多”还是“目标多”。线圈与电极优化通常是后者，所以伴随法是逆向设计的标准工具。}
+\end{compare}
+
+\section{同一场解，多种读出}\label{sec:framework-readouts}
+
+现在回到 \eqref{eq:wholeoperator} 的最后一步 $y=\mathcal O(\vb E,\vb B,\vb J)$。同一个场解可以被读成很多量，它们在数学上分成三类（\figref{fig:field_observables}）：
+\begin{itemize}
+\item \textbf{线性读出}：在某点采样、沿某方向投影（沿神经的 $\vb E\cdot\hat{\vb t}$）、求空间导数、在区域或回路上积分（磁链 $\lambda$、端电压）。它们对源线性，可以用单位场图叠加。
+\item \textbf{二次读出}：损耗与 SAR \eqref{eq:sarQ}、储能 $\tfrac12\vb I^{\mathsf T}\vb L\vb I$、由应力张量求得的力。它们是驱动幅值的二次型，叠加时有交叉项，但可以预先算好矩阵。
+\item \textbf{非线性与动力学读出}：$|\vb E|$ 与聚焦度、以 ppm 计的均匀度、相位与图像、膜电位与阈值。它们必须先把场合成出来，再计算；有的还要解额外的动力学方程（\chref{ch:mri}、\chref{ch:neuro}）。
+\end{itemize}
+
+\fig{field_observables}{同一个场解通向三类读出。线性读出可以把单位场图直接叠加；二次读出可以预先存成矩阵（$\vb Q$、$\vb L$、$\vb R$），但必须保留交叉项；非线性与动力学读出只能在合成了总场之后计算。三类都是对同一场解的不同运算，而不是不同版本的 Maxwell 方程。}{fig:field_observables}
+
+这个分类直接决定了怎样搭建代理模型与优化器：线性的部分应当精确地写成矩阵，二次的部分应当保留交叉项，非线性的部分放在最后。把单位也算进“读出”：空间导数 $\partial B_i/\partial x_j$ 的单位是 T/m，时间导数 $\partial_tB_i$ 的单位是 T/s，组织电场的空间导数是 $\mathrm{V/m^2}$。MRI 编码与神经刺激关心的，正是同一个电磁模型所产生场的不同导数。
+
+回头看，全书的各个量在这条流水线上各有位置：电荷与电流描述源和输运；$\vb E$、$\vb B$ 是场本身；$\vb P$、$\vb M$ 描述材料中的偶极子，$\vb D$、$\vb H$ 把它们重新记账；$\phi$、$\vb A$ 是相容的表示；边界条件与本构关系让问题闭合；有限元完成离散；观测量最后解释结果。从整体拆到局部、再回到整体，才不会只记住一堆符号，也不会把各个应用当成互不相干的专题。
+
+下一章把这些工具用在 MRI 的磁场观测量上，从一个看似简单的问题开始：能不能设计一个只有 $B_z=Gx$、没有其他分量的梯度场？
+
+\begin{takeaways}
+\begin{itemize}
+\item TES、TMS、MRI 梯度与磁体设计用的是同一组 Maxwell 方程；差别在源、近似、本构与观测量。三族算子：电准静态传导、指定源感应、静磁与耦合 MQS；\eqref{eq:wholeoperator} 给流水线的三段命名。
+\item 非线性材料的磁能与共能要沿本构曲线积分，$w_m+w_m'=BH$；只有线性时各为 $BH/2$。饱和铁的能量密度可以远小于 $BH/2$。
+\item 力 $F=-\partial W/\partial x|_\lambda=+\partial W'/\partial x|_i$ 对非线性同样成立；把割线电感代入 $\tfrac12i^2\,\dd L/\dd x$ 在饱和时可以错一个数量级，而且在小电流测试中发现不了。
+\item SAR $=\overline p/\rho_m$，峰值约定有 $\tfrac12$、有效值约定没有；质量平均不等于体素的算术平均。多通道 SAR 是二次型 $\vb c^\dagger\vb Q\vb c$，单通道 SAR 图不能相加。
+\item 互易性：刺激场就是测量的导联场，$V=-\vb E_1\cdot\vb p$；伴随法用一次额外求解得到一个目标对所有参数的灵敏度。
+\item 读出分三类：线性（可叠加）、二次（有交叉项）、非线性与动力学（先合成再计算）。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 梯度线圈切换时，(a) 病人体内的感应电场，(b) 极靴与磁轭中的涡流，(c) 线圈的端电压，各属于哪一族算子或哪一种读出？
+\item 在什么条件下 $W=W'$？\exref{ex:framework-coenergy} 中为什么 $W'>W$？
+\item 某人用非线性有限元扫描了电流，得到 $L_{\rm sec}(i,g)=\lambda/i$，再用 $\tfrac12i^2\,\partial L_{\rm sec}/\partial g$ 求吸力。在小电流下他的结果与测量吻合，大电流下却小得多。错在哪里？应当怎样改？
+\item 两个通道在某点产生同向的场，各为 $100\,\mathrm{V/m}$ \emph{有效值}，$\sigma=0.5\,\mathrm{S/m}$，$\rho_m=1000\,\mathrm{kg/m^3}$。同相发射时该点 SAR 是多少？只看两张单通道 SAR 图又会得出多少？
+\item \exref{ex:framework-twochannel} 中，点 $\vb Q$ 有一个零特征值，整条线平均后的 $\vb Q$ 却没有。这说明了什么？
+\item 一对电极以 $1\,\mathrm{mA}$ 刺激时，某处的电场为 $0.2\,\mathrm{V/m}$。同一对电极测量该处一个同向的电流偶极子 $|\vb p|=10\,\mathrm{nA\,m}$，测得电压的大小是多少？
+\item 你要计算一个电极电压对 $10^6$ 个单元电导率的灵敏度。直接法与伴随法各需要多少次线性求解？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item (a) 指定源感应（\chref{ch:tms}）；(b) 耦合 MQS（\chref{ch:eddy}）；(c) 一个线性读出（磁链对时间求导）加上电阻压降，即 $V=RI+\dd\lambda/\dd t$。
+\item 当 $\lambda(i)$ 是过原点的直线时。饱和后曲线向右弯平，曲线下方的面积（$W'$）大于曲线左边的面积（$W$）。
+\item 割线电感的线性公式只对线性材料成立。应当用 $F=\partial W'/\partial g|_i$，其中 $W'=\int_0^i\lambda\,\dd i'$ 由扫描数据积分得到；或者用空气中的 Maxwell 应力独立核对。
+\item 有效值约定没有 $\tfrac12$：每个通道单独 $5\,\mathrm{W/kg}$，同相时场加倍、SAR 为四倍，即 $20\,\mathrm{W/kg}$；两张图相加只得 $10\,\mathrm{W/kg}$。
+\item 在单个点上，总能找到让两个场抵消的驱动；在一个区域上，两个通道的场分布不同，无法处处抵消，交叉项被平均削弱但不消失，最小 SAR 大于零。
+\item 由 $V=-\vb E_1\cdot\vb p$，每毫安 $0.2\,\mathrm{V/m}$ 即每安培 $200\,\mathrm{V/m}$，$|V|=200\times10^{-8}=2\,\mu\mathrm V$。
+\item 直接法 $10^6$ 次（每个参数一次）；伴随法 1 次正向加 1 次伴随求解。
+\end{answers}

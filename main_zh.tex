@@ -1,0 +1,115 @@
+\documentclass[11pt,a4paper,oneside,openany]{book}
+\newif\ifChinese
+\Chinesetrue
+\input{preamble}
+\hypersetup{pdftitle={准静态仿真电磁学（第五版·学习版）},pdfauthor={Prepared for Biobot},
+  pdfsubject={Maxwell equations, quasistatic approximations, FEM, TMS, TES, MRI coils, lumped magnetic circuits and magnets}}
+
+\begin{document}
+% =====================================================================
+\begin{titlepage}
+\thispagestyle{empty}
+% Everything is placed absolutely on the page, so the layout does not depend on the text block.
+\begin{tikzpicture}[remember picture,overlay]
+\fill[accent] (current page.north west) rectangle ([yshift=-92mm]current page.north east);
+\node[anchor=north west,inner sep=0pt,text width=166mm] at ([xshift=22mm,yshift=-24mm]current page.north west) {%
+  {\color{white}\sffamily\large 以问题为线索的系统课程\par}
+  \vspace{7mm}
+  {\color{white}\sffamily\bfseries\fontsize{36}{44}\selectfont 准静态仿真电磁学\par}
+  \vspace{6mm}
+  {\color{white}\sffamily\Large 从 Maxwell 方程到物理直觉、有限元、线圈与磁路\par}};
+\node[anchor=north,inner sep=0pt] at ([yshift=-104mm]current page.north) {\includegraphics[width=150mm]{figures_zh/coil_block_3d.pdf}};
+\node[anchor=south west,inner sep=0pt,text width=166mm] at ([xshift=22mm,yshift=22mm]current page.south west) {%
+  {\sffamily\color{accent} TMS\enspace·\enspace TES\enspace·\enspace MRI 梯度与匀场线圈\enspace·\enspace 集总磁路\enspace·\enspace 永磁体与磁轭\enspace·\enspace 神经刺激与 SAR\par}
+  \vspace{7mm}
+  {\color{muted}\rule{166mm}{.5pt}}\par\vspace{3mm}
+  {\sffamily\small 为 Biobot 编写\hfill 第五版 · 学习版 · 2026 年 10 月\hfill 全书使用 SI 单位\par}};
+\end{tikzpicture}
+\null
+\end{titlepage}
+
+% =====================================================================
+\frontmatter
+\pagestyle{fancy}
+\inputchapter{zh/front_preface}
+\cleardoublepage
+\phantomsection\label{nav:contents}
+\tableofcontents
+
+% =====================================================================
+\mainmatter
+\bookpart{第一部分}{场的语言}{在写下任何方程之前，先弄清楚“场”到底描述什么、我们希望仿真回答什么问题，以及描述“源头”与“漩涡”的几何工具。这一部分不追求完整，只求让后面的每一步都有落脚点。}{%
+\chref{ch:intro}\quad\nameref{ch:intro}\par
+\chref{ch:calculus}\quad\nameref{ch:calculus}}
+\inputchapter{zh/ch01_intro}
+\inputchapter{zh/ch02_calculus}
+
+\bookpart{第二部分}{电与磁：两套平行的语言}{电与磁各有一套由源、场、势和材料组成的语言。这一部分把两套语言并排讲述，反复追问它们哪里相同、哪里不同；最后用电容、电阻、电感与磁路四个标准系统，把所有物理量重新串成一个整体。}{%
+\chref{ch:electric}\quad\nameref{ch:electric}\par
+\chref{ch:magnetic}\quad\nameref{ch:magnetic}\par
+\chref{ch:matter}\quad\nameref{ch:matter}\par
+\chref{ch:interfaces}\quad\nameref{ch:interfaces}\par
+\chref{ch:systems}\quad\nameref{ch:systems}}
+\inputchapter{zh/ch03_electric}
+\inputchapter{zh/ch04_magnetic}
+\inputchapter{zh/ch05_matter}
+\inputchapter{zh/ch06_interfaces}
+\inputchapter{zh/ch07_systems}
+
+\bookpart{第三部分}{时间、近似与表示}{仿真从来不解“完整的” Maxwell 方程。这一部分回答两个问题：在给定的频率、尺寸与材料下，哪些耦合可以有依据地忽略；同一个物理场又可以用哪些势函数来表示、它们的自由度意味着什么。}{%
+\chref{ch:regimes}\quad\nameref{ch:regimes}\par
+\chref{ch:potentials}\quad\nameref{ch:potentials}}
+\inputchapter{zh/ch08_regimes}
+\inputchapter{zh/ch09_potentials}
+
+\bookpart{第四部分}{核心场问题}{把前面的语言用到真实装置上：电极注入电流（TES）、线圈感应电场（TMS）、导体中的涡流、非线性铁磁材料、集总磁路，以及永磁体与磁轭。每一章都从一个具体的建模问题出发，到一个可以检验的结果为止。}{%
+\chref{ch:tes}\quad\nameref{ch:tes}\par
+\chref{ch:tms}\quad\nameref{ch:tms}\par
+\chref{ch:eddy}\quad\nameref{ch:eddy}\par
+\chref{ch:bh}\quad\nameref{ch:bh}\par
+\chref{ch:lumped}\quad\nameref{ch:lumped}\par
+\chref{ch:magnets}\quad\nameref{ch:magnets}}
+\inputchapter{zh/ch10_tes}
+\inputchapter{zh/ch11_tms}
+\inputchapter{zh/ch12_eddy}
+\inputchapter{zh/ch13_bh}
+\inputchapter{zh/ch14_lumped}
+\inputchapter{zh/ch15_magnets}
+
+\bookpart{第五部分}{从方程到矩阵：有限元}{把边值问题变成可以求解、也可以检验的矩阵方程：先用手算一个最小的例子，再推广到标量有限元、矢量有限元与非线性求解。}{%
+\chref{ch:femscalar}\quad\nameref{ch:femscalar}\par
+\chref{ch:femvector}\quad\nameref{ch:femvector}}
+\inputchapter{zh/ch16_femscalar}
+\inputchapter{zh/ch17_femvector}
+
+\bookpart{第六部分}{应用：同一场，不同问题}{TES、TMS、MRI 梯度、线圈设计、神经响应与射频加热使用同一套场理论；不同的是源、所保留的近似，以及最终关心的观测量。}{%
+\chref{ch:framework}\quad\nameref{ch:framework}\par
+\chref{ch:mri}\quad\nameref{ch:mri}\par
+\chref{ch:coils}\quad\nameref{ch:coils}\par
+\chref{ch:neuro}\quad\nameref{ch:neuro}\par
+\chref{ch:rf}\quad\nameref{ch:rf}}
+\inputchapter{zh/ch18_framework}
+\inputchapter{zh/ch19_mri}
+\inputchapter{zh/ch20_coils}
+\inputchapter{zh/ch21_neuro}
+\inputchapter{zh/ch22_rf}
+
+\bookpart{第七部分}{综合与验证}{把各章串成可以复现、可以检验的仿真项目，并学会区分“方程解对了没有”与“方程选对了没有”。}{%
+\chref{ch:projects}\quad\nameref{ch:projects}\par
+\chref{ch:practice}\quad\nameref{ch:practice}}
+\inputchapter{zh/ch23_projects}
+\inputchapter{zh/ch24_practice}
+
+% =====================================================================
+\appendix
+\inputchapter{zh/appendices}
+\chapter{对照索引}\label{app:compare}
+\phantomsection\label{nav:compare}
+全书的“对照”框按出现顺序列在下面。复习时可以挑出容易混淆的一对概念，回到原处重读“相同”与“不同”两列，再试着用自己的话说出最后的“一句话”。
+\begingroup\small
+\listofcomparisons
+\endgroup
+
+\backmatter
+\input{references_zh}
+\end{document}

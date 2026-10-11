@@ -1,0 +1,384 @@
+% =====================================================================
+%  preamble.tex — shared layout for the Chinese and English editions
+%  Engine: XeLaTeX (both editions).  Set \Chinesetrue / \Chinesefalse
+%  in the entry file before \input{preamble}.
+% =====================================================================
+
+% ---------------------------------------------------------------------
+% Fonts
+% ---------------------------------------------------------------------
+\usepackage{amsmath}
+\usepackage{fontspec}
+\ifChinese
+  \usepackage[CJKmath=false]{xeCJK}
+\fi
+\usepackage[math-style=TeX,bold-style=ISO]{unicode-math}
+
+% Body serif: STIX Two Text (system name or TeX Live file), fallback Termes.
+\IfFontExistsTF{STIX Two Text}{%
+  \setmainfont{STIX Two Text}}{%
+\IfFontExistsTF{STIXTwoText-Regular.otf}{%
+  \setmainfont{STIXTwoText}[Extension=.otf,UprightFont=*-Regular,
+    ItalicFont=*-Italic,BoldFont=*-Bold,BoldItalicFont=*-BoldItalic]}{%
+  \setmainfont{TeX Gyre Termes}}}
+
+% Mathematics: STIX Two Math, fallback Latin Modern Math.
+\IfFontExistsTF{STIX Two Math}{%
+  \setmathfont{STIX Two Math}}{%
+\IfFontExistsTF{STIXTwoMath-Regular.otf}{%
+  \setmathfont{STIXTwoMath-Regular.otf}}{%
+  \setmathfont{latinmodern-math.otf}}}
+
+% Headings and labels: Inter, fallback TeX Gyre Heros.
+\IfFontExistsTF{Inter}{%
+  \setsansfont{Inter}[Scale=0.94,BoldFont={Inter SemiBold}]}{%
+\IfFontExistsTF{Inter-Regular.otf}{%
+  \setsansfont{Inter}[Extension=.otf,UprightFont=*-Regular,
+    BoldFont=*-SemiBold,ItalicFont=*-Italic,Scale=0.94]}{%
+  \setsansfont{TeX Gyre Heros}[Scale=0.92]}}
+
+\IfFontExistsTF{DejaVu Sans Mono}{%
+  \setmonofont{DejaVu Sans Mono}[Scale=0.84]}{%
+  \setmonofont{Latin Modern Mono}}
+
+\ifChinese
+  % Simplified-Chinese faces.  The Noto CJK collections (.ttc) put the SC
+  % face at index 2; a family-name fallback covers single-face installs,
+  % and the Fandol fonts of TeX Live are the last resort.
+  \IfFontExistsTF{NotoSerifCJK-Regular.ttc}{%
+    \setCJKmainfont{NotoSerifCJK-Regular.ttc}[FontIndex=2,
+      BoldFont=NotoSerifCJK-Bold.ttc,BoldFeatures={FontIndex=2},
+      ItalicFont=NotoSansCJK-Regular.ttc,ItalicFeatures={FontIndex=2},
+      BoldItalicFont=NotoSansCJK-Bold.ttc,BoldItalicFeatures={FontIndex=2}]
+    \setCJKsansfont{NotoSansCJK-Regular.ttc}[FontIndex=2,
+      BoldFont=NotoSansCJK-Bold.ttc,BoldFeatures={FontIndex=2}]
+    \setCJKmonofont{NotoSansCJK-Regular.ttc}[FontIndex=2]
+    % Latin letters in headings use the same face as the CJK headings and figures.
+    \setsansfont{NotoSansCJK-Regular.ttc}[FontIndex=2,
+      BoldFont=NotoSansCJK-Bold.ttc,BoldFeatures={FontIndex=2},Scale=0.97]
+  }{%
+  \IfFontExistsTF{Noto Serif CJK SC}{%
+    \setCJKmainfont{Noto Serif CJK SC}[ItalicFont={Noto Sans CJK SC},
+      BoldItalicFont={Noto Sans CJK SC Bold}]
+    \setCJKsansfont{Noto Sans CJK SC}
+    \setCJKmonofont{Noto Sans CJK SC}
+  }{%
+    \setCJKmainfont{FandolSong-Regular.otf}[BoldFont=FandolSong-Bold.otf,
+      ItalicFont=FandolHei-Regular.otf]
+    \setCJKsansfont{FandolHei-Regular.otf}[BoldFont=FandolHei-Bold.otf]
+    \setCJKmonofont{FandolHei-Regular.otf}
+  }}
+  \xeCJKsetup{CJKecglue={\hskip 0.22em plus 0.08em minus 0.04em},
+              xCJKecglue=false, PunctStyle=quanjiao}
+  \xeCJKDeclareCharClass{CJK}{"2460 -> "2473}   % circled digits from the CJK font
+\fi
+
+% ---------------------------------------------------------------------
+% Page geometry and spacing
+% ---------------------------------------------------------------------
+\usepackage[a4paper,textwidth=152mm,textheight=236mm,top=28mm,
+            headheight=15pt,headsep=9mm,footskip=12mm]{geometry}
+\ifChinese
+  \linespread{1.32}
+\else
+  \linespread{1.10}
+\fi
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 1pt}
+\setlength{\emergencystretch}{2.5em}
+\raggedbottom
+\clubpenalty=10000
+\widowpenalty=10000
+\displaywidowpenalty=10000
+\usepackage{microtype}
+
+% ---------------------------------------------------------------------
+% Colours.  Physics semantics (also used in every figure):
+%   electric = blue, magnetic = vermilion, current = green,
+%   potentials = purple, materials = warm grey.
+% Box/structure colours are deliberately separate hues.
+% ---------------------------------------------------------------------
+\usepackage[table]{xcolor}
+\definecolor{elec}{HTML}{0072B2}
+\definecolor{magn}{HTML}{D55E00}
+\definecolor{curr}{HTML}{009E73}
+\definecolor{pot}{HTML}{A8508A}
+\definecolor{matl}{HTML}{8C8279}
+\definecolor{ink}{HTML}{1E2328}
+\definecolor{muted}{HTML}{646B73}
+\definecolor{accent}{HTML}{1F4E79}     % headings, links, guides
+\definecolor{intuit}{HTML}{B7791F}     % intuition boxes (amber)
+\definecolor{warn}{HTML}{A33A3A}       % pitfall boxes (brick)
+\definecolor{cmp}{HTML}{3F4A8A}        % comparison boxes (indigo)
+\definecolor{exmp}{HTML}{5B6670}       % worked examples (slate)
+\definecolor{deep}{HTML}{6E6E6E}       % optional deeper material
+\color{ink}
+
+% ---------------------------------------------------------------------
+% Packages
+% ---------------------------------------------------------------------
+\usepackage{graphicx,booktabs,tabularx,longtable,array,multirow}
+\usepackage{caption,float,placeins,needspace}
+\usepackage[inline]{enumitem}
+\usepackage{titlesec,titletoc}
+\usepackage{fancyhdr}
+\usepackage[most]{tcolorbox}
+\usepackage{xurl}
+\usepackage[colorlinks=true,linkcolor=accent,citecolor=accent,
+            urlcolor=elec,menucolor=accent,bookmarksnumbered=true,pdfusetitle,
+            hyperfootnotes=false]{hyperref}
+\usepackage{bookmark}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\renewcommand{\arraystretch}{1.25}
+\setlist{itemsep=2pt,topsep=3pt,parsep=0pt,leftmargin=1.6em}
+\setlist[enumerate]{label=\arabic*.}
+
+% ---------------------------------------------------------------------
+% Words that differ between the editions
+% ---------------------------------------------------------------------
+\newcommand{\ZE}[2]{\ifChinese#1\else#2\fi}
+\ifChinese
+  \renewcommand{\contentsname}{目\quad 录}
+  \renewcommand{\figurename}{图}
+  \renewcommand{\tablename}{表}
+  \renewcommand{\bibname}{参考文献}
+  \renewcommand{\appendixname}{附录}
+\fi
+
+% ---------------------------------------------------------------------
+% Mathematics
+% ---------------------------------------------------------------------
+\DeclareRobustCommand{\vb}[1]{\mathbf{#1}}
+\providecommand{\boldsymbol}[1]{\symbf{#1}}
+\DeclareRobustCommand{\boldsymbol}[1]{\symbf{#1}}
+\DeclareRobustCommand{\sig}{\boldsymbol{\sigma}}
+\DeclareRobustCommand{\eps}{\boldsymbol{\varepsilon}}
+\DeclareRobustCommand{\dd}{\mathrm{d}}
+\DeclareRobustCommand{\dV}{\,\mathrm{d}V}
+\DeclareRobustCommand{\dS}{\,\mathrm{d}S}
+\DeclareRobustCommand{\dell}{\,\mathrm{d}\ell}
+\DeclareRobustCommand{\jj}{\mathrm{j}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\abs}[1]{\left|#1\right|}
+\numberwithin{equation}{chapter}
+\setlength{\abovedisplayskip}{8pt plus 2pt minus 2pt}
+\setlength{\belowdisplayskip}{8pt plus 2pt minus 2pt}
+
+% ---------------------------------------------------------------------
+% Cross-reference helpers (identical calls in both editions)
+% ---------------------------------------------------------------------
+\newcommand{\chref}[1]{\ZE{第~\ref{#1}~章}{Chapter~\ref{#1}}}
+\newcommand{\secref}[1]{\ZE{第~\ref{#1}~节}{Section~\ref{#1}}}
+\newcommand{\figref}[1]{\ZE{图~\ref{#1}}{Figure~\ref{#1}}}
+\newcommand{\tabref}[1]{\ZE{表~\ref{#1}}{Table~\ref{#1}}}
+\newcommand{\exref}[1]{\ZE{例~\ref{#1}}{Example~\ref{#1}}}
+\newcommand{\appref}[1]{\ZE{附录~\ref{#1}}{Appendix~\ref{#1}}}
+\newcommand{\pgref}[1]{\ZE{第~\pageref{#1}~页}{p.~\pageref{#1}}}
+
+% ---------------------------------------------------------------------
+% Headings
+% ---------------------------------------------------------------------
+% Appendices are labelled "附录 A" / "Appendix A" instead of "第 A 章".
+\newif\ifinappendix
+\makeatletter\g@addto@macro\appendix{\global\inappendixtrue}\makeatother
+\newcommand{\chapterlabelword}{\ifinappendix\ZE{附录\,\thechapter}{Appendix \thechapter}\else\ZE{第\,\thechapter\,章}{Chapter \thechapter}\fi}
+\titleformat{\chapter}[display]
+  {\normalfont\sffamily}
+  {\color{accent}\large\bfseries\chapterlabelword}
+  {4pt}
+  {\color{ink}\fontsize{25}{32}\selectfont\bfseries}
+  [\vspace{6pt}{\color{accent}\titlerule[1.1pt]}]
+\titleformat{name=\chapter,numberless}[display]
+  {\normalfont\sffamily}{}{0pt}
+  {\color{ink}\fontsize{25}{32}\selectfont\bfseries}
+  [\vspace{6pt}{\color{accent}\titlerule[1.1pt]}]
+\titlespacing*{\chapter}{0pt}{-6pt}{16pt}
+
+\titleformat{\section}
+  {\normalfont\sffamily\Large\bfseries\color{ink}}
+  {\color{accent}\thesection}{0.75em}{}
+\titlespacing*{\section}{0pt}{20pt plus 3pt minus 2pt}{8pt}
+\titleformat{\subsection}
+  {\normalfont\sffamily\large\bfseries\color{ink}}
+  {\color{muted}\thesubsection}{0.7em}{}
+\titlespacing*{\subsection}{0pt}{14pt plus 2pt}{5pt}
+\titleformat{\subsubsection}[runin]
+  {\normalfont\sffamily\bfseries\color{ink}}{}{0pt}{}[\quad]
+\titlespacing*{\subsubsection}{0pt}{9pt}{0pt}
+\setcounter{secnumdepth}{1}
+\setcounter{tocdepth}{1}
+
+% Part pages ---------------------------------------------------------
+%   \bookpart{<label>}{<title>}{<why this part>}{<chapter list>}
+\newcounter{bookpart}
+\newcommand{\bookpart}[4]{%
+  \clearpage\thispagestyle{empty}\stepcounter{bookpart}%
+  \phantomsection
+  \addcontentsline{toc}{part}{#1\quad #2}%
+  \vspace*{38mm}%
+  {\sffamily\color{accent}\Large\bfseries #1\par}%
+  \vspace{4mm}%
+  {\sffamily\color{ink}\fontsize{30}{38}\selectfont\bfseries #2\par}%
+  \vspace{6mm}{\color{accent}\rule{\linewidth}{1.4pt}}\par
+  \vspace{8mm}%
+  \begin{minipage}{.86\linewidth}\large #3\end{minipage}\par
+  \vspace{10mm}%
+  {\sffamily\small\color{muted}\bfseries\ZE{本部分各章}{Chapters in this part}\par}%
+  \vspace{2mm}%
+  {\sffamily\normalsize #4\par}%
+  \clearpage}
+
+% Table of contents --------------------------------------------------
+\titlecontents{part}[0pt]
+  {\addvspace{12pt}\sffamily\bfseries\color{accent}}
+  {}{}{\hfill}[\addvspace{3pt}]
+% Room for three-digit page numbers in bold chapter entries of the table of contents.
+\makeatletter\renewcommand{\@pnumwidth}{2.4em}\renewcommand{\@tocrmarg}{3.4em}\makeatother
+\titlecontents{chapter}[2.4em]
+  {\addvspace{5pt}\sffamily\bfseries}
+  {\contentslabel{2.4em}}{\hspace*{-2.4em}}
+  {\titlerule*[0.6pc]{\textcolor{white}{.}}\contentspage}
+\titlecontents{section}[5.6em]
+  {\small}
+  {\contentslabel{3.2em}}{\hspace*{-3.2em}}
+  {\titlerule*[0.7pc]{\textcolor{muted}{.}}\contentspage}
+
+% Running heads ------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\chaptermark}[1]{\markboth{\ifinappendix\ZE{附录\,\thechapter\quad #1}{Appendix \thechapter\quad #1}\else\ZE{第\,\thechapter\,章\quad #1}{\thechapter\quad #1}\fi}{}}
+\renewcommand{\sectionmark}[1]{\markright{\thesection\quad #1}}
+\fancyhead[L]{\sffamily\footnotesize\color{muted}\leftmark}
+\fancyhead[R]{\sffamily\footnotesize\color{muted}\rightmark}
+\fancyfoot[C]{\sffamily\small\thepage}
+\fancyfoot[L]{\sffamily\scriptsize\color{muted}%
+  \hyperref[nav:contents]{\ZE{目录}{Contents}}\enspace·\enspace
+  \hyperref[nav:compare]{\ZE{对照索引}{Comparisons}}\enspace·\enspace
+  \Acrobatmenu{GoBack}{\ZE{返回}{Back}}}
+\renewcommand{\headrulewidth}{0pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\sffamily\small\thepage}%
+  \renewcommand{\headrulewidth}{0pt}}
+
+% Captions -----------------------------------------------------------
+\DeclareCaptionLabelFormat{bfsf}{\sffamily\bfseries\color{accent}#1~#2}
+\captionsetup{font=small,labelformat=bfsf,labelsep=quad,skip=6pt,
+              justification=justified,singlelinecheck=true}
+\setlength{\textfloatsep}{14pt plus 2pt}
+\setlength{\intextsep}{12pt plus 2pt}
+
+% Figure helpers: \fig{file}{caption}{label} (float) and \figH (here)
+\newcommand{\figdir}{\ifChinese figures_zh\else figures\fi}
+\newcommand{\fig}[4][.96]{\begin{figure}[htbp]\centering
+  \includegraphics[width=#1\linewidth,height=.46\textheight,keepaspectratio]{\figdir/#2.pdf}%
+  \caption{#3}\label{#4}\end{figure}}
+\newcommand{\figH}[4][.96]{\begin{figure}[H]\centering
+  \includegraphics[width=#1\linewidth,height=.46\textheight,keepaspectratio]{\figdir/#2.pdf}%
+  \caption{#3}\label{#4}\end{figure}}
+
+% ---------------------------------------------------------------------
+% Teaching boxes
+% ---------------------------------------------------------------------
+\tcbset{teachbase/.style={enhanced,breakable,boxrule=0pt,arc=1.5pt,
+  before={\par\Needspace{5\baselineskip}\noindent},
+  left=9pt,right=9pt,top=6pt,bottom=6pt,before skip=10pt,after skip=10pt,
+  fontupper=\normalsize}}
+
+% Chapter guide: core question, goals, prerequisites
+\newtcolorbox{chapterguide}[1][]{teachbase,colback=accent!5,colframe=accent!5,#1,
+  borderline west={2.6pt}{0pt}{accent},left=12pt,top=8pt,bottom=8pt,
+  fontupper=\small,before skip=4pt,after skip=14pt}
+\newcommand{\guidequestion}[1]{{\sffamily\bfseries\color{accent}\ZE{核心问题}{Core question}}\par
+  \vspace{1pt}{\large #1}\par\vspace{5pt}}
+\newenvironment{guidegoals}{%
+  {\sffamily\bfseries\color{accent}\ZE{学完本章，你应能}{After this chapter you should be able to}}\par
+  \begin{itemize}[leftmargin=1.3em,itemsep=1pt,topsep=2pt]}{\end{itemize}}
+\newcommand{\guideprereq}[1]{\vspace{4pt}{\sffamily\bfseries\color{accent}\ZE{需要用到}{Builds on}}\enspace #1\par}
+
+% Intuition
+\newtcolorbox{intuition}[1][]{teachbase,colback=intuit!7,colframe=intuit!7,
+  borderline west={2.4pt}{0pt}{intuit},
+  before upper={{\sffamily\bfseries\color{intuit!85!black}\ZE{直觉}{Intuition}%
+  \if\relax\detokenize{#1}\relax\else\ZE{：}{: }#1\fi}\par\vspace{2pt}}}
+
+% Pitfall
+\newtcolorbox{pitfall}[1][]{teachbase,colback=warn!5,colframe=warn!5,
+  borderline west={2.4pt}{0pt}{warn},
+  before upper={{\sffamily\bfseries\color{warn}\ZE{常见误区}{Common pitfall}%
+  \if\relax\detokenize{#1}\relax\else\ZE{：}{: }#1\fi}\par\vspace{2pt}}}
+
+% Optional deeper material
+\newtcolorbox{deeper}[1][]{teachbase,colback=white,colframe=deep!55,
+  boxrule=0.5pt,borderline={0.5pt}{0pt}{deep!55,dashed},
+  before upper={{\sffamily\bfseries\color{deep}\ZE{深入一步（初读可跳过）}{Going deeper (optional on first reading)}%
+  \if\relax\detokenize{#1}\relax\else\ZE{：}{: }#1\fi}\par\vspace{2pt}},
+  fontupper=\small}
+
+% Worked example (numbered per chapter)
+\makeatletter
+% \label{} inside the box body must refer to the example number (and link to the box)
+\newcommand{\tcbexamplelabelhere}{\phantomsection\protected@edef\@currentlabel{\thetcbcounter}}
+\makeatother
+\newtcolorbox[auto counter,number within=chapter,
+  list inside=examples]{example}[2][]{teachbase,
+  colback=exmp!6,colframe=exmp!6,borderline west={2.4pt}{0pt}{exmp},
+  before upper={\tcbexamplelabelhere{\sffamily\bfseries\color{exmp!90!black}\ZE{例}{Example}~\thetcbcounter\quad #2}\par\vspace{3pt}},
+  #1}
+\newcommand{\solution}{\par\vspace{3pt}{\sffamily\bfseries\color{exmp}\ZE{解}{Solution}}\enspace}
+
+% Comparison box: \begin{compare}{title}{A}{B} rows \end{compare}
+%   rows: \cmprow{aspect}{A}{B}   and optionally \cmpsum{one-line summary}
+\newtcolorbox{comparebox}[1]{teachbase,unbreakable,colback=cmp!4,colframe=cmp!4,
+  borderline north={1.6pt}{0pt}{cmp},left=8pt,right=8pt,top=4pt,
+  before upper={{\sffamily\bfseries\color{cmp}\ZE{对照}{Compare}\enspace·\enspace #1}\par\vspace{1pt}}}
+\NewDocumentEnvironment{compare}{m m m +b}{%
+  \phantomsection\addcontentsline{cmp}{section}{#1}%
+  \begin{comparebox}{#1}\small\renewcommand{\arraystretch}{1.3}%
+  \begin{tabularx}{\linewidth}{@{}>{\leavevmode\sffamily\bfseries\color{muted}\raggedright\arraybackslash}p{.15\linewidth}YY@{}}
+  \arrayrulecolor{cmp!45}\toprule
+  & {\sffamily\bfseries\color{cmp}#2} & {\sffamily\bfseries\color{cmp}#3}\\\midrule
+  #4
+  \bottomrule\end{tabularx}\end{comparebox}}{}
+\newcommand{\cmprow}[3]{#1 & #2 & #3\\}
+\newcommand{\cmpsum}[1]{\midrule\multicolumn{3}{@{}p{\linewidth}@{}}{%
+  {\sffamily\bfseries\color{cmp}\ZE{一句话}{In one line}}\enspace #1}\\}
+
+% Unindexed variant (for samples in the front matter)
+\NewDocumentEnvironment{compare*}{m m m +b}{%
+  \begin{comparebox}{#1}\small\renewcommand{\arraystretch}{1.3}%
+  \begin{tabularx}{\linewidth}{@{}>{\leavevmode\sffamily\bfseries\color{muted}\raggedright\arraybackslash}p{.15\linewidth}YY@{}}
+  \arrayrulecolor{cmp!45}\toprule
+  & {\sffamily\bfseries\color{cmp}#2} & {\sffamily\bfseries\color{cmp}#3}\\\midrule
+  #4
+  \bottomrule\end{tabularx}\end{comparebox}}{}
+
+% Key equation box (numbered like an ordinary equation)
+\newtcolorbox{keyeq}{ams equation,enhanced,colback=accent!4,colframe=accent!35,
+  boxrule=0.5pt,arc=1.5pt,left=6pt,right=6pt,top=1pt,bottom=1pt,
+  before skip=9pt,after skip=9pt}
+\newtcolorbox{keyeq*}{ams equation*,enhanced,colback=accent!4,colframe=accent!35,
+  boxrule=0.5pt,arc=1.5pt,left=6pt,right=6pt,top=1pt,bottom=1pt,
+  before skip=9pt,after skip=9pt}
+
+% End-of-chapter takeaways and self-checks
+\newtcolorbox{takeaways}{teachbase,colback=accent!5,colframe=accent!5,
+  borderline north={1.6pt}{0pt}{accent},top=6pt,
+  before upper={{\sffamily\bfseries\color{accent}\ZE{本章要点}{Key points}}\par\vspace{2pt}}}
+\newtcolorbox{selfcheck}{teachbase,colback=white,colframe=accent!40,boxrule=0.6pt,
+  before upper={{\sffamily\bfseries\color{accent}\ZE{自测}{Check yourself}}\par\vspace{2pt}}}
+\newenvironment{answers}{\par\needspace{6\baselineskip}\vspace{6pt}%
+  {\sffamily\bfseries\color{muted}\ZE{自测提示与答案}{Hints and answers}}\par\vspace{1pt}%
+  \small\color{ink!85}\begin{enumerate}[itemsep=3pt]}{\end{enumerate}\par}
+
+% Lists of comparisons (appendix index)
+\makeatletter
+\newcommand{\listofcomparisons}{\@starttoc{cmp}}
+\makeatother
+
+% Chapter opener: \chapter + label + guide box in one call is left to the author.
+\newcommand{\chapterstart}{\FloatBarrier}
+
+% Chapters are input through \inputchapter so that a partial (checkpoint) build still compiles
+% when a chapter file does not exist yet; the log then lists it as SKIPPED.
+\newcommand{\inputchapter}[1]{\IfFileExists{#1.tex}{\input{#1}}{\typeout{SKIPPED chapter file #1.tex}}}

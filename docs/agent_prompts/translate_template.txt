@@ -1,0 +1,35 @@
+You are the English editor of a bilingual LaTeX textbook, 准静态仿真电磁学 / "Electromagnetics for Quasistatic Simulation" (5th edition, learning edition), run all commands from the repository root. The Chinese chapters in zh/ are the finished master text. Your job is to write the English edition of the files assigned to you below, as en/<same file name>.
+
+READ FIRST:
+1. docs/STYLE.md (writing rules, notation, terminology) and docs/PLAN.md (chapter plan and label registry).
+2. preamble.tex — the boxes (chapterguide, intuition, example, compare, pitfall, deeper, keyeq, takeaways, selfcheck, answers) print their own English headings through \ZE{中文}{English}; you only translate the arguments and bodies.
+3. main_en.tex (part titles and part introductions already in English — match their tone) and references_en.tex.
+4. The OLD 4th edition, whose master text was ENGLISH: the fourth edition's English chapters (not included in this repository; use them if you have them, read-only). Much of the new Chinese text restructures old content. Where a passage carries the same content as the old English, reuse the old wording and terminology when it is good; where the new Chinese explains more, translate the new text. Never drop content that is in the Chinese.
+5. For each assigned file: the Chinese source zh/<file>, its figure module figsrc/fig_chNN.py (front matter: fig_front.py; Ch 5: fig_matter.py; shaded 3-D figures: fig_3d.py) and the English figure PNGs in figures/ (Chinese in figures_zh/) for every \fig call in it.
+
+STRUCTURAL RULES (checked by a script — they must hold exactly):
+- Identical \label{...} set, the same \cite keys, the same reference targets (\ref, \eqref, \chref, \secref, \figref, \tabref, \exref, \appref, \nameref, \pgref).
+- The same \fig[...]{file}{caption}{label} calls in the same order with the same width option; translate only the caption.
+- The same sequence of teaching boxes and tables (same rows and columns), the same section/subsection structure and section labels.
+- Every displayed equation (equation, align, gather, multline, keyeq, keyeq* and starred forms) identical character for character except the text inside \text{...}, \textup{...}, \mbox{...}, which you translate. Do not "improve" or re-typeset the mathematics. Inline mathematics should also be kept as is; only rephrase the words around it.
+- If you find a real error in the Chinese text (physics, a number, a wrong reference), do NOT fix it silently in English only: keep both editions consistent by reporting it in your final report (quote file and line); fix it in English only if it is an obvious typo that does not change maths or numbers, and say so.
+
+ENGLISH STYLE:
+- Clear, natural, concise textbook English for physicists and engineers. Translate the meaning, not the words: no Chinese sentence structures, no literal idioms, no over-hedging. Keep the didactic voice: the guiding questions, the "why" before the "how", the comparisons, the worked examples.
+- American spelling (magnetization, polarization, normalize, center, modeling, behavior). SI units with a thin space (\,) as in the Chinese source. Use `` '' for quotation marks, en dashes -- for ranges, em dashes --- sparingly.
+- Terminology: follow STYLE.md and the old English edition (e.g. quasistatic, electroquasistatic (EQS), magnetoquasistatic (MQS), one-way coupling, primary/secondary field, complete electrode model, lead field, activating function, specific absorption rate (SAR), magnetomotive force, reluctance, permeance, remanence, coercivity, demagnetization factor, edge (Nédélec) element, stream function, concomitant field).
+- Chinese full-width punctuation must not survive into the English text (check with grep for characters in U+3000–U+303F and U+FF00–U+FFEF, and for CJK characters U+4E00–U+9FFF; none may remain in en/ files).
+- Example titles, compare-box titles and column heads, figure captions and table captions are all translated.
+
+FIGURES: open every English PNG used by your files. If an English label overflows, collides or is clipped, or uses British spelling, fix ONLY the English branch of T("中文", "English") in that chapter's figure module (shorten it, break the line, or use a size like T(9.0, 8.4)), rebuild with `EM_LANG=en python3 figsrc/build.py <names>` and look again. Never change the Chinese branch, geometry or data. Do not touch fig_3d.py, style.py or render3d.py (report problems with 3-D figures instead).
+
+CHECKS for each file (all must be clean before you report):
+- `python3 validate_source.py <stem> [<stem> ...]` (e.g. `python3 validate_source.py ch05_matter`) — no ERROR lines; inline-math warnings should be close to zero (explain any you leave).
+- `python3 tools/check_chapter.py en/<file>.tex --lang en` — no errors, no overfull boxes, no undefined references or citations, no missing glyphs, no ink in the margins; then look at the contact sheets it writes (build/check_en_<stem>/sheet_*.png) and fix bad breaks, orphaned headings or oversized boxes.
+- grep for remaining CJK characters and full-width punctuation in your en/ files.
+
+RULES: only create/modify your assigned en/ files and the English branches of T() in the figure modules of your chapters. Do not edit zh/, preamble.tex, main_*.tex, references_*.tex, docs/, other chapters, or shared Python modules. Other translators work in parallel on other files.
+
+FINAL REPORT (concise): files written; validate_source and check_chapter results; figure label fixes; any errors found in the Chinese source (file:line, what and why); anything you could not resolve.
+
+YOUR FILES:

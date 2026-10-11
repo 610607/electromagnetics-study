@@ -1,0 +1,352 @@
+\chapter{铁磁材料：非线性与磁滞}\label{ch:bh}
+
+\begin{chapterguide}
+\guidequestion{“这块铁的磁导率是多少？”——为什么这个看似简单的问题，常常没有唯一的答案？}
+\begin{guidegoals}
+\item 把 B--H 曲线读作材料中一点上 $\vb B$ 与 $\vb H$ 的本构关系，而不是场的空间分布；解释为什么饱和之后 $B$ 仍会增长；
+\item 区分割线磁导率、微分磁导率与增量磁阻率张量，在给定工作点算出它们，并判断“总量”“同向小扰动”“横向小扰动”各该用哪一个；
+\item 在回线上读出剩磁 $B_r$、矫顽力 $H_{cB}$ 与内禀矫顽力 $H_{cJ}$，用回线面积计算每周期的损耗，用回复线描述永磁体，并判断什么时候会发生不可逆退磁；
+\item 把一条标量曲线正确地用于矢量场，避免逐分量套用造成的虚假各向异性；
+\item 导入测量数据时检查单位、数据类型、插值的单调性和外推，不让数据处理“创造”出一种不存在的材料。
+\end{guidegoals}
+\guideprereq{\secref{sec:matter-DH}（$\vb H=\vb B/\mu_0-\vb M$）；\secref{sec:matter-linear}（磁化率与磁导率）；\secref{sec:systems-magcircuit}（铁芯与气隙）；\chref{ch:interfaces}（非线性材料的界面条件）。}
+\end{chapterguide}
+
+\section{同一块铁，几个“磁导率”}\label{sec:bh-question}
+
+\exref{ex:systems-core} 把铁环当作 $\mu_r=1000$ 的线性材料，同时提醒过：去掉气隙后，线性模型算出的 $2.51\,\mathrm T$ 已经超过了教学曲线的饱和值 $1.6\,\mathrm T$，线性模型不再可信。现在追问一句：如果去问材料供应商“这种钢的 $\mu_r$ 是多少”，会得到什么？
+
+通常得到的是一条曲线，而不是一个数。即使拿到了曲线，“磁导率”还要看你在问什么：
+\begin{itemize}
+\item \textbf{总量}：铁中的 $H$ 有这么大，$B$ 总共有多大？
+\item \textbf{同向的小扰动}：在直流偏置上再叠加一点同方向的纹波电流，$B$ 跟着变多少？偏置电感器的小信号电感取决于它。
+\item \textbf{横向的小扰动}：一块已被主磁场磁化的磁轭，受到匀场线圈或梯度线圈施加的、与偏置方向垂直的小场，它怎样响应？
+\end{itemize}
+对线性材料，三个问题的答案是同一个 $\mu$。对铁磁材料，同一工作点上的三个答案可以相差好几倍（\exref{ex:bh-three} 中相差近七倍）。铁磁材料还有两件线性模型里根本没有的事：同一个 $H$ 可以对应不同的 $B$（磁滞）；$H=0$ 时 $B$ 也可以不为零（剩磁，永磁体正是靠它工作）。于是，“这块铁的磁导率是多少”必须先补上两句话：在什么状态下？回答什么问题？
+
+\begin{intuition}
+对铁磁材料，$\mu$ 不再是材料的一个常数，而是一条曲线在某一点上的某一种斜率。先说清工作点和问题，再谈磁导率。
+\end{intuition}
+
+本章先把 B--H 曲线当作本构关系读懂（\secref{sec:bh-curve}、\secref{sec:bh-saturation}），再区分几种磁导率（\secref{sec:bh-permeabilities}），然后加入历史与剩磁（\secref{sec:bh-hysteresis}），最后讨论怎样把曲线正确地放进矢量场计算和数据文件（\secref{sec:bh-vector}、\secref{sec:bh-data}）。
+
+\section{B--H 曲线是本构关系，不是场图}\label{sec:bh-curve}
+
+B--H 曲线回答的是：材料内部\emph{某一点}上，局部的 $\vb H$ 与局部的 $\vb B$ 有什么关系。它与\secref{sec:matter-linear} 的 $\vb B=\mu\vb H$ 地位相同，都是本构关系，只是不再是直线。曲线本身不含任何空间信息。一块磁轭里每一点都有自己的 $(H,B)$，它们落在同一条曲线的不同位置上；哪一点落在哪里，由 Maxwell 方程、几何和其他材料共同决定。
+
+一条测得的曲线还附带着测量条件：材料的加工与热处理状态、相对于轧制方向的取向、温度，以及测量程序。从退磁状态开始单调增大 $H$ 得到的\textbf{初始磁化曲线}、在正负饱和之间往返得到的\textbf{主回线}、局部往返得到的\textbf{小回线}、围绕某个偏置测得的\textbf{小信号响应}，是四种不同的数据。它们可能都被画成“一条 B--H 曲线”；选用哪一种，本身就是在选择物理模型。
+
+最简单也最常用的近似是\textbf{各向同性、可逆、单值}：$\vb B$ 与 $\vb H$ 平行，二者的大小由一个单调函数 $B=b(H)$ 联系。本书用下面这条\emph{合成}曲线作为教学例子：
+\begin{keyeq}
+B(H)=\mu_0H+B_s\tanh\frac{H}{H_s},\qquad B_s=1.6\,\mathrm T,\quad H_s=800\,\mathrm{A/m}.
+\label{eq:syntheticbh}
+\end{keyeq}
+它不是任何钢材牌号的拟合，只是一条光滑、单调、行为合理的曲线：$H_s$ 控制从“容易磁化”到“饱和”的过渡尺度，$B_s$ 是磁化所能贡献的极限磁通密度（下一节）。原点处的斜率 $\mu_0+B_s/H_s$ 对应相对磁导率 1593，与软铁的量级相当。
+
+曲线为什么是这个形状？铁磁材料内部分成许多\textbf{磁畴}，每个磁畴里原子磁矩已经自发地排齐，只是各磁畴取向不同，宏观上相互抵消。外加场较小时，取向有利的磁畴靠畴壁移动而长大，很小的 $H$ 就带来很大的磁化，所以低场时磁导率很高。$H$ 继续增大，畴壁移动基本完成，剩下的只能把磁矩从易磁化方向强行转向外场方向，越来越费力，磁化逐渐饱和~\cite{griffiths}。
+
+\begin{pitfall}[“B--H 曲线就是场沿某条路径的分布”]
+横轴是 $H$、纵轴是 $B$ 的曲线，看起来像场沿某条路径的变化，其实不是。曲线只说：\emph{如果}某点的 $H$ 是这么大，那么该点的 $B$ 就是那么大。同一个磁轭里，拐角处可能已经饱和，相邻的直段却还在曲线的陡峭部分；每一点落在曲线上哪里，必须解场方程才知道。
+\end{pitfall}
+
+\section{饱和不是硬上限}\label{sec:bh-saturation}
+
+“铁的饱和磁通密度是 $1.6\,\mathrm T$”这种说法很常见，却容易让人以为 $B$ 到了这里就停住了。把 $\vb B=\mu_0(\vb H+\vb M)$ \eqref{eq:materialdefinitions}代入 \eqref{eq:syntheticbh}，问题就清楚了：
+\begin{equation}
+\mu_0M=B-\mu_0H=B_s\tanh\frac{H}{H_s}\ \le\ B_s .
+\label{eq:bh-magnetization}
+\end{equation}
+饱和的是\emph{磁化}：$\mu_0M$ 不会超过 $B_s$，即磁化强度不超过 $M_s=B_s/\mu_0=1.27\times10^6\,\mathrm{A/m}$。$B$ 中还有 $\mu_0H$ 这一项，它没有上限，只是增长得很慢——斜率就是真空的 $\mu_0$。所以 $B_s$ 应读作“磁化所能贡献的极限”，而不是 $B$ 的上限。
+
+“很慢”有多慢，看一个例子。
+
+\begin{example}[label=ex:bh-saturation]{把磁通密度从 1.5 T 推到 1.7 T}
+沿用 \eqref{eq:syntheticbh}，分别求 $B=1.5$、$1.6$、$1.7\,\mathrm T$ 所需的 $H$。若这段铁是\exref{ex:systems-core} 中长 $0.2\,\mathrm m$ 的铁芯路径，各需要多少安匝的磁压降？
+\solution
+数值反解 \eqref{eq:syntheticbh}，再乘以路径长度：
+\begin{center}\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+$B$（T） & 1.5 & 1.6 & 1.7\\\midrule
+所需 $H$（A/m） & $1.37\times10^3$ & $2.73\times10^3$ & $7.96\times10^4$\\
+$0.2\,\mathrm m$ 铁芯上的磁压降（A） & 273 & 547 & $1.59\times10^4$\\
+微分相对磁导率 $\mu_{\rm diff}/\mu_0$ & 197 & 7.8 & 1.00\\
+\bottomrule
+\end{tabular}
+\end{center}
+从 $1.6\,\mathrm T$ 到 $1.7\,\mathrm T$，$B$ 只增加 6\%，所需的 $H$ 却变为 29 倍。在 $1.7\,\mathrm T$ 处磁化已完全饱和（$\mu_0M=1.600\,\mathrm T$），新增的那部分 $B$ 全靠 $\mu_0H$ 提供；这时铁的微分相对磁导率只有 $1.00$，对增量而言它和空气一样。作为对照，\exref{ex:systems-core} 的整个线圈也只有 $400$ 安匝。
+\end{example}
+
+这就是磁轭设计中的一条基本事实：在曲线的陡峭段，铁只需很小的磁压降就能传导磁通；一旦局部进入饱和，它传导\emph{额外}磁通的能力就退化到空气的水平，再多的安匝或磁体，大部分也会消耗在这一段上~\cite{comsolbh}。\chref{ch:lumped} 的磁路计算会反复遇到这一点。
+
+\section{割线、微分与增量磁导率}\label{sec:bh-permeabilities}
+
+\subsection{一条曲线，两种斜率}
+对一条过原点的单值曲线，在 $H\neq0$ 处定义
+\begin{keyeq}
+\mu_{\rm sec}=\frac{B}{H},\qquad \mu_{\rm diff}=\frac{\dd B}{\dd H}.
+\label{eq:permeabilities}
+\end{keyeq}
+\textbf{割线磁导率} $\mu_{\rm sec}$ 是从原点到工作点的连线斜率，它再现工作点上两个总量之比；\textbf{微分磁导率} $\mu_{\rm diff}$ 是工作点处切线的斜率，它描述围绕该点、\emph{沿同一方向}的小变化（\figref{fig:permeabilities}a）。二者除以 $\mu_0$ 就是相应的相对磁导率。对 \eqref{eq:syntheticbh}，
+\begin{equation}
+\mu_{\rm diff}(H)=\mu_0+\frac{B_s}{H_s}\operatorname{sech}^2\frac{H}{H_s}.
+\label{eq:bh-sech}
+\end{equation}
+$H\to0$ 时两者都趋于 $\mu_0+B_s/H_s$。随着 $H$ 增大，$\mu_{\rm diff}$ 因 $\operatorname{sech}^2$ 而迅速降到 $\mu_0$，$\mu_{\rm sec}$ 却只按 $B_s/H$ 缓慢下降（\figref{fig:permeabilities}b）。强偏置下，$B/H$ 仍可以很大，$\dd B/\dd H$ 却已接近真空值。
+
+\fig{permeabilities}{同一工作点上的几种磁导率（合成曲线 \eqref{eq:syntheticbh}，工作点 $H_0=1600\,\mathrm{A/m}$）。(a) 过原点的割线与工作点处的切线，斜率分别是 $\mu_{\rm sec}$ 与 $\mu_{\rm diff}$。(b) 二者随 $H$ 的变化（对数坐标）：在原点相等，偏置越强分得越开，$\mu_{\rm diff}$ 最终降到真空值。(c) 在偏置 $\vb B_0$ 上施加大小相同、方向各异的小扰动 $\delta\vb H$，响应 $\delta\vb B$ 的端点连成一个椭圆：沿偏置方向的半轴正比于 $\mu_{\rm diff}$，横向半轴正比于 $\mu_{\rm sec}$，二者之比按计算值 6.8 绘制。横向扰动只让 $\vb B$ 沿 $|\vb B|=B_0$ 的圆转动；点线圆是各向同性线性材料的响应。}{fig:permeabilities}
+
+\subsection{横向扰动为什么看到割线斜率}
+同向扰动改变 $|\vb B|$，工作点沿曲线移动，看到切线斜率是自然的。横向扰动需要想一想。设偏置 $\vb H_0=H_0\vb e_x$、$\vb B_0=B_0\vb e_x$，再加一个很小的 $\delta\vb H=\delta H\,\vb e_y$。合成的 $\vb H$ 转过一个小角度 $\delta H/H_0$，大小只改变二阶小量。各向同性材料中 $\vb B$ 与 $\vb H$ 平行、大小由曲线决定，于是 $\vb B$ 也以几乎不变的大小转过同样的角度，它的横向分量为
+\begin{equation*}
+\delta B_y=B_0\cdot\frac{\delta H}{H_0}=\frac{B_0}{H_0}\,\delta H=\mu_{\rm sec}\,\delta H .
+\end{equation*}
+横向扰动只“转动”磁化而不改变它的大小，工作点在曲线上不动，起作用的就是总量之比 $B_0/H_0$。
+
+用磁阻率 $\nu=1/\mu$ 的语言，可以把两个方向合在一个式子里。各向同性的非线性材料在偏置 $\vb B_0$ 附近的\textbf{增量磁阻率}是一个张量：
+\begin{equation}
+\delta\vb H=\boldsymbol\nu_{\rm inc}\,\delta\vb B,\qquad
+\boldsymbol\nu_{\rm inc}=\nu_{\rm sec}\,\mathbf I+\bigl(\nu_{\rm diff}-\nu_{\rm sec}\bigr)\,\hat{\vb b}\hat{\vb b}^{\mathsf T},\qquad
+\nu_{\rm sec}=\frac{1}{\mu_{\rm sec}},\quad \nu_{\rm diff}=\frac{1}{\mu_{\rm diff}},
+\label{eq:bh-inc}
+\end{equation}
+其中 $\hat{\vb b}=\vb B_0/B_0$。沿偏置方向的特征值是 $1/\mu_{\rm diff}$，垂直方向是 $1/\mu_{\rm sec}$。材料本身各向同性，它的\emph{增量}响应却是各向异性的~\cite{comsolbh}。\chref{ch:femvector} 将从 \eqref{eq:HofB} 出发正式推导这个张量 \eqref{eq:inctensor}，它正是非线性有限元牛顿迭代所需的切线。
+
+\begin{example}[label=ex:bh-three]{一个工作点，三个答案}
+在合成曲线上取 $H_0=2H_s=1600\,\mathrm{A/m}$。求：(1) $B_0$ 与割线、微分相对磁导率；(2) 再加同方向的 $\delta H=10\,\mathrm{A/m}$ 时 $B$ 的变化；(3) 改为加垂直方向的 $\delta H=10\,\mathrm{A/m}$ 时 $\vb B$ 的变化。
+\solution
+(1) $B_0=1.544\,\mathrm T$，其中 $99.9\%$ 来自磁化。$\mu_{\rm sec}/\mu_0=B_0/(\mu_0H_0)=768$；由 \eqref{eq:bh-sech}，$\mu_{\rm diff}/\mu_0=113$。二者相差 $6.8$ 倍。
+
+(2) $\delta B_\parallel=\mu_{\rm diff}\,\delta H=1.43\,\mathrm{mT}$。直接用曲线求差得 $1.41\,\mathrm{mT}$，差别来自 $10\,\mathrm{A/m}$ 范围内斜率本身的变化。若误用割线磁导率，会得到 $9.65\,\mathrm{mT}$，高估近七倍。
+
+(3) $\delta B_\perp=\mu_{\rm sec}\,\delta H=9.65\,\mathrm{mT}$。验证一下：$\vb H$ 转过 $\delta H/H_0=6.25\,\mathrm{mrad}$，$\vb B$ 转过 $\delta B_\perp/B_0=6.25\,\mathrm{mrad}$——二者一起转动，比值保持为割线值。
+
+同样大小的扰动，横向响应是同向响应的 $6.8$ 倍。偏置电感器的小信号电感要用第 (2) 问的斜率；磁轭对横向匀场场的响应要用第 (3) 问的斜率。哪一个都不能用 $B_0/H_0$ 这一个数代替。
+\end{example}
+
+\tabref{tab:bh-permeabilities} 把三种“磁导率”放在一起。
+
+\begin{table}[htbp]\centering\small
+\caption{同一工作点上的三种“磁导率”（例中数值取自\exref{ex:bh-three}，相对于 $\mu_0$）。}\label{tab:bh-permeabilities}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{.16\linewidth} >{\raggedright\arraybackslash}p{.17\linewidth} Y Y >{\raggedright\arraybackslash}p{.12\linewidth}@{}}
+\toprule
+名称 & 定义 & 回答的问题 & 用在哪里 & 例中数值\\\midrule
+割线 $\mu_{\rm sec}$ & $B/H$ & 给定 $H$，总共有多少 $B$ & 大信号估算；割线（Picard）迭代；横向小扰动 & 768\\
+微分 $\mu_{\rm diff}$ & $\dd B/\dd H$ & 沿偏置方向的小变化 & 牛顿迭代；偏置电感器的纹波 & 113\\
+增量张量 $\boldsymbol\nu_{\rm inc}$ & \eqref{eq:bh-inc} & 任意方向的小变化 & 偏置附近的线性化 \eqref{eq:biaslinearization}；梯度、匀场与磁轭的相互作用 & 特征值 $1/113$、$1/768$\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{compare}{沿偏置方向与垂直于偏置方向的小扰动}{沿偏置方向（同向）}{垂直于偏置方向（横向）}
+\cmprow{改变了什么}{$|\vb B|$ 的大小}{$\vb B$ 的方向；大小只变二阶小量}
+\cmprow{工作点}{沿 B--H 曲线移动}{在曲线上不动}
+\cmprow{有效磁导率}{$\mu_{\rm diff}=\dd B/\dd H$}{$\mu_{\rm sec}=B/H$}
+\cmprow{深度饱和时}{趋于 $\mu_0$：对增量如同空气}{仍为 $B/H$，可以远大于 $\mu_0$}
+\cmprow{典型情形}{偏置电感器上的同向纹波}{被主磁场磁化的磁轭中，梯度或匀场场的横向分量}
+\cmpsum{材料各向同性，它的增量响应却不是：沿偏置方向看到切线，垂直方向看到割线。}
+\end{compare}
+
+\section{磁滞、剩磁与矫顽力}\label{sec:bh-hysteresis}
+
+\subsection{同一个 H，不同的 B}
+到目前为止，曲线是单值的：给定 $H$，$B$ 就唯一确定。真实的铁磁材料还记得自己的历史。把 $H$ 从很大的正值逐渐减小，$B$ 沿一条分支下降；把 $H$ 从很大的负值逐渐增大，$B$ 沿另一条分支上升。两条分支不重合，围成一条\textbf{磁滞回线}（\figref{fig:hysteresis}a）。微观上，畴壁会被材料中的缺陷“钉住”，必须多施加一些场才能挣脱，这是磁滞的主要来源~\cite{griffiths}。
+
+回线上有两个最常用的读数：
+\begin{itemize}
+\item \textbf{剩磁} $B_r$：从正饱和出发把 $H$ 减到零时留下的磁通密度，即下降分支与 $B$ 轴的交点。
+\item \textbf{矫顽力}：把 $B$ 拉回零所需的反向场。这里要区分两个量：使 $B$ 归零的 $H_{cB}$（矫顽力），与使磁化 $\mu_0M=B-\mu_0H$ 归零的 $H_{cJ}$（内禀矫顽力）。下标 $J$ 来自永磁领域把 $\mu_0\vb M$ 称为磁极化强度、记作 $J$ 的传统，与电流密度无关。
+\end{itemize}
+
+\fig{hysteresis}{磁滞回线与永磁体的退磁曲线（均为教学构造，不是材料数据；(a) 与 (b)(c) 的横轴单位相差一千倍）。(a) 软磁材料：两条分支由合成曲线 \eqref{eq:syntheticbh} 的磁化部分分别平移 $\pm400\,\mathrm{A/m}$ 得到，箭头为遍历方向，阴影面积就是每周期单位体积的损耗；虚线是单值的合成曲线。(b) 永磁材料：常规曲线 $B$--$H$（实线）与内禀曲线 $\mu_0M$--$H$（虚线）分别在 $-H_{cB}$ 与 $-H_{cJ}$ 处过零；$B_r=1.2\,\mathrm T$，$\mu_{\rm rec}=1.05$，$H_{cJ}=1500\,\mathrm{kA/m}$。(c) $H_{cJ}=800\,\mathrm{kA/m}$ 的材料，拐点落在第二象限。负载线 $P=1$ 的工作点在直线段上；$P=0.2$ 的工作点已越过拐点，此后 $H$ 回到零时，磁体沿回复线只能回到较低的 $B'_r$。}{fig:hysteresis}
+
+\begin{compare}{矫顽力 $H_{cB}$ 与内禀矫顽力 $H_{cJ}$}{$H_{cB}$}{$H_{cJ}$}
+\cmprow{定义}{下降分支上 $B=0$ 处的 $|H|$}{下降分支上 $\mu_0M=0$ 处的 $|H|$}
+\cmprow{读自}{常规曲线 $B$--$H$}{内禀曲线 $\mu_0M$--$H$}
+\cmprow{大小关系}{$H_{cB}\le H_{cJ}$}{在 $H=-H_{cJ}$ 处 $B=-\mu_0H_{cJ}<0$，所以 $B$ 总是先过零}
+\cmprow{软磁材料}{二者几乎相等（\exref{ex:bh-loss} 中相差 $0.3\,\mathrm{A/m}$）}{同左}
+\cmprow{永磁材料}{直线回复线延伸到 $B=0$ 时为 $B_r/(\mu_0\mu_{\rm rec})$；拐点提前时更小}{可以大得多（\figref{fig:hysteresis}b 中 $1500$ 与 $909\,\mathrm{kA/m}$）}
+\cmprow{回答的问题}{多大的反向场使磁体的净磁通密度为零}{多大的反向场使材料自身的磁化消失}
+\cmpsum{$B$ 里含有 $\mu_0H$ 这一项，所以 $B$ 总比磁化先过零。对软磁材料这点差别可以忽略；对永磁材料，二者可能相差近一倍。}
+\end{compare}
+
+\subsection{回线面积就是损耗}
+回线面积为什么有物理意义？取一个截面积 $A$、平均周长 $\ell$ 的环形铁芯，绕 $N$ 匝线圈，设铁芯内场均匀、变化足够慢，涡流可以忽略。安培定律给出 $H\ell=Ni$ \eqref{eq:DHintegral}；法拉第定律给出线圈两端的感应电压 $v=N\,\dd\Phi/\dd t=NA\,\dd B/\dd t$。电源输入线圈磁场的功率为
+\begin{equation*}
+p=vi=NA\frac{\dd B}{\dd t}\cdot\frac{H\ell}{N}=A\ell\,H\frac{\dd B}{\dd t},
+\end{equation*}
+也就是说，每单位体积输入的能量为
+\begin{equation}
+\dd w=H\,\dd B\qquad[\mathrm{J/m^3}].
+\label{eq:bh-work}
+\end{equation}
+沿回线走一圈回到原来的状态，储存的磁能复原，净输入的能量 $\oint H\,\dd B$ 就是回线所围的面积，它变成了材料中的热~\cite{fitzgerald}。按真实的遍历方向（\figref{fig:hysteresis}a 的箭头），这个积分为正。每秒重复 $f$ 次，磁滞损耗的功率密度就是 $f\oint H\,\dd B$——前提是回线形状不随频率变化。频率升高后，涡流会使动态回线变宽，那是\chref{ch:eddy} 的问题。
+
+\begin{example}[label=ex:bh-loss]{教学回线的剩磁、矫顽力与损耗}
+\figref{fig:hysteresis}a 的两条分支为 $B_\pm(H)=\mu_0H+B_s\tanh\bigl((H\mp H_c)/H_s\bigr)$，$H_c=400\,\mathrm{A/m}$，$B_s$、$H_s$ 同 \eqref{eq:syntheticbh}；上升分支取上号，下降分支取下号。求 $B_r$、$H_{cJ}$、$H_{cB}$，以及驱动到饱和时每周期单位体积的损耗。
+\solution
+下降分支在 $H=0$ 处给出 $B_r=B_s\tanh(H_c/H_s)=1.6\tanh0.5=0.739\,\mathrm T$。磁化项在 $H=-H_c$ 处为零，所以 $H_{cJ}=400\,\mathrm{A/m}$；$B$ 还含有 $\mu_0H$，数值求根得 $H_{cB}=399.7\,\mathrm{A/m}$。
+
+损耗：$\oint H\,\dd B=\oint H\,\dd(\mu_0H)+\oint H\,\dd(\mu_0M)$。第一项是一个全微分，绕一圈为零。两条分支的 $\mu_0M$--$H$ 曲线只是左右平移了 $2H_c$，所以第二项等于宽 $2H_c$、高 $2B_s$（$\mu_0M$ 从 $-B_s$ 到 $+B_s$）的面积：
+\begin{equation*}
+\oint H\,\dd B\approx2H_c\cdot2B_s=2.56\times10^3\,\mathrm{J/m^3},
+\end{equation*}
+数值积分给出同一结果。回线越“胖”，每周期的损耗越大。变压器与电机铁芯选用矫顽力很小的软磁材料，正是为了这个原因。
+\end{example}
+
+用无磁滞的单值曲线或初始磁化曲线做非线性静磁计算，可以估计饱和程度与磁通走向；但不能把结果解释为对装配历史、小回线或不可逆退磁的预测。单值曲线也算不出磁滞损耗和剩磁。这些问题需要带历史的本构模型，或有依据的保守近似。
+
+\subsection{永磁体：工作在第二象限的宽回线}
+永磁材料的回线比软磁材料宽得多（\figref{fig:hysteresis} 中 (b) 与 (a) 的横轴单位相差一千倍）。磁化到饱和再撤去外场，它保留接近 $B_r$ 的磁化，不需要任何电流就能产生磁场。装进磁路以后，磁体外部的磁路和它自身的退磁场（\secref{sec:matter-DH} 的磁化球就是一例）使磁体内部 $H<0$、$B>0$：永磁体正常工作在回线的\textbf{第二象限}，这一段称为\textbf{退磁曲线}。
+
+稀土永磁材料的退磁曲线在第二象限的大部分范围内接近一条直线~\cite{fitzgerald}。沿磁化方向把它写成
+\begin{keyeq}
+B_m=\mu_0\mu_{\rm rec}H_m+B_r ,
+\label{eq:recoil}
+\end{keyeq}
+称为\textbf{回复线}；$\mu_{\rm rec}$ 是\textbf{回复磁导率}（相对值，接近 1）。本书的教学值取 $B_r=1.2\,\mathrm T$、$\mu_{\rm rec}=1.05$。这条直线在 $B_m=0$ 处的截距
+\begin{equation}
+H_m=-\frac{B_r}{\mu_0\mu_{\rm rec}}=-909\,\mathrm{kA/m}
+\label{eq:bh-intercept}
+\end{equation}
+只是一个几何截距。只有当材料的直线段确实一直延伸到 $B=0$ 时，它才等于矫顽力 $H_{cB}$（\figref{fig:hysteresis}b）；它也不等于内禀矫顽力，更不是安全工作的界限。
+
+还要注意，有剩磁的材料在 $H\to0$ 时 $B/H$ 发散，割线磁导率失去意义。描述永磁体需要两个独立的量：斜率 $\mu_{\rm rec}$ 和剩磁 $B_r$。只给一个“很大的 $\mu$”，描述的是一块软磁体，而不是永磁体（\chref{ch:magnets}）。
+
+\subsection{拐点与不可逆退磁}
+真实材料的内禀曲线在某处会出现\textbf{拐点}：反向场超过一定程度后，磁化迅速翻转。\figref{fig:hysteresis}c 中材料的 $H_{cJ}=800\,\mathrm{kA/m}$，小于直线截距 $909\,\mathrm{kA/m}$，拐点因此落在第二象限，$H_{cB}$ 也降到 $734\,\mathrm{kA/m}$。磁体的工作点由外部磁路决定，可以写成过原点的\textbf{负载线} $B_m=-P\mu_0H_m$，无量纲的\textbf{磁导系数}（permeance coefficient）$P$ 由几何决定（\chref{ch:lumped}、\chref{ch:magnets}）。$P$ 越小，负载线越平，工作点越往下、$|H_m|$ 越大。
+\begin{itemize}
+\item $P=1$：工作点 $B_m=0.585\,\mathrm T$，在直线段上。之后无论负载怎样变化，只要不越过拐点，磁体都沿同一条直线来回移动；$H_m$ 回到零时，$B$ 仍是 $B_r$。这是可逆的。
+\item $P=0.2$：按直线回复线计算，工作点应在 $H_m=-764\,\mathrm{kA/m}$、$B_m=0.192\,\mathrm T$；但这已越过拐点，真实工作点落在 $H_m=-705\,\mathrm{kA/m}$、$B_m=0.177\,\mathrm T$，一部分磁化已经翻转。此后即使把磁体装进磁阻很小的磁路，使 $H_m$ 回到零附近，它也只能沿一条新的、与原直线近似平行的回复线返回，$H_m=0$ 处只剩 $B'_r=1.11\,\mathrm T$，损失 $7.7\%$。这就是\textbf{不可逆退磁}~\cite{fitzgerald}。
+\end{itemize}
+$P=0.2$ 不是刻意挑出的极端情形：\chref{ch:lumped} 多柱磁轭算例中，薄磁体配大气隙，理想磁轭下的磁导系数正好是 $P=2\ell_m/g=0.2$。拐点的位置随材料和温度而变，判断是否安全，必须用实际工作温度下的退磁曲线，并考虑磁体经历过的最大反向场。
+
+\begin{pitfall}[“工作点在第二象限，说明磁体已经退磁”]
+不是。$H_m<0$、$B_m>0$ 是永磁体的正常状态；是否发生了不可逆退磁，要看工作点有没有越过\emph{实际}退磁曲线的拐点，这取决于材料、温度和经历过的最大反向场。反过来，把直线回复线一直延伸到 $B=0$、把截距当作“安全界限”，在拐点提前出现的材料上会严重高估安全裕量。
+\end{pitfall}
+
+\section{把标量曲线用于矢量场}\label{sec:bh-vector}
+
+三维磁场计算常以磁矢势 $\vb A$ 为未知量（\chref{ch:femvector}），先求出 $\vb B=\nabla\times\vb A$，再由材料关系求 $\vb H$。这需要曲线的反函数：记 $b=|\vb B|$，$h(b)$ 为标量反曲线（$B=b(H)$ 的反函数）。各向同性材料中 $\vb H$ 与 $\vb B$ 平行，于是
+\begin{keyeq}
+\vb H=\frac{h(b)}{b}\,\vb B=\nu_{\rm sec}(b)\,\vb B,\qquad \nu_{\rm sec}(b)=\frac{h(b)}{b},
+\label{eq:HofB}
+\end{keyeq}
+在 $b=0$ 处取连续极限 $\nu_{\rm sec}(0)=1/\mu_{\rm diff}(0)$。式中的标量函数作用在 $\vb B$ 的\emph{大小}上，方向由 $\vb B$ 自身给出。
+
+一个常见的错误是把标量函数分别作用于各个分量：$H_x=h(B_x)$、$H_y=h(B_y)$、$H_z=h(B_z)$。这样得到的是另一种材料——它的响应依赖于坐标轴的取向，是一种由坐标系造出来的各向异性。
+
+\begin{example}[label=ex:bh-componentwise]{逐分量套用会造出什么材料}
+合成曲线材料中 $|\vb B|=1.5\,\mathrm T$。分别取 $\vb B$ 沿 $x$ 轴、与 $x$ 轴成 $45^\circ$、与 $x$ 轴成 $30^\circ$，比较 \eqref{eq:HofB} 与逐分量套用得到的 $\vb H$。
+\solution
+按 \eqref{eq:HofB}，三种方向下 $|\vb H|=h(1.5\,\mathrm T)=1367\,\mathrm{A/m}$，方向与 $\vb B$ 相同。
+
+逐分量套用：沿 $x$ 轴时结果相同，也是 $1367\,\mathrm{A/m}$。成 $45^\circ$ 时，两个分量各为 $1.06\,\mathrm T$，各自查曲线后合成 $|\vb H|=902\,\mathrm{A/m}$，只有正确值的 $0.66$ 倍——材料沿对角线方向显得“更软”。成 $30^\circ$ 时，得到的 $\vb H$ 与 $x$ 轴成 $24.2^\circ$，不再与 $\vb B$ 平行。同一块各向同性的铁，仅仅因为坐标轴转了一个角度，计算出的响应就变了。
+\end{example}
+\eqref{eq:HofB} 还隐含着对曲线的要求。在工作范围内若 $h(b)>0$、$h'(b)>0$，单位体积的可逆磁能 $w(b)=\int_0^bh(b')\,\dd b'$ 是凸函数，非线性静磁问题有唯一解，牛顿迭代的切线 \eqref{eq:bh-inc}正定。下一节会看到，一个不小心的插值就可能破坏这些条件。
+
+\section{导入测量数据时避免创造虚假材料}\label{sec:bh-data}
+
+真实计算用的是测得的曲线：一张表格，几十个点。把它导入仿真软件看似只是“读一个文件”，却有几个地方会悄悄改变材料的物理性质。
+
+\subsection{单位与数据类型}
+导入前先记下单位、哪一列是横轴，以及数据是哪一种曲线（\secref{sec:bh-curve}）。老资料和一些手册仍用高斯制：
+\begin{equation*}
+1\,\mathrm{G}=10^{-4}\,\mathrm T,\qquad 1\,\mathrm{Oe}=\frac{1000}{4\pi}\,\mathrm{A/m}=79.58\,\mathrm{A/m}.
+\end{equation*}
+相对磁导率随 $B$ 变化的表格，也不是 B--H 表格；要先弄清表中的 $\mu_r$ 是割线值还是微分值，才能换算。
+
+\begin{example}[label=ex:bh-units]{一行表格，两种读法}
+某份手册的一行写着 $B=15\,\mathrm{kG}$、$H=10\,\mathrm{Oe}$（假设的数据行）。换成国际单位并求这一点的割线相对磁导率。若有人把 $\mathrm{Oe}$ 当成了 $\mathrm{A/m}$，结果会怎样？
+\solution
+$B=15\times10^3\times10^{-4}=1.5\,\mathrm T$，$H=10\times79.58=795.8\,\mathrm{A/m}$，于是 $\mu_r=B/(\mu_0H)=1500$。把 $10\,\mathrm{Oe}$ 误读成 $10\,\mathrm{A/m}$，得到 $\mu_r=1.19\times10^5$，大了 79.6 倍。这样的材料在仿真里几乎不需要磁压降就能传导磁通，磁轭会显得“永远不饱和”。
+\end{example}
+
+\subsection{插值：光滑不等于正确}
+有了正确单位的数据点，软件还要在点与点之间插值。\figref{fig:bh_interpolation} 用合成曲线做了一个实验：只取 7 个样本点（$H=0$、$200$、$500$、$1000$、$2000$、$5000$、$10000\,\mathrm{A/m}$，高场处稀疏，这在手册数据中很常见），分别用无约束的三次样条（SciPy 的 \texttt{CubicSpline}，默认端点条件）和保单调的分段三次 Hermite 插值（SciPy 的 \texttt{PchipInterpolator}，简称 PCHIP\cite{fritsch}）连接它们。
+
+\fig{bh_interpolation}{稀疏样本上的两种插值（样本取自合成曲线 \eqref{eq:syntheticbh}）。(a) 全局看，两条插值曲线与真实曲线几乎重合；放大高场部分，无约束样条在 $2000$ 与 $10000\,\mathrm{A/m}$ 之间先冲高、再下凹，$B$ 随 $H$ 增大而减小。(b) 微分相对磁导率暴露了差别：样条在约 $3950$--$7970\,\mathrm{A/m}$ 之间为负；PCHIP 保持非负，但只有一阶连续，在最后一个样本点处斜率被单侧公式置为零，低于真空值。竖直细线为样本位置。}{fig:bh_interpolation}
+
+从 $B$--$H$ 图上看，三条曲线几乎无法区分。看斜率就完全不同了：
+\begin{itemize}
+\item \textbf{无约束样条}在 $3950$ 到 $7970\,\mathrm{A/m}$ 之间斜率为负：$B$ 先冲到 $1.612\,\mathrm T$，高于下一个样本点 $1.606\,\mathrm T$，再降到 $1.579\,\mathrm T$。在 $6000\,\mathrm{A/m}$ 处，真实的 $\mu_{\rm diff}/\mu_0=1.00$，样条给出 $-9.8$。负的微分磁导率意味着可逆磁能不再是凸的，牛顿切线失去正定性，偏置电感器的小信号电感变成负值；而且 $B(H)$ 不再单调，反函数 $h(b)$ 在 $1.579$ 到 $1.612\,\mathrm T$ 之间有多个值——\eqref{eq:HofB} 所需的函数根本不存在。
+\item \textbf{PCHIP} 保证插值曲线随 $H$ 单调，没有负斜率。但它的导数只是连续而不光滑，拐点附近的斜率误差仍不小（$3000\,\mathrm{A/m}$ 处真实值 $4.5$，PCHIP $8.3$，样条 $11.4$）；在最后一个样本点，它的斜率由单侧公式给出，这里为 $0$，低于真空的 $\mu_0$。
+\end{itemize}
+所以保形插值是必要条件，不是充分条件。插值之后，要检查它的导数：对单调磁化的材料 $\dd M/\dd H\ge0$，即 $\mu_{\rm diff}\ge\mu_0$；并在拐点附近补足样本。拐点附近足够密的采样加上单调插值，通常比视觉上光滑却改变了物理的曲线可靠得多。FEMM 手册也专门讨论了 B--H 数据的插值伪影，以及超出数据范围外推的危险~\cite{femm}。
+
+\subsection{外推：数据之外的材料}
+计算中某处的 $H$ 超出了最后一个数据点，软件就必须外推。物理上，饱和之后 $\mu_{\rm diff}$ 应趋于 $\mu_0$（\secref{sec:bh-saturation}）。如果外推沿用最后一段的高斜率，铁在任意高的磁通密度下都显得高效，磁轭会“永不饱和”；如果像上面的 PCHIP 那样斜率掉到零，又会在高场处造出比空气还难磁化的材料。可靠的做法是：标记出计算场超出测量范围的区域，用有依据的数据（更高场的测量，或以 $\mu_0$ 为斜率的饱和延伸）扩展曲线，而不是默默接受软件的外推。
+
+\subsection{曲线之外的不确定性}
+温度、机械应力、轧制方向、叠片方式和加工过程都会改变材料的响应。对真实的 MRI 磁体或磁轭，这些属于输入数据及其不确定性，应当和几何公差一起进入误差预算（\secref{sec:practice-errorbudget}）。本书的合成曲线只用来说明方法，不能用来宣称某个实际装配的性能。
+
+\begin{compare}{无约束三次样条与保形插值（PCHIP）}{无约束三次样条}{保形插值（PCHIP）}
+\cmprow{构造}{二阶导数连续，整体求解}{逐段构造，由相邻斜率决定节点导数}
+\cmprow{单调性}{不保证：稀疏点之间可能冲高或下凹}{数据单调则插值单调}
+\cmprow{导数}{光滑，但可能为负}{非负，但只有一阶连续；端点斜率可能失真}
+\cmprow{对非线性求解}{负斜率使能量非凸、反函数多值}{单值、单调，可以求逆}
+\cmprow{仍需检查}{一切}{$\mu_{\rm diff}\ge\mu_0$、拐点附近的采样、外推}
+\cmpsum{看 B--H 图判断插值好坏是不够的；要看它的导数，因为求解器用的正是导数。}
+\end{compare}
+
+\section{对照：非线性、磁滞、剩磁与小信号}\label{sec:bh-compare}
+
+本章依次加入了四个建模要素。它们常被混为一谈，其实各自回答不同的问题（\tabref{tab:bh-elements}）。
+
+\begin{table}[htbp]\centering\small
+\caption{铁磁材料模型的四个要素。每一个都需要不同的数据，遗漏时错在不同的地方。}\label{tab:bh-elements}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{.15\linewidth} Y Y Y@{}}
+\toprule
+要素 & 给模型加了什么 & 需要的数据 & 缺了它会错在哪里\\\midrule
+单值非线性 & $\mu$ 随工作点变化，饱和 & 一条可逆曲线（\eqref{eq:syntheticbh}、\eqref{eq:HofB}） & 高估强磁通下的磁导率，漏掉局部饱和\\
+磁滞 & 历史与状态：同一 $H$ 对应不同 $B$ & 回线族、小回线，或带内部状态的模型 & 算不出损耗、剩磁与装配历史的影响\\
+剩磁（永磁） & 材料内置的源 & $B_r$、$\mu_{\rm rec}$、磁化方向、拐点与温度 & 磁体被当成软铁，或高估退磁安全裕量\\
+小信号线性化 & 围绕偏置的增量响应 & 偏置工作点与增量张量 \eqref{eq:bh-inc} & 用割线值代替切线值，或忽略增量的各向异性\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+一个永磁 MRI 磁体的模型通常同时用到其中三个：磁轭用单值非线性曲线，磁体用带剩磁的回复线，梯度与匀场对磁轭的作用用围绕偏置的小信号线性化。磁滞一般不进入主场计算，却在两个地方不能省：判断磁体是否越过拐点（不可逆退磁），以及估算交变场在铁中的损耗。弄清每个要素管什么，才知道哪一种数据缺了会出什么错。
+
+\begin{compare}{单值非线性与磁滞}{单值非线性}{磁滞}
+\cmprow{$B$ 由什么决定}{当前的 $H$}{当前的 $H$ 与历史}
+\cmprow{数据形态}{一条曲线}{一族分支与小回线}
+\cmprow{能量}{可逆：沿任何闭合路径净功为零}{一周净输入 $\oint H\,\dd B>0$，变成热}
+\cmprow{能给出}{饱和、磁通走向、工作点}{损耗、剩磁、退磁历史}
+\cmprow{数值处理}{单值函数 $h(b)$，可用牛顿法}{需要内部状态变量，按加载顺序逐步求解}
+\cmpsum{非线性说的是“曲线不是直线”，磁滞说的是“曲线不止一条”。二者是不同的建模要素，不能用一个代替另一个。}
+\end{compare}
+
+有了这些材料模型，就可以回到本章开头的铁芯了。下一章把铁芯、气隙和永磁体压缩成一张网络：在铁的磁导率随工作点变化、永磁体带着自己的“源”时，怎样不解三维场就估出气隙里的磁场？
+
+\begin{takeaways}
+\begin{itemize}
+\item B--H 曲线是一点上的本构关系，不是场的空间分布；同一磁轭的不同点落在同一曲线的不同位置，由场方程决定。初始曲线、主回线、小回线与小信号响应是不同的数据。
+\item 饱和的是磁化：$\mu_0M\le B_s$，而 $B=\mu_0(H+M)$ 仍以 $\mu_0$ 的斜率增长。深度饱和的铁对增量而言就像空气。
+\item 割线磁导率 $B/H$ 管总量，微分磁导率 $\dd B/\dd H$ 管同向小变化，横向小变化看到的是割线值；各向同性材料的增量响应是张量 \eqref{eq:bh-inc}。
+\item 回线面积 $\oint H\,\dd B$ 是每周期单位体积的损耗；$H_{cB}\le H_{cJ}$，对永磁材料二者可以相差很多。回复线 \eqref{eq:recoil} 的截距不是安全界限，越过拐点会造成不可逆退磁。
+\item 标量曲线作用于 $|\vb B|$ \eqref{eq:HofB}，不能逐分量套用。导入数据时检查单位、插值后的导数（$\mu_{\rm diff}\ge\mu_0$）和外推。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 合成曲线在 $H=0$ 处，割线磁导率与微分磁导率相等吗？在 $H=5000\,\mathrm{A/m}$ 处各是多少？
+\item 一台偏置电感器的铁芯工作在 $1.5\,\mathrm T$，计算叠加纹波的小信号电感应该用哪一种磁导率？主磁场磁化的磁轭，对梯度线圈施加的横向小场呢？
+\item 为什么 $H_{cB}$ 不可能大于 $H_{cJ}$？
+\item 把\exref{ex:bh-loss} 中的 $H_c$ 减半为 $200\,\mathrm{A/m}$，每周期的损耗变为多少？
+\item 若\figref{fig:hysteresis}c 中的磁体换成 (b) 中 $H_{cJ}=1500\,\mathrm{kA/m}$ 的材料，仍放在 $P=0.2$ 的磁路中，会发生不可逆退磁吗？
+\item 某有限元程序对 $\vb B$ 的每个分量分别查 B--H 表。对沿坐标轴的场和沿对角线的场，它的结果分别有什么问题？
+\item 有人发现导入的 B--H 数据插值后，在高场某处 $\mu_{\rm diff}<0$，但 $B$--$H$ 图看起来“很光滑”。这会对非线性求解造成什么后果？应该怎样处理？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item 相等，都是 $\mu_0+B_s/H_s$，相对值 1593（割线值取连续极限）。在 $5000\,\mathrm{A/m}$ 处，割线相对磁导率为 $256$，微分相对磁导率只有 $1.02$。
+\item 纹波与偏置同向，用微分磁导率 \eqref{eq:permeabilities}。横向小场使 $\vb B$ 转动而大小不变，用割线磁导率；一般方向的扰动用增量张量 \eqref{eq:bh-inc}。
+\item 在 $H=-H_{cJ}$ 处磁化为零，$B=\mu_0H=-\mu_0H_{cJ}<0$；而 $H=0$ 时 $B=B_r>0$，所以 $B$ 在到达 $-H_{cJ}$ 之前已经过零。
+\item 约为一半：$2H_c\cdot2B_s=1.28\times10^3\,\mathrm{J/m^3}$。
+\item 不会。这种材料的内禀曲线要到接近 $-H_{cJ}=-1500\,\mathrm{kA/m}$ 处才翻转，拐点远在工作点 $H_m=-764\,\mathrm{kA/m}$ 之外；工作点仍在直线上（$B_m=0.192\,\mathrm T$），$H_m$ 回到零时 $B$ 回到 $1.2\,\mathrm T$。
+\item 沿坐标轴时结果碰巧正确。沿对角线时 $|\vb H|$ 偏小（$1.5\,\mathrm T$ 时只有正确值的 $0.66$ 倍），在其他方向上 $\vb H$ 与 $\vb B$ 不平行：程序模拟的是一种依赖坐标系的各向异性材料（\exref{ex:bh-componentwise}）。
+\item 负斜率使可逆磁能非凸、牛顿切线不正定，反函数 $h(b)$ 多值，求解可能不收敛或收敛到错误的分支。应改用保单调插值，检查 $\mu_{\rm diff}\ge\mu_0$，在拐点附近补充数据，并检查外推段。
+\end{answers}

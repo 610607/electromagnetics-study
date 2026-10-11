@@ -1,0 +1,356 @@
+\chapter{势函数：同一个场的不同“坐标”}\label{ch:potentials}
+
+\begin{chapterguide}
+\guidequestion{一个均匀磁场的矢势，可以画成绕轴打转的箭头，也可以画成全部平行于同一条轴、左右两侧方向相反的箭头。把这两张矢势图分别交给 TMS 程序当作“线圈的源”，算出的组织电场会一样吗？两张看起来毫不相干的矢势图，怎么可能描述同一个实验？}
+\begin{guidegoals}
+\item 说明势函数为什么好用：$\vb B=\nabla\times\vb A$ 与 $\vb E=-\partial_t\vb A-\nabla\phi$ 让两条无源的 Maxwell 方程自动成立；
+\item 用规范变换判断两组 $(\vb A,\phi)$ 是否描述同一个场，说出哪些量与规范无关，可以用来比较不同的求解器和代理模型；
+\item 在库仑规范下，从矢势方程推导 Biot–Savart 定律；
+\item 在没有电流的区域使用磁标势，判断什么时候需要割面或额外的环量信息；
+\item 读懂二维 $A_z$、轴对称 $rA_\theta$ 与表面流函数的等值线，比较 $\phi$、$\vb A$、$\psi$、$\psi_s$ 四种“势”的异同。
+\end{guidegoals}
+\guideprereq{\secref{sec:magnetic-A}（环量就是磁通）与\secref{sec:magnetic-faraday}；\eqref{id:zeros}；\chref{ch:matter}（$\vb H$ 与 $\vb M$）；\secref{sec:regimes-mqs}、\secref{sec:regimes-oneway} 与 \eqref{id:curlcurl}。}
+\end{chapterguide}
+
+\section{两张矢势图，一个实验}\label{sec:potentials-puzzle}
+
+\chref{ch:magnetic} 用“环量等于磁通”认识了磁矢势，并用一个绕轴打转的矢势描述均匀磁场 $\vb B=B_0\vb e_z$（\secref{sec:magnetic-A}）：
+\begin{equation}
+\vb A_{\rm sym}=\frac{B_0}{2}(-y,\,x,\,0).
+\end{equation}
+那一章也提到，$\vb A_{\rm alt}=B_0(0,\,x,\,0)$ 的旋度同样是 $B_0\vb e_z$：$(\nabla\times\vb A_{\rm alt})_z=\partial_x(B_0x)-\partial_y0=B_0$。\figref{fig:gauge_pair} 把两者并排画出。它们看起来毫不相干：一个绕轴打转，中心为零、向外增大；另一个全部沿 $y$ 方向，右半平面向上，左半平面向下，在 $y$ 轴上为零。
+
+可是沿同一个圆 $C$ 累加，两者的环量都是 $\pi r^2B_0$，即圆所链接的磁通。区别只在于环量来自回路的哪一段：$\vb A_{\rm sym}$ 沿圆处处贡献一样多；$\vb A_{\rm alt}$ 的贡献集中在左右两侧，越靠近最上、最下两点越小，在那里为零（图中回路的线宽）。
+
+\fig{gauge_pair}{同一个均匀磁场 $\vb B=B_0\vb e_z$（浅红色 $\odot$，指出纸面）的两种矢势（紫色箭头，两图比例相同）。左：$\vb A_{\rm sym}$ 绕轴打转，大小正比于离轴的距离。右：$\vb A_{\rm alt}$ 全部沿 $y$ 方向，大小正比于 $|x|$。蓝色回路 $C$ 的线宽正比于 $\vb A$ 沿回路的切向分量：左图处处相同；右图集中在左右两侧，上下为零。两者沿 $C$ 的环量都是 $\pi r^2B_0$。坐标与箭头均已归一化。}{fig:gauge_pair}
+
+现在让 $B_0$ 随时间增大，$\dot B=1000\,\mathrm{T/s}$，看距轴 $8\,\mathrm{cm}$ 的两点 $P=(8\,\mathrm{cm},0)$ 与 $Q=(0,8\,\mathrm{cm})$——这正是 \eqref{eq:uniforminduction} 中用过的数字。若把 $-\partial_t\vb A$ 当作“线圈产生的电场”：用 $\vb A_{\rm sym}$，两点的电场都是 $40\,\mathrm{V/m}$；用 $\vb A_{\rm alt}$，$P$ 点是 $80\,\mathrm{V/m}$，$Q$ 点却是零。哪一个对？
+
+答案是：两者都可以是对的，只要电标势 $\phi$ 得到相容的处理。势函数是描述场的“坐标”，不是场本身。本章要讲清楚这句话：势函数为什么好用（\secref{sec:potentials-why}），它的自由在哪里、怎样才不会用错（\secref{sec:potentials-gauge}），以及本书会用到的四种“势”各自生成什么（\secref{sec:potentials-compare}）。
+
+\begin{intuition}[坐标与距离]
+同一座城市，在两张不同投影的地图上坐标不同。比较两张图上的坐标数值没有意义，比较两座城市之间的距离才有意义。势函数也是这样：同一个物理场可以写成许多组不同的 $(\vb A,\phi)$。$\vb E$、$\vb B$、回路的磁通和能量是“距离”，与写法无关；某一点 $\vb A$ 或 $\phi$ 的数值是“坐标”，随写法而变。
+\end{intuition}
+
+\section{为什么用势：把约束写进未知量}\label{sec:potentials-why}
+
+Maxwell 方程中有两条“无源”方程：$\nabla\cdot\vb B=0$ 与 $\nabla\times\vb E=-\partial_t\vb B$。它们不含电荷与电流，对任何材料都一样。势函数的作用，就是让这两条方程\emph{自动}成立。
+
+\subsubsection{第一步：磁矢势。} 由于 $\nabla\cdot\vb B=0$，相容的磁场在局部总可以写成
+\begin{equation}
+\vb B=\nabla\times\vb A .
+\label{eq:vectorpotential}
+\end{equation}
+这就是 \eqref{eq:atlasA}，只是现在把它看成一种\emph{表示}：不论 $\vb A$ 取什么，由 \eqref{id:zeros}，$\nabla\cdot\vb B=0$ 都自动成立。$\vb A$ 的单位为 Wb/m，即 $\mathrm{T\,m}$。在整个区域上的存在性与唯一性，还需要合适的边界与拓扑条件（\secref{sec:potentials-scalar}）。
+
+\subsubsection{第二步：电标势。} 把 \eqref{eq:vectorpotential} 代入法拉第定律，交换时间导数与旋度：
+\begin{equation}
+\nabla\times\Bigl(\vb E+\frac{\partial\vb A}{\partial t}\Bigr)=0 .
+\end{equation}
+括号里的场无旋。在允许单值标势的区域内，它就是某个标量的负梯度：
+\begin{keyeq}
+\vb E=-\frac{\partial\vb A}{\partial t}-\nabla\phi .
+\label{eq:Etwopotentials}
+\end{keyeq}
+$\phi$ 的单位为伏特。这样写出的电场，不论 $\vb A$、$\phi$ 取什么，都满足 $\nabla\times\vb E=-\partial_t\vb B$，因为梯度的旋度为零。
+
+\figref{fig:potential_bridge} 总结了这两步。原来要让 $\vb E$、$\vb B$ 两个矢量场（6 个分量）同时满足四条方程；现在只需求 $\phi$ 与 $\vb A$（4 个分量），并让它们满足剩下的两条有源方程——高斯定律与安培定律。约束被“写进”了未知量，数值解不必事后再去满足它。有限元中这一点尤其重要：用 $\vb A$ 作未知量，离散解的磁通自动守恒（\chref{ch:femvector}）。
+
+\fig{potential_bridge}{势函数与场的关系。紫色箭头是三种求导运算：$-\nabla\phi$ 与 $-\partial_t\vb A$ 合成电场，$\nabla\times\vb A$ 给出磁通密度。只要场这样写出，两条无源的 Maxwell 方程（底部）自动成立；剩下的高斯定律与安培定律成为关于 $\phi$、$\vb A$ 的方程。顶部的规范变换同时改动两个势，却不改变 $\vb E$、$\vb B$。}{fig:potential_bridge}
+
+\subsubsection{两部分电场各管什么？} 无论选用哪种规范（下一节），$-\partial_t\vb A$ 都承载全部感应的环量：对任一闭合回路，由 \eqref{eq:Aflux}，$\oint(-\partial_t\vb A)\cdot\dd\boldsymbol\ell=-\dd\Phi_B/\dd t$。$-\nabla\phi$ 的环量恒为零，它负责让场满足电荷、电导率界面和电边界条件（\chref{ch:interfaces}、\chref{ch:tms}）。两项都是真实电场的一部分，推动电荷的是它们的和。下一节会看到，这两项之间怎样划分，正是表示的自由所在。
+
+\section{规范自由度：表示不唯一，物理唯一}\label{sec:potentials-gauge}
+
+\subsection{两个矢势之差是一个梯度}
+回到\figref{fig:gauge_pair}。两个矢势之差为
+\begin{equation}
+\vb A_{\rm alt}-\vb A_{\rm sym}=\frac{B_0}{2}(y,\,x,\,0)=\nabla\chi,\qquad \chi=\frac{B_0xy}{2}.
+\end{equation}
+标量 $\chi$ 的单位是韦伯。梯度的旋度为零 \eqref{id:zeros}，所以加上 $\nabla\chi$ 改变了矢势图，却不改变 $\vb B$。这不是巧合：两个旋度相同的矢势，其差无旋，在单连通区域内就是某个标量的梯度。
+
+\subsection{规范变换}
+场随时间变化时，只改 $\vb A$ 不够，$\phi$ 必须同时改。设 $\chi(\vb r,t)$ 为足够光滑的标量函数，定义
+\begin{keyeq}
+\vb A'=\vb A+\nabla\chi,\qquad \phi'=\phi-\frac{\partial\chi}{\partial t}.
+\label{eq:gauge}
+\end{keyeq}
+这叫\textbf{规范变换}。检验：$\nabla\times\vb A'=\nabla\times\vb A$，$\vb B$ 不变；
+\begin{equation}
+\vb E'=-\frac{\partial\vb A}{\partial t}-\frac{\partial}{\partial t}\nabla\chi-\nabla\phi+\nabla\frac{\partial\chi}{\partial t}=\vb E ,
+\end{equation}
+两个混合导数项相消，$\vb E$ 也不变。所谓\textbf{规范}，就是从这一族等价的 $(\vb A,\phi)$ 中选出一组的约定。
+
+\begin{example}{两种规范中的同一个电场}\label{ex:potentials-gauge}
+均匀磁场 $B_z=B(t)$，$\dot B=1000\,\mathrm{T/s}$。对称规范取 $\vb A_{\rm sym}$ 与 $\phi_{\rm sym}=0$。(a) 写出非对称规范中与之等价的 $\phi_{\rm alt}$。(b) 在 $P=(8\,\mathrm{cm},0)$ 与 $Q=(0,8\,\mathrm{cm})$ 两点，分别算出两种规范中的 $-\partial_t\vb A$、$-\nabla\phi$ 与总电场。
+\solution
+(a) 由 $\chi=Bxy/2$ 与 \eqref{eq:gauge}，$\phi_{\rm alt}=\phi_{\rm sym}-\partial_t\chi=-\dot Bxy/2$。例如在 $(8\,\mathrm{cm},8\,\mathrm{cm})$ 处 $\phi_{\rm alt}=-3.2\,\mathrm V$。
+
+(b) 对称规范：$\vb E=-\partial_t\vb A_{\rm sym}=\tfrac{\dot B}{2}(y,\,-x)$，$P$ 点为 $(0,-40)\,\mathrm{V/m}$，$Q$ 点为 $(40,0)\,\mathrm{V/m}$。非对称规范：
+\begin{equation*}
+-\partial_t\vb A_{\rm alt}=(0,\,-\dot Bx),\qquad -\nabla\phi_{\rm alt}=\frac{\dot B}{2}(y,\,x).
+\end{equation*}
+$P$ 点前者为 $(0,-80)$、后者为 $(0,40)$；$Q$ 点前者为零、后者为 $(40,0)$（单位 V/m）。两项相加，两点的总电场都与对称规范相同（\figref{fig:gauge_efield}），也就是 \eqref{eq:uniforminduction} 给出的 $40\,\mathrm{V/m}$。只比较 $-\partial_t\vb A$，会以为两种写法描述了不同的实验；比较总电场，二者完全一致。
+\end{example}
+
+\fig{gauge_efield}{非对称规范中，电场的两部分怎样拼成对称规范的结果（$\dot B>0$，坐标以 $8\,\mathrm{cm}$ 为单位）。左：$-\partial_t\vb A_{\rm alt}$，全部沿 $y$ 方向；中：$-\nabla\phi_{\rm alt}$，紫色虚线是 $\phi_{\rm alt}$ 的等值线（双曲线）；右：二者之和，绕轴顺时针转圈，与对称规范的 $-\partial_t\vb A_{\rm sym}$ 完全相同。圆点 $P$、$Q$ 旁的数字是 $\dot B=1000\,\mathrm{T/s}$ 时的电场大小（V/m）。}{fig:gauge_efield}
+
+这个例子可以直接用作程序的\emph{单元测试}：把同一个解析源分别用两种规范写出，交给“源场 $\to$ 标势”的实现，比较算出的总电场。两者不一致，就说明 $\vb A$ 与 $\phi$ 的处理不相容。
+
+\begin{pitfall}[“$-\partial_t\vb A$ 就是线圈产生的初级电场，它本身有确定的物理意义”]
+总电场与规范无关，但“初级 + 次级”的划分依赖于源的表示与规范：上例中同一点的“初级场”可以是 $80\,\mathrm{V/m}$，也可以是零。TMS 工作流中，解析的源矢势、有限元的右端项和重建的标势必须采用相容的约定 \eqref{eq:tmsE}。两个常见的错误：一是用组织掩膜把源矢势截断在头皮以外——这改变了 $\vb A$ 的空间导数，等于改变了源，并不是无害的规范变换；二是对 $\vb A$ 做了随时间变化的规范变换，却没有相应地修改 $\phi$，算出的电场就错了。
+\end{pitfall}
+
+\subsection{库仑规范与参考点}
+最常用的规范是\textbf{库仑规范} $\nabla\cdot\vb A=0$。它只是一种方便的约定，不是新的物理定律或材料定律；而且单靠它还不能把 $\vb A$ 完全确定：满足 $\nabla^2\chi=0$ 的 $\chi$ 仍然可以加进去，需要配合边界条件与拓扑约束才能消除这一剩余的自由~\cite{vectorpoisson}。电标势还有另一种更简单的自由：$\phi$ 处处加上同一个常数，电场不变（\secref{sec:electric-potential}）。固定一个参考点，消除的就是这一种。
+
+\begin{compare}{电势参考点与规范变换}{加常数：$\phi\to\phi+c$}{规范变换 \eqref{eq:gauge}}
+\cmprow{改动什么}{只改 $\phi$，处处加同一个数}{同时改 $\vb A$ 与 $\phi$，由一个函数 $\chi(\vb r,t)$ 决定}
+\cmprow{自由有多大}{一个常数}{一整个函数}
+\cmprow{保持不变}{$\vb E$}{$\vb E$ 与 $\vb B$}
+\cmprow{数值上怎样消除}{固定一个节点的值，或令 $\phi$ 的平均值为零}{施加规范条件（如 $\nabla\cdot\vb A=0$），或让求解器处理离散零空间（\chref{ch:femvector}）}
+\cmprow{容易混淆的操作}{把整个边界设为 $\phi=0$：这是物理边界条件，不是选参考点（\chref{ch:tes}）}{截断源矢势、改变外部磁边界：这改变了源或场，不是规范变换}
+\cmpsum{两者都只改“坐标”，不改场；可是把整块边界设为零、截断源，改的就是物理了。}
+\end{compare}
+
+\subsection{比较求解器与代理模型：只比规范不变量}
+不同的软件、网格和合法规范，算出的 $\vb A$ 节点值可以相差很大，场、磁通与能量却应当一致~\cite{vectorpoisson}。所以比较两个求解器，或者训练、评价一个预测势函数的代理模型时，要么先把规范统一，要么只比较\emph{规范不变量}：
+\begin{itemize}
+\item \emph{与规范无关}：$\vb E$、$\vb B$；任一闭合回路上的 $\oint\vb A\cdot\dd\boldsymbol\ell$（即磁通），线圈的磁链与电感；储能、损耗与力。
+\item \emph{依赖规范}：某一点的 $\vb A$ 或 $\phi$；单独的 $-\partial_t\vb A$ 或 $-\nabla\phi$；$\nabla\cdot\vb A$；沿一条不闭合曲线的 $\int\vb A\cdot\dd\boldsymbol\ell$（它会多出 $\chi$ 在两端的差）。
+\end{itemize}
+
+\section{库仑规范与 Biot–Savart 定律}\label{sec:potentials-biot}
+
+\chref{ch:magnetic} 直接给出了 Biot–Savart 定律 \eqref{eq:biotsavart}，说它会在这里推导。有了矢势和库仑规范，推导只需三步。假设：磁导率 $\mu$ 均匀且线性；源电流 $\vb J_s$ 稳定、无散；场在无穷远处衰减。
+
+\subsubsection{第一步：矢势方程。} 把 \eqref{eq:vectorpotential} 代入安培定律 $\nabla\times\vb H=\vb J_s$，$\vb H=\vb B/\mu$：
+\begin{equation}
+\nabla\times\Bigl(\frac1\mu\nabla\times\vb A\Bigr)=\vb J_s .
+\label{eq:curlcurlA}
+\end{equation}
+这是静磁问题的一般形式，对非均匀的 $\mu$ 同样成立，也是\chref{ch:femvector} 的出发点。
+
+\subsubsection{第二步：化成三个 Poisson 方程。} $\mu$ 为常数时可以提到导数外。用 \eqref{id:curlcurl} 展开，$\nabla\times(\nabla\times\vb A)=\nabla(\nabla\cdot\vb A)-\nabla^2\vb A$，库仑规范使第一项为零：
+\begin{equation}
+-\nabla^2\vb A=\mu\vb J_s .
+\end{equation}
+在直角坐标中，这是三个互不耦合的标量方程 $-\nabla^2A_x=\mu J_{s,x}$ 等，每一个都与静电学的 $-\nabla^2\phi=\rho/\varepsilon_0$ 形式相同。静电学的答案是库仑积分，这里直接借用。由自由空间的 Green 函数恒等式 $\nabla^2(1/R)=-4\pi\delta^{(3)}(\vb r-\vb r')$，$R=\abs{\vb r-\vb r'}$，$\delta^{(3)}$ 为三维 Dirac 分布，得到
+\begin{keyeq}
+\vb A(\vb r)=\frac{\mu}{4\pi}\int\frac{\vb J_s(\vb r')}{\abs{\vb r-\vb r'}}\,\dd V' .
+\label{eq:Agreen}
+\end{keyeq}
+积分变量是源点 $\vb r'$；对观察点 $\vb r$ 求导时，$\vb J_s(\vb r')$ 是常量。
+
+\begin{compare}{静电势与矢势的 Poisson 方程}{静电：$\phi$}{静磁（库仑规范）：$\vb A$}
+\cmprow{方程}{$-\nabla^2\phi=\rho/\varepsilon_0$}{$-\nabla^2\vb A=\mu_0\vb J_s$（每个直角分量一条）}
+\cmprow{自由空间解}{$\phi=\dfrac{1}{4\pi\varepsilon_0}\displaystyle\int\frac{\rho}{R}\,\dd V'$}{$\vb A=\dfrac{\mu_0}{4\pi}\displaystyle\int\frac{\vb J_s}{R}\,\dd V'$}
+\cmprow{求场}{$\vb E=-\nabla\phi$ $\to$ 库仑定律}{$\vb B=\nabla\times\vb A$ $\to$ Biot–Savart 定律}
+\cmprow{对源的要求}{任意电荷分布}{电流必须无散（路径闭合）}
+\cmprow{需要的约定}{参考点（一个常数）}{规范条件 $\nabla\cdot\vb A=0$，加边界条件}
+\cmpsum{同一个 Green 函数 $1/(4\pi R)$：电荷生成 $\phi$，电流生成 $\vb A$；一个取梯度得到场，一个取旋度。}
+\end{compare}
+
+\subsubsection{第三步：求旋度。} 由乘积法则 \eqref{id:product}，$\nabla\times[\vb J_s(\vb r')/R]=\nabla(1/R)\times\vb J_s(\vb r')$；再用 $\nabla(1/R)=-(\vb r-\vb r')/R^3$：
+\begin{equation*}
+\vb B=\nabla\times\vb A=\frac{\mu}{4\pi}\int\frac{\vb J_s(\vb r')\times(\vb r-\vb r')}{\abs{\vb r-\vb r'}^3}\,\dd V' ,
+\end{equation*}
+正是 \eqref{eq:biotsavart}。细导线中把 $\vb J_s\dd V'$ 换成 $I\,\dd\boldsymbol\ell'$；与\chref{ch:magnetic} 所说的一样，路径必须完整闭合，包括回流导体。周围有非线性铁磁物体时，这个自由空间积分不再等于总场，但仍可作为更大的耦合模型中的源场~\cite{haus}。单向耦合模型所需的线圈矢势 $\vb A_p$（\secref{sec:regimes-oneway}），也可以直接用 \eqref{eq:Agreen} 计算。
+
+\begin{deeper}[\eqref{eq:Agreen} 确实满足库仑规范]
+推导中假设了 $\nabla\cdot\vb A=0$，结果是否自洽？对 \eqref{eq:Agreen} 取散度：$\nabla\cdot[\vb J_s(\vb r')/R]=\vb J_s\cdot\nabla(1/R)=-\vb J_s\cdot\nabla'(1/R)$，$\nabla'$ 表示对源点求导。再分部积分：
+\begin{equation*}
+\nabla\cdot\vb A=-\frac{\mu}{4\pi}\int\vb J_s\cdot\nabla'\frac1R\,\dd V'=\frac{\mu}{4\pi}\int\frac{\nabla'\cdot\vb J_s}{R}\,\dd V'-\frac{\mu}{4\pi}\oint\frac{\vb J_s\cdot\vb n'}{R}\,\dd S' .
+\end{equation*}
+源电流无散，体积分为零；取一个包住全部源的曲面，面积分也为零。所以只要电流路径闭合，\eqref{eq:Agreen} 自动满足库仑规范——这是“电流路径必须完整”的又一个理由。配套脚本对一个圆环线圈数值地检验了这一点，并检验了 \eqref{eq:Agreen} 的旋度与 Biot–Savart 积分一致。
+\end{deeper}
+
+
+\section{磁标势与拓扑：无旋不等于保守}\label{sec:potentials-scalar}
+
+在没有自由电流、位移电流也可以忽略的区域，$\nabla\times\vb H=0$。这时又可以像静电学那样用一个标量：
+\begin{equation}
+\vb H=-\nabla\psi .
+\end{equation}
+$\psi$ 叫\textbf{磁标势}，单位是安培，对长度求导得到 A/m。它不是电压，也不同于 $\vb A$。\chref{ch:matter} 求磁化球内部的场时用的就是它（\secref{sec:matter-DH}）；\chref{ch:lumped} 中的“磁压降”，就是沿一条不套住电流的路径的磁位差 $\psi(a)-\psi(b)=\int_a^b\vb H\cdot\dd\boldsymbol\ell$。
+
+\subsection{带剩磁的线性材料}
+设材料线性，磁导率为 $\boldsymbol\mu$，并带有给定的剩磁 $\vb B_r$（永磁体，\chref{ch:bh}）：$\vb B=-\boldsymbol\mu\nabla\psi+\vb B_r$。代入 $\nabla\cdot\vb B=0$：
+\begin{keyeq}
+\nabla\cdot(\boldsymbol\mu\nabla\psi)=\nabla\cdot\vb B_r .
+\label{eq:magscalar}
+\end{keyeq}
+剩磁的散度像电荷一样充当源。在剩磁突变的磁化界面上，这一项集中成面上的源：它必须保留在弱形式中，或者通过相应的法向磁通条件来处理。在均匀、无源的空气中，$\vb B_r=0$、$\mu$ 为常数，方程化为 Laplace 方程 $\nabla^2\psi=0$。MRI 匀场与目标场线圈设计中的谐波展开，正建立在这一结构上（\chref{ch:mri}、\chref{ch:coils}）。
+
+在磁性材料中，由 $\vb B=\mu_0(\vb H+\vb M)$ 与 $\nabla\cdot\vb B=0$，有 $\nabla\cdot\vb H=-\nabla\cdot\vb M$，一般不为零。所以“无电流”不等于“无材料”，更不等于“无场”：磁化球内部没有任何电流，$\vb H$ 照样不为零 \eqref{eq:atlassphere}。
+
+\subsection{导线外面：局部无旋，绕一圈却不为零}
+无限长直导线载电流 $I$，导线外处处 $\nabla\times\vb H=0$。可是绕导线一圈，$\oint\vb H\cdot\dd\boldsymbol\ell=I$ \eqref{eq:wireB}。单值的标势沿闭合回路积分必为零，不可能给出 $I$。于是只能取一个局部的分支：
+\begin{equation}
+\psi=-\frac{I\theta}{2\pi},
+\end{equation}
+$\theta$ 为极角。它确实给出 $-\nabla\psi=\frac{I}{2\pi r}\vb e_\theta$，但绕导线一圈后 $\psi$ 改变了 $-I$，回不到原值（\figref{fig:scalar_cut}）。要得到单值的函数，必须在某处“割开”：取一个从导线延伸出去的割面，规定 $\psi$ 在割面两侧相差 $I$。割面的位置可以任选；它记录的是被排除掉的环量，并不表示场在那里真有一个跳变——$\vb H$ 在割面两侧是连续的。
+
+\fig{scalar_cut}{导线外的磁标势。左：$\vb H$（红）绕导线逆时针环绕；紫色虚线是 $\psi=-I\theta/(2\pi)$ 的等值线（等步长的射线），与 $\vb H$ 处处垂直。沿绕导线的回路走一圈，$\psi$ 减少 $I$，所以必须设一条割线（黑色虚线），$\psi$ 在它两侧相差 $I$；$\vb H$ 本身在割线上连续。右：沿回路的 $\psi$。不设割线，它会一直下降（灰色虚线）；设了割线，它在 $2\pi$ 处跳回（紫色）。}{fig:scalar_cut}
+
+原因在于区域的形状。去掉导线以后，外部区域中间有一个“洞”，不是单连通的；局部无旋只能保证\emph{不}套住这个洞的回路环量为零。\chref{ch:calculus} 误区框中那个绕轴的场，\chref{ch:magnetic} 中螺线管外的感应电场 \eqref{eq:solenoidE}，都是同一种结构。处理办法有三种：引入割面；把电流的贡献用一个源场显式表示出来，只让标势描述剩下的无旋部分；或者为每个洞增加一个环量自由度。不加任何条件地强行使用全局单值的 $\psi$，就把穿过洞的电流抹掉了。
+
+同样的拓扑问题还会出现在磁矢势的规范（多连通区域中，旋度相同的两个矢势之差未必是单值函数的梯度）、多连通的涡流导体，以及带孔曲面上的流函数（\secref{sec:potentials-stream}）中。它属于场问题本身，不只是数值算法的麻烦。
+
+\begin{compare}{电标势与磁标势}{电标势 $\phi$}{磁标势 $\psi$}
+\cmprow{生成}{$\vb E=-\nabla\phi$（时变时再加 $-\partial_t\vb A$）}{$\vb H=-\nabla\psi$}
+\cmprow{单位}{V}{A}
+\cmprow{单独使用的范围}{电场无旋的区域（静态）}{没有自由电流、位移电流可略的区域}
+\cmprow{方程中的源}{电荷：$-\nabla\cdot(\varepsilon\nabla\phi)=\rho_f$}{剩磁的散度：$\nabla\cdot(\boldsymbol\mu\nabla\psi)=\nabla\cdot\vb B_r$}
+\cmprow{为何会多值}{回路套住变化的磁通}{回路套住电流}
+\cmprow{两点之差}{电压：电场对单位电荷做的功}{磁压降 $\int\vb H\cdot\dd\boldsymbol\ell$，即磁路中的“电压”}
+\cmpsum{两者形式相同，都只在“无旋”的区域里单值；电标势被变化的磁通打破，磁标势被电流打破。}
+\end{compare}
+
+\section{二维与轴对称：等值线就是磁力线}\label{sec:potentials-2d}
+
+许多磁场问题沿某个方向不变（长导线、长铁芯的截面），或者绕某个轴对称（圆环线圈、螺线管）。这时矢势只剩一个分量，而这个分量的等值线有一个很有用的性质。
+
+\subsection{二维问题}
+设场沿 $z$ 不变，$\vb A=A_z(x,y)\vb e_z$。求旋度：
+\begin{equation}
+B_x=\frac{\partial A_z}{\partial y},\qquad B_y=-\frac{\partial A_z}{\partial x},\qquad B_z=0;
+\qquad\text{即}\quad \vb B=\nabla A_z\times\vb e_z .
+\end{equation}
+于是 $\vb B\cdot\nabla A_z=0$：磁场处处垂直于 $A_z$ 的梯度，也就是\emph{沿着 $A_z$ 的等值线}。$A_z$ 的等值线就是磁力线。矢势本身指向纸面外（或内），磁场却完全在纸面内，两者的方向毫不相干。这个性质属于二维表示，不能推广到任意的三维矢势图。
+
+等值线的疏密还有定量的意义。在两条等值线上各取一点 $P_1$、$P_2$，以它们为两条竖边、沿 $z$ 方向拉出深度为 $\ell_z$ 的矩形回路。由 \eqref{eq:Aflux}，穿过它的磁通等于 $\vb A$ 的环量；$\vb A$ 只有 $z$ 分量，只有两条竖边有贡献：
+\begin{equation}
+\Phi_B=\ell_z\bigl[A_z(P_1)-A_z(P_2)\bigr]
+\end{equation}
+（符号取决于回路的绕向）。所以\emph{两条等值线之间每单位深度的磁通，等于它们的 $A_z$ 之差}，与在线上取哪两点无关。按等步长画等值线，相邻两线之间夹着相等的磁通，线越密的地方磁场越强。\chref{ch:lumped} 中的二维磁场图就是这样画的。
+
+\subsubsection{线电流。} 沿 $+z$ 的线电流 $I$，在导线外的矢势为
+\begin{equation}
+A_z=-\frac{\mu_0I}{2\pi}\ln\frac{r}{r_0}.
+\end{equation}
+验算：$B_\theta=-\partial A_z/\partial r=\mu_0I/(2\pi r)$，与 \eqref{eq:wireB} 一致。等值线是同心圆。改变参考半径 $r_0$ 只给 $A_z$ 加上一个常数——这是 $\chi=c\,z$ 的规范变换——$\vb B$ 不变（\figref{fig:az_contours}）。
+
+\fig{az_contours}{二维问题中，$A_z$ 的等值线就是磁力线。左：指出纸面的线电流（绿）周围，按等步长画出的 $A_z$ 等值线（红，箭头为 $\vb B$ 的方向）。两条相邻等值线之间每米深度的磁通等于它们的 $A_z$ 之差，所以等值线越往外越稀，正好对应 $B\propto1/r$。右：两个参考半径 $r_0$ 给出的 $A_z(r)$ 只差一个常数，$B_\theta=-\partial_rA_z$ 完全相同。导线内部未画。}{fig:az_contours}
+
+\begin{example}{等值线之间夹着多少磁通}\label{ex:potentials-az}
+一根长直导线载 $I=5\,\mathrm A$（教学数值）。每米长度上，半径 $1\,\mathrm{cm}$ 与 $2\,\mathrm{cm}$ 两个圆柱面之间通过多少磁通？$2\,\mathrm{cm}$ 与 $4\,\mathrm{cm}$ 之间呢？为什么等步长的 $A_z$ 等值线越往外越稀？
+\solution
+每米的磁通等于两处的 $A_z$ 之差：$\dfrac{\mu_0I}{2\pi}\ln\dfrac{r_2}{r_1}=2\times10^{-7}\times5\times\ln2\,\mathrm{Wb/m}\approx6.93\times10^{-7}\,\mathrm{Wb/m}$。$2$ 到 $4\,\mathrm{cm}$ 之间，半径之比同样是 2，磁通也相同。所以 $A_z$ 每降低同样的量，半径就乘以同一个倍数：等值线的间距正比于 $r$，密度正比于 $1/r$，正好与 $B_\theta\propto1/r$ 一致。
+\end{example}
+
+\subsection{轴对称问题}
+轴对称时常用的分量是 $A_\theta(r,z)$。由 \eqref{eq:Aflux}，高度 $z$ 处半径为 $r$ 的圆所链接的磁通为
+\begin{equation}
+\Phi_B(r,z)=2\pi r\,A_\theta(r,z),
+\end{equation}
+这就是\chref{ch:magnetic} 中的 \eqref{eq:Afromflux}。所以 $rA_\theta$ 是轴对称场的\textbf{磁通函数}：在子午面上，它的等值线就是磁力线，相邻等值线之间夹着相等的磁通。注意是 $rA_\theta$，而不是 $A_\theta$ 本身。\chref{ch:magnetic} 中圆环线圈的场线图（\figref{fig:flux_linkage}）就是这样画的。它与下一节描述绕组电流的流函数是两回事。
+
+二维与轴对称问题因此都只有一个标量未知量，可以用普通的节点有限元求解（\chref{ch:femvector}）。
+
+\section{表面流函数：生成电流，而不是场}\label{sec:potentials-stream}
+
+到目前为止，势函数都用来生成\emph{场}。在线圈设计中，未知的却是\emph{电流}本身：MRI 梯度线圈与匀场线圈的导线，往往排布在一个圆柱面或平面上。电流必须守恒，不能凭空出现或消失，而优化算法很难逐点保证这一点。办法与\secref{sec:potentials-why} 如出一辙：选一个自动满足约束的表示。
+
+在一个法向为 $\vb n$ 的有向曲面上，定义
+\begin{keyeq}
+\vb K_s=\nabla_s\psi_s\times\vb n,\qquad \nabla_s=(\vb I-\vb n\vb n^{\mathsf T})\nabla .
+\label{eq:stream}
+\end{keyeq}
+$\vb K_s$ 是面电流密度（A/m），$\vb I$ 是单位张量，$\nabla_s$ 是切向梯度；标量 $\psi_s$ 叫\textbf{表面流函数}，单位为安培。在平面 $z=0$ 上，$\vb n=\vb e_z$：
+\begin{equation}
+\vb K_s=\Bigl(\frac{\partial\psi_s}{\partial y},\,-\frac{\partial\psi_s}{\partial x},\,0\Bigr),\qquad
+\nabla_s\cdot\vb K_s=\frac{\partial^2\psi_s}{\partial x\,\partial y}-\frac{\partial^2\psi_s}{\partial y\,\partial x}=0 .
+\end{equation}
+混合偏导数相等，电流守恒自动成立。
+
+\subsubsection{怎样读流函数？}
+\begin{itemize}
+\item \emph{电流沿等值线流动}：$\vb K_s\cdot\nabla_s\psi_s=0$，与 $A_z$ 和磁力线的关系完全相同。
+\item \emph{两条等值线的函数值之差，等于它们之间流过的电流}，符号由约定的方向决定~\cite{bfieldtheory}。例如在 $z=0$ 上沿 $x$ 轴从 $x_1$ 到 $x_2$，向 $+y$ 方向穿过的电流为 $\int_{x_1}^{x_2}K_y\,\dd x=-\int_{x_1}^{x_2}\partial_x\psi_s\,\dd x=\psi_s(x_1)-\psi_s(x_2)$。
+\item \emph{边界若是一条等值线，电流就不会流出边界}。
+\end{itemize}
+
+\begin{example}{方形平板上的流函数}\label{ex:potentials-stream}
+在 $-1\le x,y\le1$（单位长度）的平板上取 $\psi_s=\psi_0(1-x^2)(1-y^2)$，$\psi_0=10\,\mathrm A$（教学数值）。电流怎样流动？绕中心流动的总电流是多少？若取 $N=5$ 条等步长的等值线作为串联的导线，每条导线承载多少电流？
+\solution
+由 \eqref{eq:stream}，$\vb K_s=\psi_0\bigl(-2y(1-x^2),\,2x(1-y^2)\bigr)$。在 $(x>0,\,y=0)$ 处电流沿 $+y$，所以从 $+z$ 方向看，电流绕中心逆时针流动。板边上 $\psi_s=0$，边界是一条等值线，没有电流流出板边。从中心（$\psi_s=\psi_0$）到板边（$\psi_s=0$）的任一条线上，穿过的总电流都是 $\psi_0-0=10\,\mathrm A$。把 $0$ 到 $\psi_0$ 等分为 $N=5$ 份，在每一份的中间取一条等值线作为导线：每条导线代表 $\Delta\psi=\psi_0/N=2\,\mathrm A$ 的电流；把它们串联起来通以 $2\,\mathrm A$，就近似再现了这个面电流分布（\figref{fig:stream_function}）。
+\end{example}
+
+\fig{stream_function}{表面流函数。左：方形平板上 $\psi_s=\psi_0(1-x^2)(1-y^2)$ 的等值线（紫）与面电流 $\vb K_s$（绿）。电流沿等值线逆时针流动；中心 $\psi_s$ 最大，板边 $\psi_s=0$，没有电流流出板边。右：在 $0$ 到 $\psi_0$ 之间等步长取 5 条等值线作为导线，每条代表 $\psi_0/5$ 的电流；从中心到板边的任一条线（虚线）上，穿过的总电流为 $\psi_0$。}{fig:stream_function}
+
+这就是由流函数生成可绕制线圈的基本思想：优化器调整 $\psi_s$，电流守恒自动满足；最后从等值线中提取导线路径（\chref{ch:coils}）。若曲面上有孔，$\psi_s$ 在不同的边界上可以取不同的常数，二者之差就是绕孔流动的净电流——又是\secref{sec:potentials-scalar} 的拓扑问题。
+
+\begin{compare}{二维磁矢势 $A_z$ 与表面流函数 $\psi_s$}{$A_z$：生成磁场}{$\psi_s$：生成电流}
+\cmprow{公式}{$\vb B=\nabla A_z\times\vb e_z$}{$\vb K_s=\nabla_s\psi_s\times\vb n$}
+\cmprow{自动满足}{$\nabla\cdot\vb B=0$}{$\nabla_s\cdot\vb K_s=0$（电流守恒）}
+\cmprow{等值线是}{磁力线}{电流路径（导线）}
+\cmprow{两线之差}{每单位深度的磁通，Wb/m}{两线之间的电流，A}
+\cmprow{定义在}{场所在的二维截面}{源所在的曲面}
+\cmprow{从哪里来}{解场方程得到}{设计变量，由优化决定}
+\cmpsum{数学结构完全相同，都是“把梯度转 90°”；$A_z$ 回答磁力线怎么走，$\psi_s$ 回答电流怎么走。}
+\end{compare}
+
+\section{对照：四种“势”}\label{sec:potentials-compare}
+
+$\phi$、$\vb A$、$\psi$、$\psi_s$ 在软件里都叫“势”，其中三个还是标量场。可是它们生成的量、单位、适用的区域和求导的方式都不同，不能互换。\figref{fig:four_potentials} 把四者画在一起，\tabref{tab:potentials-four} 列出它们的单位、成立的区域、不唯一之处与典型用途。
+
+\fig{four_potentials}{四种“势”与它们生成的矢量场（箭头只表示方向）。左边两种是梯度型：$\vb E=-\nabla\phi$、$\vb H=-\nabla\psi$，场垂直于等值线。右边两种是流函数型：$\vb B=\nabla A_z\times\vb e_z$、$\vb K_s=\nabla_s\psi_s\times\vb n$，场沿着等值线。第一幅与第三幅用的是同一族曲线 $\ln(r_2/r_1)$：作为两根异号线电荷的电势，电场与它正交；作为两根反向线电流的 $A_z$，磁场沿着它。}{fig:four_potentials}
+
+\begin{table}[htbp]\centering\small
+\caption{四种“势”：生成什么，在哪里成立，自由在哪里。}\label{tab:potentials-four}
+\begin{tabularx}{\linewidth}{@{}l YYYY@{}}
+\toprule
+ & 电标势 $\phi$ & 磁矢势 $\vb A$ & 磁标势 $\psi$ & 表面流函数 $\psi_s$\\\midrule
+生成 & $\vb E=-\nabla\phi-\partial_t\vb A$ & $\vb B=\nabla\times\vb A$，并贡献 $-\partial_t\vb A$ & $\vb H=-\nabla\psi$ & $\vb K_s=\nabla_s\psi_s\times\vb n$\\
+单位 & V & Wb/m & A & A\\
+自动满足 & 与 $\vb A$ 一起：$\nabla\times\vb E=-\partial_t\vb B$ & $\nabla\cdot\vb B=0$ & $\nabla\times\vb H=0$ & $\nabla_s\cdot\vb K_s=0$\\
+成立的区域 & 处处（时变时与 $\vb A$ 配合） & 处处 & 无自由电流的区域 & 载流曲面上\\
+不唯一之处 & 常数；时变时随规范改变 & 加任意梯度 $\nabla\chi$ & 常数；绕电流时多值 & 常数；每个孔一个常数\\
+等值线 & 等势线，垂直于 $\vb E$ & 二维 $A_z$、轴对称 $rA_\theta$：磁力线 & 垂直于 $\vb H$ & 电流路径\\
+典型用途 & TES，TMS 的次级场 & 静磁、涡流、TMS 的源 & 匀场、永磁体、磁路 & 线圈逆向设计\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+
+\figref{fig:four_potentials} 把四者放在一起看。最值得记住的是几何上的分组：$\phi$ 与 $\psi$ 是\emph{梯度型}，场垂直于等值线，像水从山坡上流下来；$A_z$ 与 $\psi_s$ 是\emph{流函数型}，场沿着等值线，像沿等高线绕山而行。第一幅与第三幅甚至用了同一族曲线：同一个函数，作为两根异号线电荷的电势，电场线与它正交；作为两根反向线电流的 $A_z$，磁力线就是这些曲线本身。读一张“势”的图之前，先问清楚它是哪一种，就不会把等势线当成场线，也不会把流线当成等势线。
+
+
+回到本章开头的问题。两张矢势图描述的是同一个磁场；只要电标势与之相容（\exref{ex:potentials-gauge}），它们在组织中给出的电场也完全相同。可观测的是 $\vb E$、$\vb B$ 与回路的磁通，而不是某一点箭头的样子。
+
+至此，第三部分的两件工具都准备好了：在给定的频率、尺寸与材料下可以略去哪些耦合（\chref{ch:regimes}），以及用什么未知量来表示场。下一部分开始求解具体的场问题，从最简单的一个开始：两块电极贴在头皮上，没有变化的磁场，只需要电标势 $\phi$（\chref{ch:tes}）。
+
+\begin{takeaways}
+\begin{itemize}
+\item $\vb B=\nabla\times\vb A$、$\vb E=-\partial_t\vb A-\nabla\phi$ 让 $\nabla\cdot\vb B=0$ 与 $\nabla\times\vb E=-\partial_t\vb B$ 自动成立；剩下的高斯定律与安培定律成为关于势的方程。$-\partial_t\vb A$ 承载感应的环量，$-\nabla\phi$ 满足电荷与边界的要求。
+\item 规范变换 $\vb A\to\vb A+\nabla\chi$、$\phi\to\phi-\partial_t\chi$ 不改变 $\vb E$、$\vb B$。均匀变化的磁场中，同一点的 $-\partial_t\vb A$ 可以是 $80\,\mathrm{V/m}$ 或零，总电场却总是 $40\,\mathrm{V/m}$。比较求解器与代理模型时只比规范不变量；截断源矢势不是规范变换。
+\item 库仑规范加 \eqref{id:curlcurl} 把静磁方程化为 $-\nabla^2\vb A=\mu\vb J_s$，其解 $\vb A=\frac{\mu}{4\pi}\int\vb J_s/R\,\dd V'$ 取旋度即得 Biot–Savart 定律；电流路径闭合时，这个解自动满足库仑规范。
+\item 磁标势 $\vb H=-\nabla\psi$ 只在无自由电流的区域可用，$\nabla\cdot(\boldsymbol\mu\nabla\psi)=\nabla\cdot\vb B_r$；绕电流一圈 $\psi$ 改变 $I$，必须用割面、源场或环量自由度保留被排除的电流。无旋不等于保守。
+\item 二维 $A_z$ 与轴对称 $rA_\theta$ 的等值线就是磁力线，两线之差是它们之间的磁通；表面流函数的等值线是电流路径，两线之差是它们之间的电流。
+\item $\phi$、$\psi$ 是梯度型（场垂直于等值线），$A_z$、$\psi_s$ 是流函数型（场沿着等值线）。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 验证 $\vb A_3=(-B_0y,\,0,\,0)$ 的旋度也是 $B_0\vb e_z$。它与 $\vb A_{\rm alt}=B_0(0,\,x,\,0)$ 相差哪个标量的梯度？
+\item 若 $B(t)$ 随时间变化，改用 $\vb A_3$ 表示，$\phi_3$ 应取什么，才能与对称规范（$\phi=0$）给出同一个电场？
+\item 一个 TMS 程序在头皮以外把源矢势置零，理由是“反正 $\vb A$ 只是一种表示”。错在哪里？
+\item 两个代理模型输出的 $\vb A$ 节点值相差很大，但它们给出的 $\vb B$ 与线圈磁链相同。能断定其中一个错了吗？应当比较什么？
+\item 导线外处处 $\nabla\times\vb H=0$，为什么不能用一个处处单值的 $\psi$？割面放在哪里，会影响算出的 $\vb H$ 吗？
+\item 为什么按等步长画出的 $A_z$ 等值线，其疏密就表示 $|\vb B|$ 的大小？这个读法对三维矢势图中箭头的疏密成立吗？
+\item \exref{ex:potentials-stream} 中若改取 $N=10$ 条导线，每条代表多少电流？串联后应通多大的电流？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item $(\nabla\times\vb A_3)_z=\partial_x0-\partial_y(-B_0y)=B_0$，其余分量为零。$\vb A_{\rm alt}-\vb A_3=(B_0y,\,B_0x,\,0)=\nabla(B_0xy)$。
+\item $\vb A_3-\vb A_{\rm sym}=(-B_0y/2,\,-B_0x/2,\,0)=\nabla(-B_0xy/2)$，即 $\chi=-Bxy/2$，所以 $\phi_3=0-\partial_t\chi=\dot Bxy/2$。验算：$-\partial_t\vb A_3-\nabla\phi_3=(\dot By,0)-(\dot By/2,\dot Bx/2)=\tfrac{\dot B}{2}(y,-x)$。
+\item 规范变换只能给 $\vb A$ 加上一个梯度场。截断相当于在头皮外减去 $\vb A$ 本身，这一项一般不是梯度，它的旋度不为零（在边界上相当于一层虚构的面电流），所代表的磁场与源都变了；离散模型中边界单元的插值与导数也随之改变。
+\item 不能。$\vb A$ 的节点值依赖规范，两种合法规范可以相差任意一个梯度场。应当比较规范不变量：$\vb E$、$\vb B$、闭合回路的磁通与磁链、能量；或者先把两者的规范统一。
+\item 绕导线一圈的环量是 $I\neq0$，而单值函数的梯度沿闭合回路积分必为零。割面可以放在任何从导线延伸出去的位置，它只标出 $\psi$ 跳变 $I$ 的地方；算出的 $\vb H$ 与割面的位置无关。
+\item 相邻两条等值线之间每单位深度的磁通都是同一个步长 $\Delta A_z$；同样的磁通挤进更窄的间隙，磁场就更强（$B\approx\Delta A_z/\text{间距}$）。三维矢势图的箭头不行：$\vb A$ 的箭头一般不沿磁场方向，例如 $\vb A_{\rm sym}$ 绕轴打转，$\vb B$ 却是笔直均匀的。
+\item 每条代表 $\psi_0/10=1\,\mathrm A$；串联后通以 $1\,\mathrm A$。总电流仍是 $\psi_0=10\,\mathrm A$，只是分给了更多的匝。
+\end{answers}

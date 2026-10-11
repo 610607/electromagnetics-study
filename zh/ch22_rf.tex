@@ -1,0 +1,287 @@
+\chapter{准静态的边界：射频场与 SAR}\label{ch:rf}
+
+\begin{chapterguide}
+\guidequestion{MRI 的射频线圈离身体只有几厘米，身体明明处在线圈的“近场”里。为什么这还不足以让我们沿用前面各章的准静态模型？回到完整的 Maxwell 方程以后，哪些量要换一种读法？}
+\begin{guidegoals}
+\item 用三把尺子判断同一台 MRI 中主磁体、梯度与射频各自需要什么模型，并说明为什么要按载频、而不是按脉冲包络来判断；
+\item 从频域 Maxwell 方程推出射频的旋度--旋度方程及其弱形式，指出与准静态相比多出来的是哪一项；
+\item 把横向射频磁场分解为同向与反向旋转分量，避开“二倍因子”陷阱，分清 $B_1^+$ 与 $B_1^-$；
+\item 在比较 SAR 之前，把源归一化到同一个明确的激发目标；
+\item 区分射频周期平均、空间质量平均与脉冲串平均，写出 SAR 的二次型并检查它的实现。
+\end{guidegoals}
+\guideprereq{\secref{sec:regimes-phasor}（峰值相量、复导纳率）；\secref{sec:regimes-wave} 与\exref{ex:regimes-rf}（波动方程、128 MHz 的例子）；\eqref{id:curlibp}（旋度分部积分）；\secref{sec:framework-sar}（SAR 与二次加热）。}
+\end{chapterguide}
+
+\section{同一台 MRI，几个频率范围}\label{sec:rf-ranges}
+
+一台 MRI 里至少有三种磁场源。主磁体建立静态的 $B_0$；梯度线圈在千赫兹量级上快速切换；射频（RF）线圈以\textbf{拉莫尔频率} $f_0=\bar\gamma B_0$ 发射，$\bar\gamma=\gamma/2\pi$，对氢核约为 $42.58\,\mathrm{MHz/T}$。它们不是可以互换的磁源，各自对应一个不同的电磁问题（\chref{ch:mri}）：主磁体是带非线性铁的静磁问题（\chref{ch:bh}、\chref{ch:magnets}）；梯度在金属中需要耦合的 MQS，在组织中通常用单向耦合（\chref{ch:regimes}、\chref{ch:eddy}）；射频呢？
+
+射频线圈常常就贴在身体表面。按\secref{sec:regimes-labels}，观察点离线圈只有几厘米，相对于自由空间波长确实在“近场”里。这能说明可以用准静态吗？\chref{ch:regimes} 已经给出了否定的回答：近场说的是\emph{空间}上离源多远，准静态说的是\emph{方程}里略去了哪一条反馈。要回答的问题是：在身体这样大的尺度上，被略去的反馈是否真的小。这一章是一座连接准静态与全波的桥：哪些旧方程可以沿用，哪些被略去的项必须放回来，SAR 又为什么在这条边界两侧都仍有意义~\cite{rf,qslimits}。
+
+先用\chref{ch:regimes} 的三把尺子量一量。射频激励必须按\emph{载频}评估，而不是按序列的重复频率或脉冲包络的带宽：包络也许每几毫秒才变一次，场本身却每秒振荡上亿次。\tabref{tab:rf-ranges} 沿用\chref{ch:regimes} 的教学尺度（$\ell=0.20\,\mathrm m$，$\sigma=0.5\,\mathrm{S/m}$，以及 $\varepsilon_r=80$ 的比较介质），把它们放到不同的频率上。这些材料参数在所有频率上保持不变，只是为了看清尺度；它们不是某个频率下的组织参数。
+
+\begin{table}[htbp]\centering\small
+\caption{同一组教学尺度（$\ell=0.20\,\mathrm m$，$\sigma=0.5\,\mathrm{S/m}$）在 MRI 不同频率下的三把尺子。$\eta_w=k_0\ell$ 按自由空间计算；第五列是在 $\varepsilon_r=80$ 的无损比较介质中的 $k\ell$。拉莫尔频率按 $\bar\gamma=42.577\,\mathrm{MHz/T}$ 计算。}\label{tab:rf-ranges}
+\begin{tabularx}{\linewidth}{@{}l r r Y Y Y@{}}
+\toprule
+源 & 频率 $f$ & 波长 $\lambda_0$ & $\eta_w=k_0\ell$ & $k\ell$（$\varepsilon_r=80$） & $\eta_m=\omega\mu_0\sigma\ell^2$\\\midrule
+主磁体 & 0 & --- & 0 & 0 & 0\\
+梯度（教学频率） & $3\,\mathrm{kHz}$ & $\approx100\,\mathrm{km}$ & $1.26\times10^{-5}$ & $1.12\times10^{-4}$ & $4.74\times10^{-4}$\\
+射频，$0.1\,\mathrm T$ & $4.26\,\mathrm{MHz}$ & $70.4\,\mathrm m$ & $0.0178$ & $0.160$ & $0.672$\\
+射频，$1.5\,\mathrm T$ & $63.9\,\mathrm{MHz}$ & $4.69\,\mathrm m$ & $0.268$ & $2.39$ & $10.1$\\
+射频，$3\,\mathrm T$ & $127.7\,\mathrm{MHz}$ & $2.35\,\mathrm m$ & $0.535$ & $4.79$ & $20.2$\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+逐行读这张表：
+\begin{itemize}
+\item \emph{梯度}：三个数都远小于 1，组织中的单向耦合有依据（\secref{sec:regimes-oneway}）。
+\item \emph{3 T 射频}（$127.7\,\mathrm{MHz}$，即\exref{ex:regimes-rf} 的 $128\,\mathrm{MHz}$）：即使按自由空间计算，$\eta_w$ 也有 $0.5$；在介电常数更大的介质中 $k\ell$ 达到几个弧度，身体在电学上是“大”的，场的形状由波决定。必须用全波模型。
+\item \emph{0.1 T 射频}（$4.26\,\mathrm{MHz}$）：$\eta_w$ 只有 $0.018$，在比较介质中也只有 $0.16$，波的相位变化在身体尺度上不大。但 $\eta_m=0.67$ 并不远小于 1，对应的趋肤深度约 $0.35\,\mathrm m$，与身体尺寸可比：身体中感应电流的磁场已经不能先验地忽略，梯度线圈的单向耦合模型不能直接搬过来。
+\end{itemize}
+所以低场的射频问题也许可以用某种经过检验的准静态模型，但需要逐项检查：负载几何、容性耦合、波长，以及所关心的观测量；材料参数要换成该频率下的数据~\cite{itisdielectric}。这个判断不能从梯度线圈模型直接外推，也不能只凭“线圈离得近”。
+
+\begin{intuition}[近场挡不住什么]
+“近场”保证的是：在\emph{源附近}，场的形状像静态场。它不保证在\emph{身体内部}的传播延迟可以忽略——身体本身有 $0.2\,\mathrm m$ 那么大，而 3 T 时在 $\varepsilon_r=80$ 的比较介质中波长只有约 $0.26\,\mathrm m$（\exref{ex:regimes-rf}）。线圈离身体再近，也改变不了身体的电尺寸。
+\end{intuition}
+
+\section{恢复频域场方程}\label{sec:rf-equations}
+
+\subsection{旋度--旋度方程}
+沿用峰值相量约定 $e^{\jj\omega t}$ \eqref{eq:phasor}。设 $\widetilde{\vb J}_s$ 为外加电流密度（例如线圈导体中的电流），$\boldsymbol Y=\sig+\jj\omega\eps$ 为复导纳率张量 \eqref{eq:admittivity}，$\boldsymbol\mu$ 为射频频率下的线性磁导率张量；常见的非磁性射频负载中 $\boldsymbol\mu\simeq\mu_0\vb I$。两条旋度方程为
+\begin{equation}
+\nabla\times\widetilde{\vb E}=-\jj\omega\boldsymbol\mu\widetilde{\vb H},
+\qquad
+\nabla\times\widetilde{\vb H}=\widetilde{\vb J}_s+\boldsymbol Y\widetilde{\vb E}.
+\end{equation}
+由第一式，$\widetilde{\vb H}=-(\jj\omega)^{-1}\boldsymbol\mu^{-1}\nabla\times\widetilde{\vb E}$。代入第二式，两边乘以 $-\jj\omega$，整理得
+\begin{keyeq}
+\nabla\times\bigl(\boldsymbol\mu^{-1}\nabla\times\widetilde{\vb E}\bigr)+\jj\omega\boldsymbol Y\widetilde{\vb E}=-\jj\omega\widetilde{\vb J}_s .
+\label{eq:rfwave}
+\end{keyeq}
+对实标量 $\sigma$、$\varepsilon$，第二项的系数是 $\jj\omega\sigma-\omega^2\varepsilon$。其中 $-\omega^2\varepsilon\widetilde{\vb E}$ 正是磁准静态中缺少的位移电流反馈。这些 $\jj$ 和负号来自所选的时间约定；换成 $e^{-\mathrm i\omega t}$ 约定，形式会变，测得的场不会变。
+
+与\chref{ch:eddy} 对照最清楚。把 MQS 的 $\vb A$--$\phi$ 方程 \eqref{eq:av_mqs} 写成相量形式，再把其中的 $\sigma$ 换成 $\boldsymbol Y$，就得到全波的同一个方程：全波“只是”让安培定律右端的电流包含位移电流。在均匀区域中，\eqref{eq:rfwave} 回到 \eqref{eq:wave}，其中 $k^2=\omega^2\mu\varepsilon-\jj\omega\mu\sigma$ 的两项正是这里的两项。
+
+三项的相对大小可以用尺子估计。在尺度 $\ell$ 上，旋度--旋度项约为 $\widetilde E/(\mu\ell^2)$，传导项与它之比为 $\eta_m$，位移项与它之比为 $\eta_w^2=\eta_d\eta_m$ \eqref{eq:scales}：
+\begin{equation}
+\underbrace{\nabla\times\mu^{-1}\nabla\times}_{1}\;:\;\underbrace{\jj\omega\sigma}_{\eta_m}\;:\;\underbrace{-\omega^2\varepsilon}_{\eta_w^2}.
+\end{equation}
+按\tabref{tab:rf-ranges}，梯度频率下后两项都微不足道；$0.1\,\mathrm T$ 射频时传导项约为 $0.67$，位移项在比较介质中约为 $0.026$；$3\,\mathrm T$ 射频时两者分别约为 $20$ 与 $23$，都比旋度--旋度项大一个数量级——场在身体内部按小于 $\ell$ 的尺度变化，三项都必须保留。
+
+\begin{compare}{磁准静态与全波}{磁准静态（MQS）}{全波}
+\cmprow{安培定律右端}{$\vb J_f$}{$\vb J_f+\partial_t\vb D$，即 $\boldsymbol Y=\sig+\jj\omega\eps$}
+\cmprow{电场方程}{$\nabla\times\mu^{-1}\nabla\times\widetilde{\vb E}+\jj\omega\sigma\widetilde{\vb E}=-\jj\omega\widetilde{\vb J}_s$}{多一项 $-\omega^2\varepsilon\widetilde{\vb E}$}
+\cmprow{需要小的数}{$\eta_w\ll1$（容性反馈也可忽略）}{无}
+\cmprow{物体内部}{场的形状由源与导体几何决定}{出现波长尺度的相位变化与干涉}
+\cmprow{线圈}{绕组电流给定}{导体上的电流分布、调谐电容、端口与负载一起求解}
+\cmprow{外边界}{远处场衰减，适当截断即可}{辐射要能离开：吸收边界、吸收层或经检验的屏蔽腔}
+\cmpsum{放回来的是位移电流这一项；它与传导项一起让场在身体尺度上出现相位变化——这正是“近场”挡不住的东西。}
+\end{compare}
+
+\subsection{弱形式}
+\eqref{eq:rfwave} 与磁场有限元的方程 \eqref{eq:magweak}有同样的旋度--旋度结构，所以\chref{ch:femvector} 的棱单元仍然适用，只是多了一个复数的“质量项”。取复测试场 $\vb w$，用 $\vb w^*$ 点乘 \eqref{eq:rfwave} 并在区域 $\Omega$ 上积分。对第一项用旋度分部积分 \eqref{id:curlibp}，取 $\vb F=\boldsymbol\mu^{-1}\nabla\times\widetilde{\vb E}$、$\vb G=\vb w^*$，并注意 $\boldsymbol\mu^{-1}\nabla\times\widetilde{\vb E}=-\jj\omega\widetilde{\vb H}$：
+\begin{keyeq}
+\begin{split}
+\int_\Omega(\nabla\times\vb w)^*\cdot\boldsymbol\mu^{-1}(\nabla\times\widetilde{\vb E})\dV
++\jj\omega\int_\Omega\vb w^*\cdot\boldsymbol Y\widetilde{\vb E}\dV
+\\
+=-\jj\omega\int_\Omega\vb w^*\cdot\widetilde{\vb J}_s\dV
++\jj\omega\oint_{\partial\Omega}(\vb n\times\widetilde{\vb H})\cdot\vb w^*\dS .
+\end{split}
+\label{eq:rfweak}
+\end{keyeq}
+星号表示逐分量取复共轭。最后一项是边界与端口项：在理想导体上切向电场为零，测试场的切向分量也取零，它消失；在端口上它携带激励；在人工截断的外边界上，它要由吸收条件给出。组装出的矩阵是复数的，而且由于 $-\omega^2\varepsilon$ 这一项，一般是不定的——它不再是\chref{ch:tes} 那种实对称正定的电导矩阵，求解器与预条件要按实际算子选择~\cite{mfemem}。
+
+\subsection{边界、端口与外边界}
+理想导体要求切向电场为零。真实导体的损耗可以解析导体体积，也可以用合适的表面阻抗近似。端口、馈电、调谐电容、屏蔽，以及患者或体模，一起定义了激励问题：线圈导体上的电流分布不是给定的，而是解的一部分。人工外边界需要辐射条件、吸收层，或者一个经过检验的封闭屏蔽模型。
+
+\begin{pitfall}[“外边界离线圈不远，直接令场为零就好”]
+在射频线圈附近直接施加 $\widetilde{\vb E}=0$，等于在线圈外面放了一个理想导体的盒子：它会反射本应离开的能量，形成谐振腔，改变线圈的电流分布和负载中的场。这改变的是物理问题本身，不是一个无害的电势参考。准静态中“截断边界足够远就行”的经验，在这里需要换成吸收边界或真实存在的屏蔽。
+\end{pitfall}
+
+\section{发射观测量是旋转分量}\label{sec:rf-rotating}
+
+\subsection{自旋只“认”一个旋转方向}
+射频场的用途是让自旋翻转。在静磁场 $B_0\vb e_z$ 中，自旋磁矩绕 $z$ 轴进动。约定旋磁比 $\gamma>0$，自旋满足 $\dot{\vb M}=\gamma\vb M\times B_0\vb e_z$：$\vb M$ 沿 $+x$ 时，$\dot{\vb M}$ 指向 $-y$，所以从 $+z$ 往原点看，横向磁矩\emph{顺时针}旋转。与它同向旋转的射频分量在随自旋旋转的坐标系里近似静止，能持续地推动自旋；反向旋转的分量在该坐标系里以 $2\omega$ 转动，作用平均掉了。这就是旋转波近似的图像。
+
+采用 $e^{\jj\omega t}$ 约定时，顺时针的圆极化实场 $b(\cos\omega t\,\vb e_x-\sin\omega t\,\vb e_y)$ 对应相量 $(\widetilde B_x,\widetilde B_y)=(b,\jj b)$。定义横向相量的两个旋转分量：
+\begin{keyeq}
+\widetilde b_{\rm co}=\frac{\widetilde B_x-\jj\widetilde B_y}{2},
+\qquad
+\widetilde b_{\rm counter}=\frac{\widetilde B_x+\jj\widetilde B_y}{2}.
+\label{eq:corotating}
+\end{keyeq}
+$\widetilde b_{\rm co}$ 与自旋同向（顺时针），$\widetilde b_{\rm counter}$ 反向。对上面的圆极化场，$\widetilde b_{\rm co}=b$、$\widetilde b_{\rm counter}=0$。
+
+\subsection{二倍因子}
+一个只沿 $x$ 振荡、峰值为 $b$ 的线性极化场，$(\widetilde B_x,\widetilde B_y)=(b,0)$，代入 \eqref{eq:corotating} 得 $\widetilde b_{\rm co}=\widetilde b_{\rm counter}=b/2$。时域里看得更直接：
+\begin{equation}
+b\cos\omega t\,\vb e_x=\frac b2\bigl(\cos\omega t\,\vb e_x-\sin\omega t\,\vb e_y\bigr)+\frac b2\bigl(\cos\omega t\,\vb e_x+\sin\omega t\,\vb e_y\bigr),
+\end{equation}
+一个来回振荡的矢量，等于两个长度减半、反向旋转的矢量之和（\figref{fig:rotating_components}）。只有一半能用来激发。把线性场的峰值当成“$B_1$”，翻转角就会高估一倍——这是常见的\textbf{二倍因子陷阱}。
+
+\fig{rotating_components}{横向射频磁场的两个旋转分量。(a) 线性驱动：沿 $x$ 振荡的场（黑色）是两个长度为 $b/2$ 的旋转矢量之和，深色的顺时针分量与自旋同向，浅色的逆时针分量反向。(b) 正交驱动 $(b,\jj b)$：一个长度为 $b$、顺时针旋转的矢量，全部与自旋同向。(c) 同样的分量峰值 $b$ 下两种驱动的旋转分量。约定：峰值相量 $e^{\jj\omega t}$，$\gamma>0$，从 $+z$ 俯视。}{fig:rotating_components}
+
+在共振、射频相位恒定、旋转波近似成立时，简单的翻转角估计为
+\begin{equation}
+\alpha=\gamma\int b_{\rm co}(t)\,\dd t,
+\label{eq:rf-flip}
+\end{equation}
+幅值沿所选的旋转坐标轴带符号。离共振、空间相位变化和一般的脉冲形状，需要相应的自旋动力学计算。
+
+\begin{example}[label=ex:rf-flip]{一个 $90^\circ$ 脉冲需要多大的场}
+用 $1\,\mathrm{ms}$ 的矩形脉冲在共振处把氢核翻转 $90^\circ$（教学输入），需要多大的 $b_{\rm co}$？用一个线性线圈和用正交驱动，分别需要多大的场？
+\solution
+由 \eqref{eq:rf-flip}，$b_{\rm co}=(\pi/2)/(\gamma T)$。$\gamma=2\pi\times42.577\,\mathrm{MHz/T}$，$T=1\,\mathrm{ms}$：
+\begin{equation*}
+b_{\rm co}=\frac{\pi/2}{2\pi\times42.577\times10^6\times10^{-3}}\,\mathrm T=5.87\,\mu\mathrm T .
+\end{equation*}
+线性线圈产生的场只有一半是同向分量，它在自己的轴上需要峰值 $2b_{\rm co}=11.74\,\mu\mathrm T$。正交驱动用两个互相垂直、相位差 $90^\circ$ 的通道，每个通道只需 $5.87\,\mu\mathrm T$。若误把线性场的峰值 $11.74\,\mu\mathrm T$ 当作 $b_{\rm co}$ 代入 \eqref{eq:rf-flip}，算出的翻转角是 $180^\circ$。
+\end{example}
+
+\subsection{发射与接收}
+文献和软件中常用 $B_1^+$、$B_1^-$ 两个记号。在本书的约定下，$B_1^+$ 是发射线圈单位驱动的场的同向分量 $\widetilde b_{\rm co}$；$B_1^-$ 则是接收线圈单位电流的场的反向分量 $\widetilde b_{\rm counter}$，它决定接收灵敏度~\cite{rf}。
+
+\begin{compare}{$B_1^+$ 与 $B_1^-$}{$B_1^+$：发射}{$B_1^-$：接收}
+\cmprow{取自}{发射线圈单位驱动的横向场}{接收线圈单位电流的横向场}
+\cmprow{本书约定}{$(\widetilde B_x-\jj\widetilde B_y)/2$，与自旋同向}{$(\widetilde B_x+\jj\widetilde B_y)/2$，与自旋反向}
+\cmprow{决定}{翻转角 $\alpha=\gamma\int b_{\rm co}\,\dd t$}{接收信号的灵敏度（互易性）}
+\cmprow{二者的关系}{同一线圈的 $|B_1^+|$ 与 $|B_1^-|$ 只在 $\widetilde B_x$、$\widetilde B_y$ 同相时相等}{导电负载中的相位变化使二者的空间分布不同}
+\cmprow{约定变化时}{换时间约定或 $z$ 轴方向，$\pm\jj$ 对调}{同左}
+\cmpsum{同一个横向磁场有两个旋转分量：发射看与自旋同向的那个，接收看与自旋反向的那个。先写清约定，才能读别人的 $B_1^+$、$B_1^-$。}
+\end{compare}
+
+\begin{deeper}[为什么接收看反向分量]
+由互易性（\secref{sec:framework-reciprocity}），一个以相量 $\widetilde{\vb M}$ 振荡的磁化在接收线圈端口感应的开路电压为 $\widetilde V=-\jj\omega\int\widetilde{\vb B}_1\cdot\widetilde{\vb M}\dV$，$\widetilde{\vb B}_1$ 是接收线圈单位电流的场（互易性不取共轭）。顺时针进动的横向磁化 $M_\perp(\cos\omega t,-\sin\omega t)$ 的相量是 $M_\perp(1,\jj)$，于是 $\widetilde{\vb B}_1\cdot\widetilde{\vb M}=M_\perp(\widetilde B_{1x}+\jj\widetilde B_{1y})=2M_\perp\,\widetilde b_{\rm counter}$。至于 $|\widetilde b_{\rm co}|$ 与 $|\widetilde b_{\rm counter}|$ 何时相等：二者的平方之差为 $|\widetilde b_{\rm co}|^2-|\widetilde b_{\rm counter}|^2=\operatorname{Im}(\widetilde B_x^*\widetilde B_y)$，只有 $\widetilde B_x$ 与 $\widetilde B_y$ 同相（例如无损、电尺寸小的情形）时才为零。
+\end{deeper}
+
+使用论文或软件中的 $B_1^+$、$B_1^-$ 公式之前，先检查时间约定、坐标轴与旋向；它们在不同来源中可能带着相反的 $\pm$ 号或共轭，不能直接移植笛卡尔分量的公式。
+
+\section{比较 SAR 前先归一化源}\label{sec:rf-normalization}
+
+\subsection{场基与系数的单位}
+设计射频线圈或多通道阵列时，常把场写成若干个基场的线性组合：
+\begin{equation}
+\widetilde{\vb E}(\vb r)=\sum_kc_k\,\vb e_k(\vb r).
+\label{eq:rf-basis}
+\end{equation}
+复系数 $c_k$ 乘在一致定义的端口或电流基上，$\vb e_k$ 是每单位系数的峰值电场。$\vb e_k$ 的单位取决于 $c_k$ 是什么：电流（A）、电压（V），还是归一化的功率波幅值（$\sqrt{\mathrm W}$）。还要说明端口的参考阻抗，以及计算某个基场时其他端口处于什么状态（开路、短路或匹配）。按 $1\,\mathrm A$、$1\,\mathrm V$、$1\,\mathrm W$ 归一化的场图，数值上不能互换——这与\chref{ch:tms} 中“每 A/s 还是每 A/$\mu$s”是同一类问题。
+
+\subsection{接受功率与耦合}
+在功率波约定下，单个端口的接受功率等于前向功率减去反射功率。多端口阵列中，若功率波按 $|a_k|^2$ 等于第 $k$ 个端口的前向功率归一化，入射波向量 $\vb a$、出射波 $\vb b=\vb S\vb a$（$\vb S$ 为散射矩阵），则总接受功率为
+\begin{equation}
+P_{\rm acc}=\vb a^{\dagger}\vb a-\vb b^{\dagger}\vb b=\vb a^{\dagger}\bigl(\vb I-\vb S^{\dagger}\vb S\bigr)\vb a .
+\end{equation}
+（若 $\vb a$ 取峰值幅值，前面再乘 $1/2$——又是峰值与有效值之别。）只要通道之间有耦合，$\vb S$ 就有非对角元，接受功率取决于\emph{整个}系数向量，包括各通道的相位。所以，把各个通道孤立地缩放到名义上的 $1\,\mathrm W$、再把各自的 SAR 相加，并不等于同时激励时的结果。线性叠加适用于指定基中的复数场，而不适用于事先取了模的场或功率（\exref{ex:regimes-phasorsum}）~\cite{rf}。
+
+\subsection{先对齐激发目标}
+一个无量纲的幅值乘数 $a$ 使电场与有用的射频磁场分量都乘以 $a$，SAR 却乘以 $|a|^2$。因此，比较两个设计的 SAR 之前，先把它们缩放到同一个明确定义的射频目标，再比较 SAR。目标可以是某个区域内 $B_1^+$ 的平均值、某一点的值，或完整的激发误差；目标不同，比较的就是不同的问题。两个设计即使产生相同的有用发射场，也可能有不同的电场热点。
+
+\begin{intuition}[SAR 是为目标付出的代价]
+一张 SAR 图本身不说明设计的好坏。有意义的是“为了达到这个 $B_1^+$，付出了多少 SAR”。离开激发目标谈 SAR，就像只比较两台电机的耗电而不问它们各带多大的负载。
+\end{intuition}
+
+\begin{example}[label=ex:rf-quad]{线性驱动与正交驱动的 SAR}
+两个相同、互不耦合的通道：通道 $x$ 每单位驱动产生 $(\widetilde B_x,\widetilde B_y)=(b,0)$，通道 $y$ 产生 $(0,b)$。设它们的 SAR 矩阵 \eqref{eq:sarQ}为 $\vb Q=q\,\vb I$：两个通道各自的 SAR 相同，交叉项为零（例如整个负载按对称性平均时）。要得到同样的 $\widetilde b_{\rm co}=b$，线性驱动与正交驱动的 SAR 之比是多少？
+\solution
+线性驱动只用通道 $x$，由 \eqref{eq:corotating}，需要 $\vb c=(2,0)$，$\mathrm{SAR}=\vb c^\dagger\vb Q\vb c=4q$。正交驱动取 $\vb c=(1,\jj)$，产生 $(b,\jj b)$，$\widetilde b_{\rm co}=b$，$\mathrm{SAR}=|1|^2q+|\jj|^2q=2q$。同样的激发目标下，线性驱动的 SAR 是正交驱动的 2 倍：线性场中反向旋转的那一半不参与激发，却照样带着电场、沉积功率。这个“2”依赖于 $\vb Q=q\vb I$ 的假设；真实线圈有耦合、有交叉项，局部 SAR 更要逐点计算，比值可以偏离 2。
+\end{example}
+
+\begin{pitfall}[“两个线圈都按 $1\,\mathrm W$ 输入功率归一化，比较 SAR 图就知道哪个更安全”]
+同样的 $1\,\mathrm W$ 下，两个线圈产生的 $B_1^+$ 不同，达到同一个翻转角所需的功率也就不同。要比较的是同一激发目标下的 SAR。对耦合的阵列，“每通道 $1\,\mathrm W$”本身还依赖于其他通道的状态。
+\end{pitfall}
+
+\section{三种平均}\label{sec:rf-averages}
+
+SAR 报告中的每一个数，背后都做过这三种平均中的一种或几种。它们针对不同的时间与空间尺度，回答不同的问题，不能混用（\figref{fig:rf_averaging_ladder}）。
+
+\subsection{射频周期平均与局部损耗}
+定义复导纳率的耗散部分，即它的 Hermitian 部分 $\boldsymbol Y_H=(\boldsymbol Y+\boldsymbol Y^\dagger)/2$。对实对称的 $\sig$、$\eps$，$\boldsymbol Y_H=\sig$；若介电常数含损耗 $\varepsilon''$，则 $\boldsymbol Y_H=\sig+\omega\boldsymbol\varepsilon''$——正是\secref{sec:regimes-phasor} 中那份不能重复计算的介电损耗。峰值相量下，一个射频周期内的平均损耗密度为
+\begin{equation}
+\overline p=\tfrac12\,\widetilde{\vb E}^\dagger\boldsymbol Y_H\widetilde{\vb E},
+\end{equation}
+因子 $1/2$ 就是对 $\cos^2\omega t$ 取的周期平均 \eqref{eq:localsar}。
+
+\subsection{空间质量平均}
+平均区域 $V_a$ 的质量为 $m_a=\int_{V_a}\rho_m\dV$。把 \eqref{eq:rf-basis} 代入并在 $V_a$ 上积分，区域平均 SAR 是系数的二次型：
+\begin{keyeq}
+Q_{ij}^{(a)}=\frac{1}{2m_a}\int_{V_a}\vb e_i^\dagger\boldsymbol Y_H\vb e_j\dV,
+\qquad
+\mathrm{SAR}_a=\vb c^\dagger\vb Q^{(a)}\vb c .
+\label{eq:rfQ}
+\end{keyeq}
+这就是\eqref{eq:sarQ} 加上了平均区域与介电损耗。实现它时有几项现成的检查：被动材料给出 Hermitian、半正定的 $\vb Q^{(a)}$；$\vb c^\dagger\vb Q^{(a)}\vb c$ 必须是非负实数；所有系数乘以 $a$ 时它乘以 $|a|^2$。检查脚本用随机的复数基场、各向异性的有损材料核对了这几条，以及 $\vb c^\dagger\vb Q\vb c$ 与直接积分的一致性。$\vb Q$ 的非对角元描述通道之间的干涉，物理上不能省略（\secref{sec:framework-sar}）。
+
+逐点 SAR、局部质量平均 SAR 与全身平均 SAR 是不同的观测量。场不均匀时，平均区域越大，热点被摊得越平：\figref{fig:rf_averaging_ladder} 中一个一维教学热点的逐点峰值为 $2.5\,\mathrm{W/kg}$，在居中的 $10\,\mathrm{mm}$ 窗口上平均为 $1.87\,\mathrm{W/kg}$，在 $20\,\mathrm{mm}$ 窗口上为 $1.10\,\mathrm{W/kg}$。靠近空气与材料边界时，平均区域怎样构造、包含多少组织质量，都必须明确写出。
+
+\subsection{脉冲串平均}
+若射频由一个窄带的慢包络 $\vb c(t)$ 调制，并沿用同一组频域基场，那么在时间 $T_a$ 上的平均为
+\begin{keyeq}
+\langle\mathrm{SAR}_a\rangle_{T_a}=\frac{1}{T_a}\int_0^{T_a}\vb c(t)^\dagger\,\vb Q^{(a)}\,\vb c(t)\,\dd t .
+\label{eq:rftimeaverage}
+\end{keyeq}
+\eqref{eq:rfQ} 中的因子 $1/2$ 已经完成了射频周期平均，这里的积分再完成一层脉冲串平均。真正宽带的激励、或材料参数随频率显著变化时，单一频率的基场与包络近似都要重新审视。低频的实波形（例如梯度感应的电场）则直接用 $\vb E(t)^{\mathsf T}\sig\vb E(t)$ 计算瞬时损耗再做时间平均，不要套用正弦的因子 $1/2$。
+
+\begin{example}[label=ex:rf-units]{一组单位检查}
+取 $\sigma=0.5\,\mathrm{S/m}$、$\rho_m=1000\,\mathrm{kg/m^3}$，均匀的峰值电场 $100\,\mathrm{V/m}$。射频周期平均的 SAR 是多少？若这样的激励每 $10\,\mathrm{ms}$ 出现 $1\,\mathrm{ms}$（矩形包络），长期平均是多少？若 $100\,\mathrm{V/m}$ 其实是有效值呢？
+\solution
+瞬时损耗 $\sigma E(t)^2/\rho_m$ 在 $0$ 与 $5\,\mathrm{W/kg}$ 之间振荡，周期平均 $\tfrac12\times0.5\times100^2/1000=2.5\,\mathrm{W/kg}$。材料均匀、场均匀，任何区域上的质量平均都仍是 $2.5\,\mathrm{W/kg}$。由 \eqref{eq:rftimeaverage}，占空比 $0.1$ 给出长期平均 $0.25\,\mathrm{W/kg}$。若 $100\,\mathrm{V/m}$ 是有效值，两个结果都加倍：$5\,\mathrm{W/kg}$ 与 $0.5\,\mathrm{W/kg}$（\secref{sec:framework-sar}）。这些合成数值只用来检查单位与约定，不是安全限值。
+\end{example}
+
+\fig{rf_averaging_ladder}{同一个场幅值的三层平均。① 射频周期平均：瞬时损耗以两倍载频振荡，平均值为峰值的一半（$128\,\mathrm{MHz}$ 时一个周期约 $7.8\,\mathrm{ns}$）。② 空间质量平均：一维教学热点的逐点峰值为 $2.5\,\mathrm{W/kg}$，在 $10\,\mathrm{mm}$ 与 $20\,\mathrm{mm}$ 窗口上的平均分别为 $1.87$ 与 $1.10\,\mathrm{W/kg}$。③ 脉冲串平均：每 $10\,\mathrm{ms}$ 发射 $1\,\mathrm{ms}$，长期平均为脉冲期间的 $0.1$ 倍。每一行是一个独立的教学例子，数值都是合成的，不是暴露限值。}{fig:rf_averaging_ladder}
+
+\phantomsection\addcontentsline{cmp}{section}{三种平均}%
+\begin{comparebox}{三种平均}\small\renewcommand{\arraystretch}{1.3}%
+\begin{tabularx}{\linewidth}{@{}>{\leavevmode\sffamily\bfseries\color{muted}\raggedright\arraybackslash}p{.13\linewidth}YYY@{}}
+\arrayrulecolor{cmp!45}\toprule
+& {\sffamily\bfseries\color{cmp}射频周期平均} & {\sffamily\bfseries\color{cmp}空间质量平均} & {\sffamily\bfseries\color{cmp}脉冲串平均}\\\midrule
+对什么平均 & 一个载波周期内的 $\sigma E(t)^2$ & 区域 $V_a$ 内的损耗，按质量加权 & 包络 $\vb c(t)$ 在时间 $T_a$ 内的变化\\
+典型尺度 & 纳秒（$128\,\mathrm{MHz}$：$7.8\,\mathrm{ns}$） & 毫米到厘米 & 毫秒到更长\\
+在公式中 & 峰值相量下的因子 $\tfrac12$ & $\frac{1}{m_a}\int_{V_a}\cdots\dV$，即 $\vb Q^{(a)}$ & $\frac{1}{T_a}\int\vb c^\dagger\vb Q\vb c\,\dd t$\\
+本章的数 & 瞬时 $0$--$5$，平均 $2.5\,\mathrm{W/kg}$ & 热点 $2.5$；$10\,\mathrm{mm}$：$1.87$；$20\,\mathrm{mm}$：$1.10$ & 脉冲期间 $2.5$，长期 $0.25\,\mathrm{W/kg}$\\
+常见错误 & 峰值与有效值混用，差 2 倍 & 不说明区域大小、形状与组织质量 & 把脉冲期间的值当作长期平均\\
+\midrule
+\multicolumn{4}{@{}p{\linewidth}@{}}{{\sffamily\bfseries\color{cmp}一句话}\enspace 三种平均依次作用在时间、空间、时间上；报告一个 SAR 数值，就要说清它做了哪几种、各自的区间多大。}\\
+\bottomrule
+\end{tabularx}
+\end{comparebox}
+
+\begin{pitfall}[“SAR 没有超标，所以安全”“SAR 图收敛了，评估就完成了”]
+SAR 是单位质量的沉积功率，不是温度，也不是神经兴奋。温度还取决于热输运与生理条件；PNS 取决于电场沿神经的投影与膜动力学（\chref{ch:neuro}）。一张收敛的 SAR 图，或一张收敛的激活函数图，都不能单独构成设备的安全评价。
+\end{pitfall}
+
+至此，书中的每一类场问题都已经出现过：静电与传导、感应、涡流、非线性磁体、有限元、线圈设计、神经响应，以及准静态的边界。下一章把它们放进几个一体化的仿真项目，在同一套模型约定下把源、场与观测量连起来。
+
+\begin{takeaways}
+\begin{itemize}
+\item 同一台 MRI 里有静态、千赫兹与兆赫兹三类源。射频要按载频判断：“近场”说的是离源多远，准静态要求被略去的反馈在\emph{身体尺度}上小。3 T 时 $\eta_w\approx0.5$（自由空间），身体在电学上是“大”的；0.1 T 时 $\eta_w$ 小，但 $\eta_m\approx0.67$ 不小。
+\item 射频的旋度--旋度方程 $\nabla\times\mu^{-1}\nabla\times\widetilde{\vb E}+\jj\omega\boldsymbol Y\widetilde{\vb E}=-\jj\omega\widetilde{\vb J}_s$：放回来的是位移项 $-\omega^2\varepsilon\widetilde{\vb E}$。三项之比约为 $1:\eta_m:\eta_w^2$。弱形式仍用棱单元，边界项 $\jj\omega\oint(\vb n\times\widetilde{\vb H})\cdot\vb w^*\dS$ 承载端口与吸收边界；矩阵复数且不定。
+\item 发射看同向旋转分量 $\widetilde b_{\rm co}=(\widetilde B_x-\jj\widetilde B_y)/2$。峰值为 $b$ 的线性场只含 $b/2$ 的同向分量——二倍因子陷阱。接收灵敏度看接收线圈场的反向分量。
+\item 比较 SAR 之前先把设计缩放到同一个激发目标；SAR 随幅值乘数按 $|a|^2$ 变化；耦合阵列的接受功率依赖整个系数向量。
+\item 三种平均：射频周期（因子 $\tfrac12$）、空间质量（$\vb Q^{(a)}$，Hermitian 半正定）、脉冲串（$\tfrac1{T_a}\int\vb c^\dagger\vb Q\vb c\,\dd t$）。$100\,\mathrm{V/m}$ 峰值、$0.5\,\mathrm{S/m}$、$1000\,\mathrm{kg/m^3}$：$2.5\,\mathrm{W/kg}$，10\% 占空比 $0.25\,\mathrm{W/kg}$。SAR 不是温度，也不是神经响应。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 一台 0.1 T 低场系统的射频线圈。按\tabref{tab:rf-ranges}，$\eta_w$ 与 $\eta_m$ 各约多大？能否直接套用梯度线圈在组织中的单向耦合模型？
+\item 某线圈在中心产生 $(\widetilde B_x,\widetilde B_y)=(3\,\mu\mathrm T,0)$。$\widetilde b_{\rm co}$ 与 $\widetilde b_{\rm counter}$ 各是多少？
+\item 相量 $(b,-\jj b)$ 描述的是什么样的场？按本书约定，它能激发自旋吗？
+\item 把一个设计的所有通道幅值都乘以 $1.2$，$B_1^+$ 与 SAR 各变为原来的多少倍？
+\item 为什么把各通道单独按 $1\,\mathrm W$ 归一化的 SAR 图相加，一般不等于同时激励时的 SAR？
+\item \exref{ex:rf-units} 中若 $100\,\mathrm{V/m}$ 是有效值、占空比改为 $5\%$，长期平均 SAR 是多少？
+\item 弱形式 \eqref{eq:rfweak} 中，若在离线圈不远的外边界上令 $\widetilde{\vb E}=0$，求得的是什么问题的解？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item $\eta_w\approx0.018$（比较介质中 $k\ell\approx0.16$），$\eta_m\approx0.67$。波的延迟在身体尺度上小，但 $\eta_m$ 不远小于 1，身体中感应电流的磁场不能先验忽略，不能直接套用单向耦合；还要用该频率下的介电数据检查容性耦合，并与更完整的模型对照。
+\item 由 \eqref{eq:corotating}，二者都是 $1.5\,\mu\mathrm T$。
+\item $\operatorname{Re}\{(b,-\jj b)e^{\jj\omega t}\}=b(\cos\omega t,\sin\omega t)$：从 $+z$ 看逆时针旋转的圆极化场。$\widetilde b_{\rm co}=(b-\jj(-\jj b))/2=0$，$\widetilde b_{\rm counter}=b$：它与自旋反向，在旋转波近似下不产生翻转。
+\item $B_1^+$ 乘以 $1.2$，SAR 乘以 $1.44$。
+\item SAR 是场的二次量，同时激励时有交叉项（干涉），可正可负；通道耦合还使每个端口的接受功率依赖其他通道的幅值与相位。叠加只对复数场成立。
+\item 有效值下脉冲期间为 $5\,\mathrm{W/kg}$，乘以占空比 $0.05$ 得 $0.25\,\mathrm{W/kg}$。
+\item 一个被理想导体盒子包围的问题：盒壁反射能量、形成谐振腔，改变线圈电流与负载中的场。它不是原来开放问题的近似，需要吸收边界或真实存在的屏蔽。
+\end{answers}

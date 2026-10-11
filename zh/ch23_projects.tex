@@ -1,0 +1,423 @@
+\chapter{一体化仿真项目}\label{ch:projects}
+
+% a compact "lab card" for each project (same macro in both editions)
+\providecommand{\labcard}[4]{\par\noindent\begingroup\small\renewcommand{\arraystretch}{1.28}%
+\arrayrulecolor{accent!45}%
+\begin{tabularx}{\linewidth}{@{}>{\leavevmode\sffamily\bfseries\color{accent}\raggedright\arraybackslash}p{.1\linewidth}Y@{}}
+\toprule
+\ZE{目标}{Goal} & #1\\
+\ZE{用到}{Builds on} & #2\\
+\ZE{输入}{Inputs} & #3\\
+\ZE{产出}{Outputs} & #4\\
+\bottomrule
+\end{tabularx}\arrayrulecolor{black}\endgroup\par}
+
+\begin{chapterguide}
+\guidequestion{前面二十二章分别算过 TES、TMS、涡流、磁体与磁轭、有限元、梯度与线圈、神经响应与射频。真实的装置把这些问题放在同一台机器里。怎样把它们连成一个别人能复现、能逐项检查的整体，而不是一叠互相说不清关系的彩色场图？}
+\begin{guidegoals}
+\item 写出一份模型约定，说清改变其中任何一项为什么就换了一个问题；在坐标系之间正确地变换点、极矢量、轴矢量与张量；
+\item 在同一网格上搭建 TES 与 TMS，用两组独立的检查把“源错了”和“体导体修正错了”分开；
+\item 用一组单位源基同时得到场、损耗、感性电压、受力与组织电场，并说出这组基什么时候失效；
+\item 先求非线性偏置、再求小信号，用中心差分检验切线；
+\item 从同一个电场分别得到神经驱动与加热，解释二者为什么是两个独立的约束；加入射频之前重新检查范围，并把场数组做成可复现的接口。
+\end{guidegoals}
+\guideprereq{\secref{sec:femscalar-bar}（两单元导电棒）；\chref{ch:tes}、\chref{ch:tms}；\chref{ch:framework}（叠加与读出）；\secref{sec:femvector-bias}（偏置附近的线性响应）；\chref{ch:neuro}；\chref{ch:rf}。}
+\end{chapterguide}
+
+\section{模型约定：所有项目共用的一页纸}\label{sec:projects-contract}
+
+把一组场图交给同事，她首先会问：这是每单位什么的场？在哪个坐标系里？保留了哪些耦合、用了什么材料？在回答这些问题之前，一张场图还不是一个结果。本章的项目都为了一个目的：产生可以独立检查的计算，而不是收集漂亮的场图。
+
+\subsection{一架梯子}
+项目按\figref{fig:project_ladder} 的顺序排成一架梯子。最下面一级是\secref{sec:femscalar-bar} 的两单元导电棒：小到可以手算，却已经包含了组装、边界反力、场重建与功率平衡这些贯穿全书的步骤。往上每一级只增加一样新的困难——同一网格上的两种源、一组源基的多种读出、非线性偏置、两种响应、频率范围的改变——而模型约定始终不变。每一级都写成实验课的样子：目标、用到哪些章、输入、步骤、必须通过的检查，以及可能出错的地方。
+
+\fig{project_ladder}{综合项目的梯子。从下往上，每一级在上一级的基础上只增加一种新的困难；中间一栏是这一级用到的章，右栏是它必须通过的检查。最下一级（两单元导电棒）在\chref{ch:femscalar}；最上一级是把结果做成别人能复现的接口（\secref{sec:projects-interface}）。左侧箭头表示：所有项目共用同一份模型约定。}{fig:project_ladder}
+
+\subsection{约定写什么}
+每个项目都从同一份\textbf{模型约定}开始（\tabref{tab:projects-contract}）。表中的八项缺一不可；改变其中任何一项，就改变了问题——哪怕网格、软件和场图的样子都没有变。
+
+\begin{table}[htbp]\centering\small
+\caption{模型约定的八项内容（右栏以\figref{fig:tes_setup} 的含夹杂方块为例）。}\label{tab:projects-contract}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{.17\linewidth} Y Y@{}}
+\toprule
+项目 & 要写明什么 & 例：含夹杂的方块\\\midrule
+几何与坐标 & 区域、界面、公共坐标系与长度单位 & 单位正方形，长度以边长计；夹杂中心 $(0.62,0.56)$、半径 $0.16$\\
+源及归一化 & 源是什么，场图是每单位什么 & TES：每单位电极电流；TMS：每单位 $\partial_tB_z$\\
+材料定律 & 本构关系及其数据来源 & $\sigma=1$，夹杂中 $\sigma=10$（归一化的教学输入）\\
+保留的 Maxwell 项 & 哪些耦合保留、哪些略去，依据是什么 & 电流平衡中略去位移电流；组织电流的磁场略去（单向耦合）\\
+未知量 & 用什么表述、求哪个势或场 & 节点电势 $\phi$（线性三角形单元）\\
+边界与界面 & 外边界条件、界面怎样处理 & 外边界绝缘；界面由弱形式自动处理\\
+参考或规范 & 电势参考、矢势的规范 & 零均值电势；初级场按对称规范给出\\
+观测量与平均 & 读出什么，在什么区域、怎样平均 & 例如夹杂内 $|\vb E|$ 的面积平均\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{同一个坐标系}
+网格、线圈的位姿、神经路径与磁体的材料轴，必须放在同一个声明清楚的坐标系里。坐标系之间用一个正交矩阵 $\vb Q$ 和一个平移 $\vb r_0$ 联系。不同的量变换的方式不同：
+\begin{keyeq}
+\vb r'=\vb Q\vb r+\vb r_0,\qquad
+\vb E'=\vb Q\vb E,\qquad
+\vb B'=(\det\vb Q)\,\vb Q\vb B,\qquad
+\sig'=\vb Q\sig\vb Q^{\mathsf T}.
+\label{eq:projects-frames}
+\end{keyeq}
+平移只作用于点，不作用于场的分量：把线圈整体挪动 $1\,\mathrm{cm}$，场矢量的分量并不加上 $1\,\mathrm{cm}$。$\vb E$、$\vb J$、力这样的\textbf{极矢量}直接乘以 $\vb Q$；张量（电导率、回复磁导率）两边各乘一次，矢量只乘一次（\eqref{eq:sigmatensor}、\eqref{eq:magnets-rotate}）。$\vb B$、$\vb H$、$\vb M$、剩磁这些由右手规则（叉积、旋度）定义方向的\textbf{轴矢量}，在正常的旋转（$\det\vb Q=+1$）下与极矢量相同；但在镜像（$\det\vb Q=-1$）下多出一个负号。检查脚本用 Biot--Savart 积分验证了这一点：把一个倾斜的电流环对平面 $x=0$ 作镜像，镜像位置上的磁场等于 $(\det\vb Q)\vb Q\vb B$，而不是 $\vb Q\vb B$。
+
+\begin{example}[label=ex:projects-frame]{旋转的纤维方向}
+沿用\exref{ex:electric-aniso} 的组织：在纤维坐标系中 $\sig=\mathrm{diag}(1,4)\,\mathrm{S/m}$，电导率大的方向是纤维坐标的第二轴。纤维坐标系相对实验室坐标系转过 $30^\circ$，实验室中施加 $\vb E=(1,0)\,\mathrm{V/m}$。求实验室中的电流密度与损耗密度，并与两种常见的错误做法比较。
+\solution
+由 \eqref{eq:projects-frames}，$\sig'=\vb Q\,\mathrm{diag}(1,4)\,\vb Q^{\mathsf T}$，$\vb Q$ 为转过 $30^\circ$ 的旋转矩阵：
+\begin{equation*}
+\sig'=\begin{pmatrix}1.75&-1.299\\-1.299&3.25\end{pmatrix}\mathrm{S/m},\qquad
+\vb J=\sig'\vb E=(1.75,\,-1.299)\,\mathrm{A/m^2}.
+\end{equation*}
+电流偏离电场 $36.6^\circ$，偏向电导率大的纤维方向。损耗密度 $\vb E\cdot\vb J=1.75\,\mathrm{W/m^3}$；在纤维坐标系中算，结果完全相同——损耗是标量，不随坐标系改变，这是一个好用的检查。两种错误：忘了旋转，直接用 $\mathrm{diag}(1,4)$，得到 $\vb J=(1,0)$，看不出各向异性；把张量当矢量只乘一次 $\vb Q$，得到 $(0.87,\,0.50)\,\mathrm{A/m^2}$，连偏转的方向都反了。
+\end{example}
+
+\begin{compare}{极矢量与轴矢量}{极矢量}{轴矢量}
+\cmprow{例子}{$\vb E$、$\vb J$、力、位移}{$\vb B$、$\vb H$、$\vb M$、剩磁 $\vb B_r$、磁矩 $\vb m$}
+\cmprow{方向怎样定义}{直接由物理方向给出}{由右手规则给出（叉积、旋度）}
+\cmprow{旋转（$\det\vb Q=+1$）}{$\vb Q\vb E$}{$\vb Q\vb B$，与极矢量相同}
+\cmprow{镜像（$\det\vb Q=-1$）}{$\vb Q\vb E$}{$-\vb Q\vb B$：多一个负号}
+\cmprow{容易出错的场合}{忘了旋转张量，或只乘一次}{用镜像构造磁体阵列、线圈或对称模型时，把剩磁当作普通矢量反射}
+\cmpsum{旋转时二者没有区别；一旦涉及镜像，轴矢量多一个 $\det\vb Q$。这与\chref{ch:magnets} 中“对称面的条件取决于源的奇偶”是同一件事。}
+\end{compare}
+
+\section{项目一：同一网格上的 TES 与 TMS}\label{sec:projects-p1}
+
+\labcard{在同一个有界导电体模上分别求 TES 与 TMS，看清二者共用什么、不同在哪里；能把“源错了”和“体导体修正错了”分开。}
+{\chref{ch:tes}、\chref{ch:tms}；组装与边界反力（\secref{sec:femscalar-bar}）；源的独立检查用\chref{ch:magnetic} 的 \eqref{eq:loopaxis} 与 \eqref{eq:solenoidA}。}
+{含一个电导率夹杂的有界导体（如\figref{fig:tes_setup} 的方块）；TES：一组和为零的电极电流；TMS：由线圈给出的初级场 $\vb E_p=-\partial_t\vb A_p$。}
+{两个解、同一个刚度矩阵 $\vb K$、每个解的检查记录。}
+
+\subsubsection{步骤。}
+\begin{enumerate}
+\item 组装一次刚度矩阵 $\vb K$ \eqref{eq:elementmatrix}。两个问题都用它。
+\item TES：按 \eqref{eq:tesneumann} 把电极电流写进右端，检查它们之和为零，固定一个电势参考，求解 \eqref{eq:tespde}。
+\item TMS：去掉电极注入；在\emph{整个}导体中按线圈公式计算 $\vb E_p$，不按组织标签裁剪；右端为 $b_i=\int\nabla N_i\cdot\sig\vb E_p\dV$，外边界绝缘 \eqref{eq:tmsboundary}；用同一个 $\vb K$ 求解。
+\item 重建 $\vb E$ 与 $\vb J$，读出约定中的观测量。
+\end{enumerate}
+
+\subsubsection{必须通过的检查。}
+\begin{itemize}[label=$\mdlgwhtsquare$]
+\item $\phi$ 加一个常数，总场不变；
+\item 源加倍，矢量场加倍（TES 的电流、TMS 的 $\partial_t\vb B$）；
+\item 弱守恒：右端之和为零，求解后\emph{所有}行的残差都在舍入误差以内（\exref{ex:femscalar-twolayer}）；
+\item TMS 的加权正交性 \eqref{eq:tmsorthogonal}；
+\item 线圈源算子\emph{单独}与解析式对照：圆环轴线上的场 \eqref{eq:loopaxis}，理想螺线管外的矢势环量 \eqref{eq:solenoidA}。
+\end{itemize}
+
+\begin{example}[label=ex:projects-p1]{在含夹杂的方块上走一遍}
+在\figref{fig:tes_setup} 的方块上（$64\times64$ 网格），按上面的步骤求 TES（均匀电流密度电极，单位电流）与 TMS（均匀 $\partial_tB_z$）。各项检查给出什么？若线圈源用正多边形近似圆环，源本身的误差有多大？（归一化的数学基准，不是解剖预测，也不是 PNS 阈值。）
+\solution
+两个问题的刚度矩阵逐个元素相同。TES 的右端之和恰为零，TMS 的右端之和约为 $6\times10^{-17}$——TMS 的右端由 $\sum_i\nabla N_i=0$ 自动满足守恒。给 $\phi$ 加上 $0.37$，电场的变化小于 $10^{-12}$；把源加倍，电场加倍，相对误差小于 $10^{-10}$。TMS 解的加权正交和约为 $3.5\times10^{-18}$。
+
+源的检查与导体无关。用 $n$ 条直线段组成、顶点在圆上的正多边形代替圆环，中心磁场比圆环大 $n\tan(\pi/n)/\pi-1$：$n=6$、$12$、$24$、$48$ 时依次为 $10.3\%$、$2.3\%$、$0.57\%$、$0.14\%$，段数加倍，误差降为四分之一。这个误差会\emph{线性地}进入 $\vb E_p$，再经过同一个体导体投影进入总场；导体那一侧的检查（正交性、守恒）对它完全无动于衷。
+\end{example}
+
+\begin{compare}{源的错误与体导体修正的错误}{源的错误}{体导体修正的错误}
+\cmprow{出在哪里}{线圈几何、段数、匝数、归一化、规范}{电导率、外边界条件、界面、网格}
+\cmprow{怎样进入总场}{线性地传给 $\vb E_p$，再经同一个投影传给总场；守恒与正交性照样成立}{只通过 $-\nabla\phi$ 进入，破坏守恒或正交性}
+\cmprow{能抓住它的检查}{与 \eqref{eq:loopaxis}、\eqref{eq:solenoidA} 对照；单位换算}{右端之和、各行残差、正交性 \eqref{eq:tmsorthogonal}、网格序列}
+\cmprow{看总场图能否发现}{不能：错误的源也给出光滑的场}{不能：好看的场照样可能漏电流}
+\cmpsum{没有分开的检查，一张好看的总场图说不出错误来自哪一半；有了它们，每一半都能单独被证明。}
+\end{compare}
+
+\subsubsection{可能出错的地方。}
+外边界写成齐次的 $\partial_n\phi=0$（\chref{ch:tms} 的误区）；按组织标签截断 $\vb A_p$，它改变了 $\vb E_p$ 的导数，并不是无害的规范变换（\secref{sec:potentials-gauge}）；解析源、有限元右端与重建的电势用了不同的规范；单位场图的 $10^6$ 与匝数（\chref{ch:tms}）。
+
+\section{项目二：同一源基，多种读出}\label{sec:projects-p2}
+
+\labcard{用一组固定线圈（或一组流函数基）的单位场，同时评价磁场目标、电阻损耗、感性电压、主磁场中的受力与组织电场。}
+{\chref{ch:framework}（叠加，线性与二次读出）；\chref{ch:mri}（梯度的观测量）；\chref{ch:coils}（场、电阻与电感算子，\eqref{eq:coilobjective}）；\chref{ch:eddy}（端电压与涡流）。}
+{线圈或流函数基；每个基的单位场 $\vb b_k$（T/A）、矢势 $\vb a_k$（T\,m/A）、含导体修正的组织电场 $\vb e_k$（$(\mathrm{V/m})/(\mathrm{A/s})$）；电阻与电感矩阵；主磁场 $\vb B_0$。}
+{一组系数（或绕组）以及它的全部读出。}
+
+用 $I_k(t)$ 表示各线圈的电流。在线性、与频率无关、导体静止的假设下：
+\begin{keyeq}
+\vb B=\vb B_0+\sum_kI_k\vb b_k,\qquad
+\vb E=\sum_k\dot I_k\vb e_k,\qquad
+\vb V=\vb R\vb I+\vb L\dot{\vb I}.
+\label{eq:projects-operators}
+\end{keyeq}
+若梯度效率 $\eta_k$ 的单位是 T/(m\,A)，则梯度强度 $G_k=\eta_kI_k$，切换速率 $\dot G_k=\eta_k\dot I_k$。\emph{每单位切换速率的场图不是每安培的场图}：$\vb e_k$ 与 $\vb b_k$ 的单位不同，前者还已经包含了组织的修正 \eqref{eq:tmswaveform}。
+
+\subsubsection{步骤。}
+\begin{enumerate}
+\item 对每个基求一次单位场，得到场矩阵、$\vb R$ 与 $\vb L$（\chref{ch:coils}）。
+\item 对每个基在组织中求一次感应电场 $\vb e_k$（\chref{ch:tms} 的投影，含导体修正）。
+\item 按 \eqref{eq:coilobjective} 优化系数；目标函数中的每一项都对应一个物理量。
+\item 用\emph{同一组}系数计算全部读出（\tabref{tab:projects-readouts}）。
+\item 把电流片离散成真实的绕组。这是一次物理上的改变（回流引线、线距、串联连接），要重新求场和全部读出。
+\item 动态匀场，或梯度线圈靠近导电结构、涡流的“记忆”变得重要时，把常数的单位场图换成频率响应或脉冲响应算子（\chref{ch:eddy}）。
+\end{enumerate}
+
+\begin{example}[label=ex:projects-p2]{一组系数，八个读出}
+取\chref{ch:coils} 中双平面 $x$ 梯度的教学设计（$0.6\,\mathrm m$ 见方的两块板，$z=\pm0.18\,\mathrm m$；目标 $10\,\mathrm{mT/m}$；按 $1\,\mathrm{mm}$ 厚的铜片计算功率；绕组每圈 $100\,\mathrm A$）。用误差为 $1\%$ 的那组系数，列出它的各种读出，并指出哪些对系数线性、哪些是二次的。
+\solution
+结果见\tabref{tab:projects-readouts}，全部来自同一组系数。线性读出（场、场的变化率、组织电场、主磁场中的受力）可以按 \eqref{eq:projects-operators} 叠加和缩放；二次读出（功率、储能）不能——梯度降到 $1\,\mathrm{mT/m}$，功率降为 $1\%$，而不是 $10\%$。组织电场这一行需要对每个基做一次体导体求解，本书的教学模型没有算它，表中只写出它的缩放方式。
+\end{example}
+
+\begin{table}[htbp]\centering\small
+\caption{同一组系数的读出（\exref{ex:projects-p2}；数值来自\chref{ch:coils} 与\chref{ch:mri} 的检查脚本）。}\label{tab:projects-readouts}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{.2\linewidth} Y >{\raggedright\arraybackslash}p{.15\linewidth}@{}}
+\toprule
+读出 & 数值 & 对系数\\\midrule
+场误差 & DSV 检验点上 RMS 误差 $1\%$ & 线性\\
+梯度效率 & $\eta=0.1\,\mathrm{mT/m}$ 每安培（每圈 $100\,\mathrm A$ 得 $10\,\mathrm{mT/m}$） & 线性\\
+耗散功率 & $513\,\mathrm W$（$10\,\mathrm{mT/m}$） & 二次\\
+储能与电感 & $0.557\,\mathrm J$；$L=2W/I^2=111\,\mu\mathrm H$ & 二次\\
+端电压 & $0\to100\,\mathrm A$ 用 $0.1\,\mathrm{ms}$：$L\,\dd I/\dd t=111\,\mathrm V$ & 线性（对 $\dot I$）\\
+场的变化率 & $\dot G=\eta\dot I=100\,\mathrm{T/(m\,s)}$；$x=0.2\,\mathrm m$ 处 $\partial_tb_z=20\,\mathrm{T/s}$ & 线性\\
+主磁场中的受力 & $0.1\,\mathrm T$ 中最大面力密度 $1.72\,\mathrm{kN/m^2}$；每块板净力为零，$\int|\vb f|\dS=202\,\mathrm N$ & 线性（$\vb B_0$ 固定）\\
+组织电场 & $\vb E=\sum_k\dot I_k\vb e_k$，每个 $\vb e_k$ 需一次导体求解 & 线性\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{必须通过的检查。}
+\begin{itemize}[label=$\mdlgwhtsquare$]
+\item 每张单位场图都写明是每 A、每 A/s 还是每单位系数，匝数只计入一次；
+\item 线性读出用单位场图叠加，二次读出保留交叉项（\eqref{eq:sarQ} 与 $\tfrac12\vb I^{\mathsf T}\vb L\vb I$ 同理）；
+\item 离散成绕组之后，重新计算全部读出，并与电流片的结果比较；
+\item 靠近导电结构时，检查常数基是否还够用（与时域或谐波的耦合模型对照）。
+\end{itemize}
+
+\subsubsection{可能出错的地方。}
+用系数的平方和代替真实的功率 $\vb c^{\mathsf T}\vb R\vb c$（\chref{ch:coils}）；把每安培的磁场图当作电场图；在偏置的磁轭旁边仍使用真空中的单位场图——那里的响应要在偏置上线性化，这就是下一个项目。
+
+\section{项目三：先求非线性偏置，再求小信号}\label{sec:projects-p3}
+
+\labcard{在永磁体与磁轭的非线性偏置上，得到梯度或匀场线圈的局部线性响应，并检验它。}
+{\chref{ch:bh}、\chref{ch:lumped}、\chref{ch:magnets}、\chref{ch:femvector}（一致切线 \eqref{eq:inctensor}，偏置附近的线性化 \eqref{eq:biaslinearization}）。}
+{空气、永磁体（剩磁与回复线，\eqref{eq:pmconstitutive}）、磁轭（实测或明确标注的合成 B--H 曲线）、直流绕组；小信号线圈。}
+{收敛的偏置状态；由一致切线给出的小信号算子；中心差分的检验记录。}
+
+\subsubsection{步骤。}
+\begin{enumerate}
+\item 区分材料：永磁体用剩磁与回复线，磁轭用 B--H 曲线——它们不是同一种材料（\chref{ch:magnets}）。
+\item 先用磁路粗估（\chref{ch:lumped}），再求矢量或适用的标量磁场有限元（\chref{ch:femvector}）。
+\item 检查偏置状态：成像区的场、磁轭的局部工作点、磁体内的反向场、漏磁与力；扩大空气域，比较的是这些观测量，而不只是残差（\chref{ch:magnets}）。
+\item 偏置收敛之后，才线性化小的梯度或匀场扰动 \eqref{eq:biaslinearization}。切线来自 \eqref{eq:inctensor}，而不是割线磁导率。
+\item 用两次完整的非线性求解检验切线 \eqref{eq:biascheck}。
+\end{enumerate}
+
+设 $y(\vb I)$ 是所选的场观测量（例如成像区中心的 $B$），$\vb I_0$ 为偏置下的电流，方向 $\vb d$ 带电流的单位，$\epsilon$ 无量纲。比较
+\begin{keyeq}
+\frac{y(\vb I_0+\epsilon\vb d)-y(\vb I_0-\epsilon\vb d)}{2\epsilon}
+\quad\text{与}\quad
+\mathrm Dy(\vb I_0)[\vb d] ,
+\label{eq:biascheck}
+\end{keyeq}
+右边是一致切线给出的方向导数。减小 $\epsilon$，二者的差应当先按 $\epsilon^2$ 减小，然后出现一段一致的平台；再减小，非线性求解的误差与舍入误差开始主导，差又变大。只有在平台上与切线一致，才算通过（\chref{ch:femvector} 在单回路永磁磁路上做过同样的检验）。大的变化或不可逆的状态改变（例如退磁）需要重新做非线性求解；验证了局部导数，并不等于验证了全局的源叠加。
+
+\begin{example}[label=ex:projects-p3]{多柱磁轭上的匀场线圈}
+取\exref{ex:lumped-pillars} 的多柱磁轭网络（柱截面 $A_p=0.005\,\mathrm{m^2}$），在主磁通回路上加一个小线圈（例如绕在极靴上），附加磁动势为 $\delta\mathcal F$。观测量 $y=B_g$。分别取 $N=6$、$5$、$4$ 根柱，比较一致切线与“冻结割线”给出的 $\dd B_g/\dd\mathcal F$，并对 $N=5$ 做中心差分检验。（教学输入，网络省略了漏磁等效应。）
+\solution
+\emph{$N=6$。}柱中 $B_p=1.27\,\mathrm T$，$B_g=0.191\,\mathrm T$。一致切线给出 $\dd B_g/\dd\mathcal F=2.60\,\mu\mathrm T/\mathrm A$；冻结割线只高估 $0.7\%$。柱子还没饱和：微分相对磁导率约 $590$，虽然只有割线值（约 $1170$）的一半，但两者都很大，柱子的增量磁阻只占回路的 $1.4\%$，磁阻主要在磁体与气隙上，所以用哪一个差别很小。
+
+\emph{$N=5$。}$B_p=1.52\,\mathrm T$，冻结割线高估 $4.9\%$。中心差分与切线的相对差：磁动势步长为 $3000\,\mathrm A$ 时 $1.1\times10^{-2}$，$1000\,\mathrm A$ 时 $9.6\times10^{-4}$，$100\,\mathrm A$ 时 $9.4\times10^{-6}$，$10\,\mathrm A$ 时 $9.4\times10^{-8}$——每缩小十倍，差别缩小一百倍，正是 $\epsilon^2$；$1\,\mathrm A$ 与 $0.1\,\mathrm A$ 时降到 $10^{-9}$ 以下，这是平台；再缩小到 $10^{-6}\,\mathrm A$，舍入误差把差别抬回 $10^{-6}$ 量级。切线通过检验。
+
+\emph{$N=4$。}$B_g=0.162\,\mathrm T$，柱子却已经深入饱和：$B_p=1.62\,\mathrm T$，割线相对磁导率 $69$，微分相对磁导率约为 $1$。一致切线给出 $0.194\,\mu\mathrm T/\mathrm A$，冻结割线给出 $2.23\,\mu\mathrm T/\mathrm A$，高估 $11.5$ 倍。同一个线圈，在 $4$ 根柱的磁体上比在 $6$ 根柱的磁体上弱 $13.4$ 倍：对增量来说，饱和的柱子就像空气。这里中心差分在很宽的 $\epsilon$ 范围内都与切线一致，因为合成曲线在深度饱和区恰好是直线——一个“很宽的平台”是这条曲线的性质，不是普遍的保证。
+\end{example}
+
+这个算例与\secref{sec:lumped-validity} 末尾关于\exref{ex:lumped-pillars} 的误区是同一个故事的两面：为了省铁而把柱子压到饱和边缘，不仅让气隙磁场对 B--H 数据最敏感，也让匀场与梯度线圈在磁轭上的小信号响应完全变了样。网络只给出趋势；同样的检验要在场模型上、对真实的观测量重做。
+
+\subsubsection{必须通过的检查。}
+\begin{itemize}[label=$\mdlgwhtsquare$]
+\item 偏置状态的网格与外边界收敛，所有积分点的 $|\vb B|$ 都在 B--H 数据的范围之内；
+\item 切线与残差使用同一条插值曲线及其导数（\chref{ch:femvector}）；
+\item 中心差分 \eqref{eq:biascheck} 用一串 $\epsilon$，报告平台，而不是单个步长；
+\item 保存偏置状态与对应的切线，与小信号场图放在一起（\secref{sec:practice-reproducible}）。
+\end{itemize}
+
+\subsubsection{可能出错的地方。}
+用割线磁导率“冻结”磁轭来求小信号响应；偏置还没收敛就线性化；把一个步长上的“吻合”当作检验通过——步长太大时差别来自截断，太小时来自舍入；把局部切线用于大幅度的变化。
+
+\section{项目四：同一电场，PNS 与加热}\label{sec:projects-p4}
+
+\labcard{从同一个电场解出发，分别得到外周神经的驱动与阈值，以及加热；说明二者为什么必须作为两个独立的约束。}
+{\chref{ch:neuro}（电缆方程、激活函数、阈值搜索）；\chref{ch:framework}（SAR 与二次型）；\chref{ch:rf}（三种平均）；\chref{ch:tms}（波形与单位场图）。}
+{明确的物理波形；含导体修正的总电场；声明的神经轨迹；电缆与膜参数；组织电导率与质量密度；平均规则。}
+{沿路径的驱动与阈值（连同兴奋判据）；SAR（连同平均方式）。}
+
+\subsection{神经这一支}
+选定明确的波形，沿声明的神经轨迹评价\emph{总}电场。对弧长坐标为 $s_n$ 的相邻电缆节点，胞外的有效驱动差为
+\begin{keyeq}
+V^{\rm eff}_{e,n+1}(t)-V^{\rm eff}_{e,n}(t)
+=-\int_{s_n}^{s_{n+1}}\vb E(\vb r(s),t)\cdot\vb t(s)\,\dd s ,
+\label{eq:nervedifference}
+\end{keyeq}
+$\vb t$ 为单位切向量。给这些路径势加一个共同的常数，不改变相邻节点之差。逐段积分电场，通常比对带噪声的采样电势求两次导数更容易控制；但插值方式与积分规则仍要写明，跨过组织界面时尤其如此（\chref{ch:neuro}）。
+
+对简单的均匀离散电缆，设相邻节点之间的轴向电阻为 $R_a$，节点电容为 $C_n$，向外的离子电流为 $I_{{\rm ion},n}$，向内注入的电流为 $I_{{\rm inj},n}$，内部节点满足
+\begin{keyeq}
+\begin{split}
+C_n\dot V_{m,n}={}&\frac{V_{m,n-1}-2V_{m,n}+V_{m,n+1}}{R_a}
++\frac{V^{\rm eff}_{e,n-1}-2V^{\rm eff}_{e,n}+V^{\rm eff}_{e,n+1}}{R_a}\\
+&-I_{{\rm ion},n}+I_{{\rm inj},n} .
+\end{split}
+\label{eq:discretecable}
+\end{keyeq}
+每一项的单位都是安培。取 $R_a=r_i\Delta s$、$C_n=c_m\Delta s$、被动膜 $I_{{\rm ion},n}=g_m\Delta s\,V_{m,n}$，令 $\Delta s\to0$，就回到电缆方程 \eqref{eq:cablephysical}；它也就是\chref{ch:neuro} 中节点方程在均匀电缆上的形式。末端与分支要写自己的轴向电流方程；详细的有髓纤维模型还有更多的隔室与参数。
+
+四个数值环节要\emph{分别}加密：场的插值、路径的采样、电缆的离散、时间步长。阈值搜索需要先写明动作电位的判据，并确认响应在搜索区间内足够单调；非单调的响应或传导阻滞，不能交给未经检查的二分法~\cite{davids,rattay}。还要记住：PNS 与 TMS 共享感应的物理，但一个经过验证的外周神经模型，并不自动成为经过验证的皮层神经群体模型——形态、纤维群、目标反应和用来比较的实验都不同。大的 $|\vb E|$ 不是通用的阈值，也不能代替空间与时间上的响应计算。
+
+\subsection{加热这一支}
+独立地，用 $\vb E^{\mathsf T}\sig\vb E$ 加上规定的质量与时间平均计算加热（\eqref{eq:localsar}、\eqref{eq:sarQ}、\secref{sec:rf-averages}）。低频的实波形直接对 $\vb E(t)^{\mathsf T}\sig\vb E(t)$ 做时间平均，不套用正弦的 $\tfrac12$。
+
+理想的无限长直电缆处在均匀的纵向场中：内部的激活函数为零，欧姆损耗却是正的。反过来，纵向空间变化很强的短脉冲，可以使神经明显极化，而在时间平均上只沉积很少的能量。所以即使共用同一个场求解器，PNS 与 SAR 也必须保持为两个不同的约束（\figref{fig:pns_sar_branches}）。
+
+\begin{example}[label=ex:projects-p4]{同样的 SAR，不同的神经驱动}
+一根很长的直轴突（被动膜、封闭末端在很远处），沿它的纵向电场有两种教学分布：(A) 均匀的 $E_s=E_{\rm rms}$；(B) $E_s=\sqrt2E_{\rm rms}\cos(s/\lambda)$，$\lambda$ 是长度常数。两种场的加热有什么不同？稳态膜电压呢？
+\solution
+\emph{加热。}在一个周期上平均，$E_s^2$ 的平均值都是 $E_{\rm rms}^2$。组织相同，SAR 就相同。
+
+\emph{神经。}(A) 的激活函数处处为零，节点模型给出的内部膜电压小于 $10^{-3}E_{\rm rms}\lambda$——只有末端极化。(B) 的激活函数 $f=-\partial_sE_s=\sqrt2E_{\rm rms}\sin(s/\lambda)/\lambda$。更一般地取 $E_s=\sqrt2E_{\rm rms}\cos ks$，在稳态的 \eqref{eq:cablenormalized} 中代入 $V_m=C\sin ks$：
+\begin{equation*}
+-\lambda^2k^2C-C+\lambda^2\sqrt2E_{\rm rms}k=0
+\quad\Longrightarrow\quad
+C=\frac{\sqrt2E_{\rm rms}\lambda^2k}{1+k^2\lambda^2}.
+\end{equation*}
+$k\lambda=1$ 时 $C=E_{\rm rms}\lambda/\sqrt2\approx0.707\,E_{\rm rms}\lambda$，这也是所有 $k$ 中最大的；$k\lambda=0.1$ 或 $10$ 时只有它的五分之一。用节点模型 \eqref{eq:discretecable} 数值求解（驱动用 \eqref{eq:nervedifference} 的精确路径积分），$\Delta s=0.5\lambda$、$0.25\lambda$、$0.1\lambda$ 时峰值的误差为 $1.1\%$、$0.28\%$、$0.042\%$，按 $\Delta s^2$ 收敛——这只是四个环节中的一个，另外三个要另行加密。
+
+电缆对纵向场是一个\emph{空间带通}：太均匀（$k\to0$）或变化太快（$k\to\infty$）都不能有效地极化它；SAR 只看均方值，对空间变化完全不加区分。
+\end{example}
+
+\fig{pns_sar_branches}{同一个电场，两条读出的分支。(a) 神经这一支：投影到路径、路径积分、电缆与膜动力学、阈值；对源线性（被动时），看的是沿路径的变化。加热这一支：二次的损耗密度、质量与时间平均；温度还需要热模型。(b) 均方值相同的两种纵向场（\exref{ex:projects-p4}，节点模型计算）：SAR 相同，均匀场（虚线）在内部不产生膜电压，余弦场产生 $\pm0.71\,E_{\rm rms}\lambda$。(c) 稳态膜电压幅值随空间频率 $k\lambda$ 的变化（以 $k\lambda=1$ 的值归一化）：电缆是空间带通，SAR 与 $k$ 无关。长度以 $\lambda$、场以 $E_{\rm rms}$ 归一化。}{fig:pns_sar_branches}
+
+\begin{compare}{神经驱动与加热}{神经驱动（PNS）}{加热（SAR）}
+\cmprow{运算}{投影到路径，沿弧长求导，再经过膜动力学}{二次损耗 $\vb E^{\mathsf T}\sig\vb E$，再做质量与时间平均}
+\cmprow{对源}{被动时线性；阈值以上非线性}{二次，有交叉项}
+\cmprow{方向}{只看沿神经的分量}{与方向无关}
+\cmprow{空间变化}{空间带通：均匀纵向场在内部不驱动}{只看均方值：均匀场照样发热}
+\cmprow{时间}{膜的时间常数过滤波形}{在规定窗口上平均（射频周期、空间、脉冲串）}
+\cmprow{确认靠什么}{刺激阈值实验}{温度测量与适用的暴露标准}
+\cmpsum{同一个场解，两种完全不同的运算。一个约束通过了，不说明另一个也通过。}
+\end{compare}
+
+\subsubsection{必须通过的检查。}
+\begin{itemize}[label=$\mdlgwhtsquare$]
+\item 神经轨迹与场在同一个坐标系里，路径积分的规则写明；
+\item 场插值、路径采样、电缆离散、时间步长分别加密，观测量（阈值）稳定；
+\item 兴奋判据写明；二分之前先扫描，确认区间内只有一次切换；
+\item SAR 写明峰值或有效值、平均的质量与时间窗口，多通道时保留交叉项。
+\end{itemize}
+
+\subsubsection{可能出错的地方。}
+用最大 $|\vb E|$ 同时代表 PNS 风险与加热风险；对带噪声的体素电势求两次导数而不加控制；把一条强度--时程曲线搬到另一个线圈上（\chref{ch:neuro}）；把 SAR 当作温度。
+
+\section{项目五：重新检查范围，再加入射频}\label{sec:projects-p5}
+
+\labcard{在同一个装配上加入射频线圈，而不把低频模型的假设悄悄带过去。}
+{\chref{ch:regimes}（三把尺子）；\chref{ch:rf}（频域方程、旋转分量、源的归一化、三种平均）。}
+{载频；线圈与负载的几何；端口、调谐与匹配；该频率下的材料数据~\cite{itisdielectric}。}
+{复数的发射场组合（$B_1^+$）、SAR 矩阵、功率平衡的记录。}
+
+\subsubsection{步骤。}
+\begin{enumerate}
+\item 保留几何，也保留“源—场—观测量”的纪律；但按\emph{载频}重新量一遍三把尺子。教学尺度下，$0.1\,\mathrm T$ 的射频（$4.26\,\mathrm{MHz}$）$\eta_w\approx0.018$，$\eta_m\approx0.67$；$3\,\mathrm T$（$128\,\mathrm{MHz}$）时 $\eta_w\approx0.54$，在 $\varepsilon_r=80$ 的比较介质中 $k\ell\approx4.8$（\chref{ch:rf}）。
+\item 需要时，用射频方程 \eqref{eq:rfwave}、\eqref{eq:rfweak} 替代低频算子；外边界用吸收条件或真实存在的屏蔽。
+\item 检查端口归一化、调谐与负载、相对于几何与波长变化的网格分辨率，以及功率平衡（端口接受的功率 = 组织与导体中的损耗 + 辐射）。
+\item 在取模和平均之前，先计算复数的发射场组合 \eqref{eq:corotating}与 SAR 矩阵 \eqref{eq:rfQ}。
+\end{enumerate}
+
+\begin{example}[label=ex:projects-p5]{给 0.1 T 磁体加一个发射线圈：先量尺子，再定模型}
+在本书的 $0.1\,\mathrm T$ 教学磁体中加入一个发射线圈，要求 $1\,\mathrm{ms}$ 的矩形脉冲产生 $90^\circ$ 翻转。用\chref{ch:rf} 的教学尺度（$\sigma=0.5\,\mathrm{S/m}$，$\ell=0.2\,\mathrm m$，比较介质 $\varepsilon_r=80$）回答：(a) 项目一、二用过的哪一条低频假设必须重新检查？(b) 需要多大的共旋分量？如果用线性极化线圈，峰值要多大？(c) 两个相同、互不耦合、SAR 矩阵为 $q\vb I$ 的通道，正交驱动的 SAR 是线性驱动的几分之几？这个结论什么时候不可靠？
+\solution
+(a) 载频为 $4.26\,\mathrm{MHz}$（\tabref{tab:rf-ranges}）。$\eta_w\approx0.018$，比较介质中 $k\ell\approx0.16$，波的延迟在身体尺度上不大；但 $\eta_m\approx0.67$ 并不远小于 1（趋肤深度约 $0.35\,\mathrm m$），组织中感应电流的磁场不能先验忽略。所以项目一、二所用的单向耦合（\secref{sec:regimes-oneway}）不能原样搬来：至少要解一次保留涡流反馈的模型，并用该频率的介电数据检查容性耦合，再决定能否简化。
+
+(b) 由\exref{ex:rf-flip}，需要 $\widetilde b_{\rm co}=5.87\,\mu\mathrm T$。线性极化场只有一半参与激发，所以线性线圈的峰值要 $11.74\,\mu\mathrm T$；如果误把这个峰值当成 $B_1^+$，算出的翻转角会是 $180^\circ$。
+
+(c) 由\exref{ex:rf-quad}，正交驱动的 SAR 是线性驱动的一半。这个“一半”依赖 $\vb Q=q\vb I$：通道耦合、交叉项和局部 SAR 都会让比值偏离 2。真实模型中要先按\secref{sec:rf-normalization} 统一归一化源，再逐点计算 $\vb c^\dagger\vb Q\vb c$ 并按声明的方式平均（\secref{sec:rf-averages}）。
+\end{example}
+
+项目二的低频源基不会自动成为射频的基场：
+\begin{compare}{低频源基与射频源基}{低频源基（项目二）}{射频源基}
+\cmprow{系数}{实的电流波形 $I_k(t)$、$\dot I_k(t)$}{某一频率下端口的复幅值 $c_k$}
+\cmprow{单位场图}{每 A 的 $\vb b_k$，每 A/s 的 $\vb e_k$}{每 A、每 V 或每 $\sqrt{\mathrm W}$ 的复数场，要写明端口状态}
+\cmprow{与频率、负载}{在适用范围内与频率无关}{只属于这一个频率；随负载、调谐而变}
+\cmprow{叠加}{时域中实数叠加}{固定频率下复数叠加（带相位）}
+\cmprow{典型读出}{$\vb B$、$\partial_tb_z$、组织 $\vb E$、端电压、受力}{$B_1^+$、$\vb Q$ 矩阵与 SAR、接受功率}
+\cmpsum{两组基回答的是不同频率下的不同问题；把低频的单位场图乘上射频的幅值，得到的不是射频场。}
+\end{compare}
+
+\subsubsection{可能出错的地方。}
+因为“线圈离身体很近”就沿用准静态（\chref{ch:rf}）；在线圈附近随手令外边界 $\widetilde{\vb E}=0$；先对各通道取模再相加；把线性极化场的峰值当作 $B_1^+$（二倍因子）。
+
+\subsection{一个合适的综合项目}
+把五个项目合在一起，就是一个合适的综合练习：一台 MRI 装配，包括静态的磁体与磁轭、梯度或匀场线圈、导电的体模和一条声明的神经路径，再加上一个单独论证过适用性的射频模型。最终的产出不是一张彩色的体渲染图，而是一组相互连接、逐一检查过的算子，明确的工作点假设，随波形变化的场，以及明确的读出。这才是面对一个新的 TMS 线圈或 MRI 装置时能够迁移的能力——不需要为每一个应用重新发明电磁理论。
+
+\section{从场数组到可复现的接口}\label{sec:projects-interface}
+
+项目的结果最终是一些数组：节点上的电势，单元上的电场，体素里的 SAR。可是\emph{场数组不会自己解释自己}。坐标系、空间单位、物理量、分量的顺序、源的幅值与时间约定，都是数组定义的一部分，不能只写在笔记的某一段里。
+
+\begin{example}[label=ex:projects-units]{两个不报错的单位错误}
+(1) \secref{sec:femscalar-bar} 的导电棒，节点电势为 $(0.4,0.2,0)\,\mathrm V$，节点间距 $1\,\mathrm{cm}$，坐标却以毫米存储。若有人把坐标当作米求梯度，电场与损耗密度各是多少？(2) 一张 TMS 单位场图在某点的值为 $2\times10^{-5}$，单位是每 A/s 的 V/m。波形的电流变化率为 $1\,\mathrm{A}/\mu\mathrm s$。若误以为场图是每 A/$\mu$s 的，算出的电场是多少？
+\solution
+(1) 正确的电场是 $0.2\,\mathrm V/0.01\,\mathrm m=20\,\mathrm{V/m}$，损耗密度 $\sigma E^2=200\,\mathrm{W/m^3}$（$\sigma=0.5\,\mathrm{S/m}$）。把间距 $10$ 当作米，电场变成 $0.02\,\mathrm{V/m}$，小了 $10^3$；损耗密度变成 $2\times10^{-4}\,\mathrm{W/m^3}$，小了 $10^6$。(2) 正确的结果是 $2\times10^{-5}\times10^6=20\,\mathrm{V/m}$；误读后得到 $2\times10^{-5}\,\mathrm{V/m}$，又差了 $10^6$。两种错误都不会让任何程序报错。
+\end{example}
+
+\subsection{势与场的重建}
+若求解器或代理模型输出的是势，就在\emph{同一个}坐标约定下重建 $\vb B=\nabla\times\vb A$ 与 $\vb E=-\partial_t\vb A-\nabla\phi$。矢势的时间导数需要源的归一化，相伴的标势还需要一致的规范（\secref{sec:potentials-gauge}）。若直接输出 $\vb E$，就用同一坐标系中的张量计算 $\vb J_c=\sig\vb E$ \eqref{eq:projects-frames}。软件里的变量名要按它自己的文档理解：源代码中一个叫“D”的变量，不一定是 Maxwell 方程中的电位移；决定它含义的是单位与支配方程~\cite{simnibsfields}。
+
+\subsection{随数组一起走的信息}
+\tabref{tab:projects-metadata} 列出一个场数组至少要携带的信息。它们应当写在数据文件的元数据里，跟着数组走。
+
+\begin{table}[htbp]\centering\small
+\caption{一个场数组至少要携带的信息。}\label{tab:projects-metadata}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{.2\linewidth} Y Y@{}}
+\toprule
+信息 & 例 & 缺了会怎样\\\midrule
+物理量与分量顺序 & 总电场 $\vb E$，分量 $(x,y,z)$ & 把初级场、次级场或电流密度当成总场\\
+单位 & V/m & 差一个前缀就是 $10^3$ 或 $10^6$\\
+源的归一化 & 每 1 A/s 的线圈电流变化率，含 $N$ 匝 & 每 A/s 与每 A/$\mu$s 差 $10^6$；匝数计两次\\
+坐标系与长度单位 & 头部坐标系，长度以米计；网格与线圈的位姿 & 梯度差 $10^3$；旋转、镜像出错\\
+时间约定 & 峰值相量 $e^{\jj\omega t}$，或实波形 & 加热差 2 倍；相位符号反了\\
+参考与规范 & 零均值电势；库仑规范 & 势不能比较；$-\partial_t\vb A$ 被误当成总场\\
+偏置状态 & 磁体剩磁、线圈电流、B--H 数据版本 & 小信号场图离开了有效范围\\
+来源 & 求解器、网格、设置与脚本的版本 & 无法复现，也无法追问\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{代理模型也是一个接口}
+用神经网络或其他代理模型替代场求解器时，上面的每一条都同样适用，而且更隐蔽。\chref{ch:tes} 与\chref{ch:tms} 已经说明了一个具体的做法：场对源是精确线性的，对解剖是非线性的。所以代理模型可以只去学习与几何、解剖有关的那一部分（例如每单位源的场图），再把源线性地作用上去；按每个样本的最大值归一化输出、随源改变网格、依赖于源的材料系数，都会悄悄破坏本应成立的线性。输入与输出的单位、归一化和坐标系，同样要写进接口。
+
+这些检查围绕着同一个结构：源守恒、材料闭合、势的重建与观测量。它们同时适用于头部、线圈、电容器和非线性磁体装配，并不专属于某一类设备。
+
+项目能算出来了。可是怎样让结果经得起追问——哪些检查证明“方程解对了”，哪些证据证明“方程选对了”，剩下的不确定性有多大、够不够支持一个设计决定？这是最后一章的问题。
+
+\begin{takeaways}
+\begin{itemize}
+\item 每个项目都从同一份模型约定开始：几何与坐标、源与归一化、材料、保留的 Maxwell 项、未知量、边界与界面、参考或规范、观测量与平均。改变其中任何一项，就换了一个问题。点、极矢量、轴矢量与张量按 \eqref{eq:projects-frames} 变换；镜像时轴矢量多一个 $\det\vb Q$。
+\item TES 与 TMS 共用同一个 $\vb K$，只有右端不同。源的错误线性地传给总场，体导体修正的错误破坏守恒与正交性；两组检查要分开做。
+\item 一组单位源基给出全部读出：线性读出（场、$\partial_tb_z$、组织电场、主磁场中的受力）可以叠加与缩放，二次读出（功率、储能、SAR）不能。每单位切换速率的场图不是每安培的场图；电流片离散成绕组之后要重新求解。
+\item 非线性偏置先收敛，再线性化；切线用增量磁阻率张量，并用一串步长的中心差分 \eqref{eq:biascheck} 检验。多柱磁轭中柱子饱和时，冻结割线把小信号响应高估 $11.5$ 倍。
+\item 神经驱动用路径积分 \eqref{eq:nervedifference} 与离散电缆 \eqref{eq:discretecable}，四个数值环节分别加密；它是空间带通，而 SAR 只看均方值。均方值相同的两种场，SAR 相同，膜电压可以从零到 $0.71\,E_{\rm rms}\lambda$。
+\item 加入射频之前按载频重新量尺子；低频源基不是射频基。场数组要带着单位、坐标、归一化、时间约定、规范与偏置状态一起走——单位错误不会报错。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 同事把一个模型的电极从“均匀电流密度”改成了完整电极模型，网格、材料、观测量都没变。按模型约定，这算不算换了一个问题？为什么？
+\item 一块永磁体的剩磁沿 $+z$，现在要用对平面 $z=0$ 的镜像构造它的“另一半”。镜像后的剩磁指向哪里？若错误地把剩磁当作极矢量反射，会得到什么？
+\item 项目一中，一个 TMS 解的正交性残差在舍入误差以内，各行残差也很小，可是总电场比预期大了 $10\%$。最先应该怀疑哪一半？怎样检查？
+\item \tabref{tab:projects-readouts} 的设计若把梯度从 $10$ 降到 $5\,\mathrm{mT/m}$，功率、储能、端电压（同样的上升时间）与主磁场中的受力各变为多少？
+\item \exref{ex:projects-p3} 中，为什么 $N=4$ 时同一个小线圈对气隙磁场的作用比 $N=6$ 时弱得多？只用割线磁导率的模型会怎样误判？
+\item 一根直轴突上，纵向场在一段长度内是均匀的。某人据此断言“这一段既不会被刺激，也不会发热”。哪一半对，哪一半错？
+\item 一个代理模型按每个样本的最大值归一化输出的电场图，训练效果很好。用它做多线圈的电流优化时会出什么问题？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item 算。电极模型属于“边界与界面”（也改变了源在边界上的分布），电极附近的场会改变，远处的场也会改变几个百分点（\chref{ch:tes}）。约定中的一项变了，就是另一个问题，结果需要重新检查。
+\item 镜像矩阵 $\vb Q=\mathrm{diag}(1,1,-1)$，$\det\vb Q=-1$。轴矢量 $\vb B_r'=(\det\vb Q)\vb Q\vb B_r=-(0,0,-B_r)=(0,0,+B_r)$：仍沿 $+z$。当作极矢量反射会得到 $-z$，两半磁体的磁化相互抵消。
+\item 先怀疑源。导体修正的错误会破坏正交性与守恒，而源的错误（线圈几何、段数、匝数、单位）会线性地传进总场——匝数、单位这类整体比例的错误更是原样保留——导体一侧的检查看不见它。应把线圈源单独与 \eqref{eq:loopaxis}、\eqref{eq:solenoidA} 对照，并核对单位与匝数。
+\item 电流减半。功率与储能是二次的，变为 $1/4$：约 $128\,\mathrm W$、$0.139\,\mathrm J$；端电压对 $\dot I$ 线性，同样的上升时间下减半，约 $56\,\mathrm V$；主磁场中的受力对电流线性，减半。
+\item $N=4$ 时柱子深入饱和，微分磁导率约等于 $\mu_0$：对增量来说，柱子就像空气，小线圈的磁动势大部分落在柱子上。冻结割线把柱子当成相对磁导率 $69$ 的铁，把响应高估 $11.5$ 倍。
+\item “不发热”是错的：均匀场的损耗 $\sigma E^2$ 照样为正。“不刺激”只对理想的无限长直电缆内部成立；若这一段包含神经的末端、弯曲或分支，或者场在段的两端发生变化，仍可能极化（\chref{ch:neuro}）。
+\item 按样本最大值归一化破坏了场对源的线性：两组电流的场不再能够叠加，缩放源也不再缩放输出。优化器需要的是每单位源的线性算子；应让代理模型学习与解剖有关的部分，把源线性地作用在外面，并保留物理单位。
+\end{answers}

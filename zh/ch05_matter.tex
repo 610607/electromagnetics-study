@@ -1,0 +1,350 @@
+\chapter{物质中的电与磁：P 与 M，D 与 H}\label{ch:matter}
+
+\begin{chapterguide}
+\guidequestion{把同一类“偶极子会顺着场排列”的材料放进电容器，电场变弱；放进螺线管，磁场却变强。电和磁对物质的反应为什么像是反着来的？教科书又为什么要在 $\vb E$、$\vb B$ 之外再引入 $\vb D$、$\vb H$？}
+\begin{guidegoals}
+\item 用偶极子图像解释极化 $\vb P$ 与磁化 $\vb M$，并说清它们的相同与不同；
+\item 从 $\vb P$、$\vb M$ 的空间变化推出束缚电荷（散度）与束缚电流（旋度）；
+\item 说明 $\vb D$、$\vb H$ 是“记账变量”：它们把束缚源并入场变量，并没有删除物质的作用；
+\item 区分两种电磁类比——“力的类比”$\vb E\leftrightarrow\vb B$ 与“方程形式的类比”$\vb E\leftrightarrow\vb H$、$\vb D\leftrightarrow\vb B$——知道各自何时有用、何时误导；
+\item 用位移电流补全安培定律，并逐条读懂完整的宏观 Maxwell 方程组。
+\end{guidegoals}
+\guideprereq{\chref{ch:electric}（电荷、$\vb E$、$\phi$、$\vb J$）；\chref{ch:magnetic}（$\vb B$、$\vb A$、法拉第定律）；\secref{sec:calc-div}、\secref{sec:calc-curl}（散度与旋度的几何意义）。}
+\end{chapterguide}
+
+\section{从一个对比实验开始}\label{sec:matter-puzzle}
+
+前两章只处理了真空中的电荷与电流。现在把材料放进去，先看两个结果，再解释原因。
+
+\textbf{实验一（电）。}平行板电容器的极板上固定自由电荷 $\pm Q$。在两板之间塞满一块相对介电常数 $\varepsilon_r=4$ 的介质，板间电场降为原来的四分之一。
+
+\textbf{实验二（磁）。}一根很长的螺线管通以固定电流 $I$。在管内塞满一根相对磁导率 $\mu_r=1000$ 的软铁芯（暂且当作线性材料），管内磁通密度 $B$ 增大到原来的一千倍。
+
+两种材料里发生的事情很相似：材料中本来杂乱取向的微观偶极子，在外场作用下部分地顺着场排列。可是一个使场变弱，一个使场变强。答案藏在“偶极子自己的场在它内部指向哪里”这一个细节里。本章会先把这个细节讲清楚，再由它出发，自然地得到束缚电荷、束缚电流，以及 $\vb D$ 与 $\vb H$。
+
+\begin{intuition}
+本章的主线只有一句话：\emph{物质的作用等价于一批额外的源}——极化留下束缚电荷，磁化留下束缚电流。$\vb D$ 和 $\vb H$ 只是把这批额外的源“记进”场变量的一种簿记方式。
+\end{intuition}
+
+\section{偶极子：物质响应的基本单元}\label{sec:matter-dipoles}
+
+\textbf{电偶极子}由相距 $\vb d$ 的一对电荷 $-q$、$+q$ 组成，$\vb d$ 从负电荷指向正电荷。它的偶极矩为
+\begin{equation}
+\vb p=q\vb d\qquad[\mathrm{C\,m}].
+\label{eq:pdipole}
+\end{equation}
+\textbf{磁偶极子}最简单的模型是一个电流为 $I$、面积为 $A_c$ 的小平面电流环，法向 $\vb n$ 与电流方向满足右手规则：
+\begin{equation}
+\vb m=IA_c\vb n\qquad[\mathrm{A\,m^2}].
+\label{eq:mdipole}
+\end{equation}
+原子尺度的磁矩来自电子的轨道运动与自旋。“小电流环”是与之等效的经典图像，并不是说自旋真是一个旋转的带电小球~\cite{magnetization}。
+
+两类偶极子有一个重要的共同点：在外场中，它们都受到使自身转向场方向的力矩，
+\begin{equation}
+\boldsymbol\tau=\vb p\times\vb E,\qquad \boldsymbol\tau=\vb m\times\vb B .
+\label{eq:dipoletorque}
+\end{equation}
+这就是材料在外场中“部分排列”的原因：热运动打乱取向，力矩使取向倾向于场的方向，两者竞争的结果是一个平均的净偶极矩。
+
+\fig{dipoles_pair}{电偶极子与磁偶极子的场线（轴对称截面，按精确解计算）。远处两种图样几乎一样，都是偶极场；靠近源时却截然不同：电场线从 $+$ 出发、终止于 $-$，两电荷之间的电场与 $\vb p$ 反向；磁场线从电流环中间穿过、自成闭合回路，环内的磁场与 $\vb m$ 同向。}{fig:dipoles_pair}
+
+\figref{fig:dipoles_pair} 揭示了两者的关键区别。从远处看，二者的场图样相同，所以在许多计算中可以用同一个“偶极子”公式。但在偶极子\emph{内部}：
+\begin{itemize}
+\item 两电荷之间，电场从 $+$ 指向 $-$，即与 $\vb p$ \emph{反向}；
+\item 电流环之内，磁场与 $\vb m$ \emph{同向}。
+\end{itemize}
+材料是由无数这样的偶极子挤在一起组成的，材料内部的“平均场”恰好落在这些偶极子的“内部区域”里。于是，排好队的电偶极子在材料内部产生与外场相反的电场，使电场变弱；排好队的电流环在材料内部产生与外场同向的磁场，使磁场变强~\cite{purcell}。\secref{sec:matter-puzzle} 的两个实验，现在已经有了定性解释。下面把它变成可以计算的形式。
+
+\section{极化强度 P 与束缚电荷}\label{sec:matter-P}
+
+单个偶极子太小，宏观模型只关心它们在一个小体积 $\Delta V$ 内的平均。定义\textbf{极化强度}
+\begin{equation}
+\vb P=\frac{1}{\Delta V}\sum_{a\in\Delta V}\vb p_a\qquad[\mathrm{C/m^2}],
+\label{eq:Pdef}
+\end{equation}
+即单位体积的电偶极矩。$\Delta V$ 要大于分子或微观结构尺度，又要小于宏观场明显变化的尺度。极化可以来自正负电荷中心的相对位移、永久偶极子的转向，或被粗粒化成介电响应的界面效应；它们都不同于自由载流子穿越整个样品的传导~\cite{polarization}。
+
+\subsection{为什么不均匀的极化会留下电荷}
+先看一维情形。设极化只沿 $x$ 方向，大小 $P_x(x)$ 随位置变化。极化就是电荷的微小位移：在任一截面上，单位面积有数量为 $P_x$ 的正电荷被推到截面右侧。取 $x$ 与 $x+\dd x$ 之间的一薄层，从左侧推进来的正电荷为 $P_x(x)$，从右侧推出去的为 $P_x(x+\dd x)$。若两者不等，薄层内就多出净电荷：
+\begin{equation}
+\rho_b\,\dd x=P_x(x)-P_x(x+\dd x)\quad\Longrightarrow\quad \rho_b=-\frac{\dd P_x}{\dd x}.
+\end{equation}
+三维中，“推进来减去推出去”正是散度的含义（\secref{sec:calc-div}），因此
+\begin{keyeq}
+\rho_b=-\nabla\cdot\vb P,\qquad q_{b,s}=\vb P\cdot\vb n\quad\text{（材料与真空的分界面）}.
+\label{eq:boundcharge}
+\end{keyeq}
+第二个式子单独记下极化在表面突然终止时留下的电荷，$\vb n$ 为指向材料外的法向。两个式子来自同一笔“位移电荷”的核算~\cite{griffiths}。两种极化介质相接时，界面上的束缚面电荷由两侧法向极化之差决定，而不是假设外侧极化为零。
+
+\textbf{束缚电荷是真实的电荷。}“自由”与“束缚”只是宏观模型中的一种分账方式：自由电荷 $\rho_f$ 指尚未计入 $\vb P$ 的电荷，束缚电荷 $\rho_b$ 指由极化的不均匀造成的净电荷。二者都按库仑定律产生电场，并没有一种“更真实”。
+
+\subsection{均匀极化：体内无电荷，表面有电荷}
+均匀的 $\vb P=P_0\vb e_x$ 散度为零，体内没有束缚电荷；但在平板左右两个表面，$\vb P\cdot\vb n$ 分别为 $-P_0$ 与 $+P_0$。这两层面电荷在板内产生向左的电场，与 $\vb P$ 反向，称为\textbf{退极化场}——正是\secref{sec:matter-dipoles} 中“偶极子内部电场反向”在宏观上的体现。
+
+若极化随时间变化，束缚电荷也在移动，对应一个真实的电流密度 $\partial_t\vb P$，称为\textbf{极化电流}。即使没有任何自由载流子穿过介质，它也可以不为零。
+
+\section{磁化强度 M 与束缚电流}\label{sec:matter-M}
+
+与极化完全平行地，定义\textbf{磁化强度}为单位体积的磁偶极矩：
+\begin{equation}
+\vb M=\frac{1}{\Delta V}\sum_{a\in\Delta V}\vb m_a\qquad[\mathrm{A/m}].
+\label{eq:Mdef}
+\end{equation}
+它的单位是 A/m，与面电流密度相同——这并非巧合，下面马上会看到，磁化的确等价于一层面电流。
+
+\subsection{为什么磁化会留下电流}
+把均匀磁化的材料想象成一格格首尾相接的小电流环（\figref{fig:bound_sources} 右）。两个相邻电流环在公共边上的电流大小相等、方向相反，互相抵消；所以均匀磁化的材料\emph{内部}没有净电流。只有最外一圈电流环的外侧边没有邻居可以抵消，于是沿材料边界留下一圈净电流。若各处磁化强度不同，相邻电流环的电流不能完全抵消，体内也会留下净电流。“相邻环流之差”正是旋度的含义（\secref{sec:calc-curl}），因此
+\begin{keyeq}
+\vb J_M=\nabla\times\vb M,\qquad \vb K_M=\vb M\times\vb n\quad\text{（材料与真空的分界面）}.
+\label{eq:boundcurrent}
+\end{keyeq}
+下标 $M$ 用来与极化电流 $\partial_t\vb P$ 区分。均匀磁化的物体内部 $\vb J_M=0$，但边界上的 $\vb K_M$ 照样产生磁场：\emph{没有体电流，不等于没有磁性}。
+
+\fig{bound_sources}{均匀极化与均匀磁化的平板。左：偶极子在体内首尾相接，正负电荷相互抵消，只在左右表面留下束缚面电荷 $\vb P\cdot\vb n$。右：小电流环在体内相邻边相互抵消，只在边界留下一圈束缚面电流 $\vb M\times\vb n$。}{fig:bound_sources}
+
+\begin{compare}{束缚电荷与束缚电流}{极化 $\vb P$ 留下束缚电荷}{磁化 $\vb M$ 留下束缚电流}
+\cmprow{来源}{$\vb P$ 不均匀，或在表面终止}{$\vb M$ 不均匀，或在表面终止}
+\cmprow{体密度}{$\rho_b=-\nabla\cdot\vb P$（散度）}{$\vb J_M=\nabla\times\vb M$（旋度）}
+\cmprow{面密度}{$q_{b,s}=\vb P\cdot\vb n$（法向分量）}{$\vb K_M=\vb M\times\vb n$（切向分量）}
+\cmprow{均匀材料内部}{为零}{为零}
+\cmprow{产生什么}{按库仑定律产生电场}{按安培定律产生磁场}
+\cmprow{能否被测到}{是真实电荷；但不会从端子流出}{等效电流；不发热、不从端子流出}
+\cmpsum{极化的\emph{散度}留下电荷，磁化的\emph{旋度}留下电流——这正是“电荷是 $\vb E$ 的散度源、电流是 $\vb B$ 的旋度源”的镜像。}
+\end{compare}
+
+\section{回到开头的实验}\label{sec:matter-puzzle-solved}
+
+现在可以定量解释两个实验了。
+
+\begin{example}{填满介质的电容器（固定自由电荷）}\label{ex:dielectriccap}
+理想平行板电容器的面积为 $A_c$，自由面电荷为 $\pm q_{f,s}=\pm Q/A_c$，板间填满 $\varepsilon_r=4$ 的线性介质，忽略边缘效应。板间的电场、极化与介质表面的束缚面电荷各是多少？
+\solution
+介质被极化，$\vb P$ 与 $\vb E$ 同向（从正极板指向负极板）。由 \eqref{eq:boundcharge}，介质靠近正极板的一面出现负的束缚面电荷，靠近负极板的一面出现正的束缚面电荷——它们与相邻极板上的自由电荷符号相反，部分抵消了自由电荷的电场。线性介质中 $P=\varepsilon_0(\varepsilon_r-1)E$，而板间电场由全部面电荷决定：
+\begin{equation*}
+\varepsilon_0E=q_{f,s}-P\quad\Longrightarrow\quad
+\varepsilon_0E=\frac{q_{f,s}}{\varepsilon_r},\qquad P=\Bigl(1-\frac{1}{\varepsilon_r}\Bigr)q_{f,s}.
+\end{equation*}
+取 $\varepsilon_r=4$：电场降为真空时的 $1/4$，束缚面电荷抵消了 $3/4$ 的自由面电荷。下一节会看到，$\varepsilon_0E+P$ 这个组合恰好等于 $q_{f,s}$，不受介质影响（\figref{fig:e_d_capacitor}）。
+\end{example}
+
+\fig{e_d_capacitor}{固定自由电荷时，真空间隙与介质间隙的对比（$\varepsilon_r=4$）。左：介质表面出现与相邻极板反号的束缚电荷，电场线变稀。右：$D=\varepsilon_0E+P$ 的分解——两种情形 $D$ 相同，介质中 $\varepsilon_0E$ 只占 $1/4$，其余由 $P$ 补足。}{fig:e_d_capacitor}
+
+\begin{example}{带软铁芯的长螺线管（固定电流）}\label{ex:ironcore}
+理想长螺线管每单位长度 $n_t$ 匝，电流 $I$，管内充满 $\mu_r=1000$ 的线性铁芯。铁芯表面的束缚面电流与绕组电流相比有多大？
+\solution
+铁芯被磁化，$\vb M$ 沿管轴，与绕组产生的场同向。由 \eqref{eq:boundcurrent}，铁芯侧面上 $\vb K_M=\vb M\times\vb n$ 绕轴环流，\emph{方向与绕组电流相同}——它像是在线圈里又绕了一层看不见的线圈。线性材料中 $M=(\mu_r-1)H$，而长螺线管内 $H=n_tI$（\secref{sec:matter-DH} 会说明这一结论为什么不受铁芯影响）。于是
+\begin{equation*}
+K_M=M=(\mu_r-1)\,n_tI=999\,n_tI,\qquad B=\mu_0(n_tI+K_M)=\mu_0\mu_r n_tI.
+\end{equation*}
+铁芯表面的等效电流是绕组电流的 999 倍，这就是磁场增强一千倍的来源。
+\end{example}
+
+两个例子的结构完全对称：物质被场排列 $\rightarrow$ 排列留下束缚源 $\rightarrow$ 束缚源再产生场。区别只在于束缚源产生的场在材料内部与外场\emph{反向}（电）还是\emph{同向}（磁），而这又回到了\figref{fig:dipoles_pair} 中偶极子内部场的方向。
+
+\begin{pitfall}[“介质总会削弱电场”“铁芯总会增强磁场”]
+两句话都依赖于实验中保持了什么不变，以及几何形状。电容器若接在恒压源上，板间电压与间距都不变，$E=V/d$ 也就不变；此时电源会补充自由电荷，使 $Q$ 增大到 $\varepsilon_r$ 倍。同样，一个短而粗的磁化物体内部，$\vb H$ 会被它自身磁化产生的退磁场明显削弱（\secref{sec:matter-DH} 的磁化球），铁芯的“放大倍数”远小于 $\mu_r$。还要注意，抗磁材料的 $\mu_r$ 略小于 1，会使磁场略为减弱。
+\end{pitfall}
+
+\section{D 与 H：把束缚源记进场变量}\label{sec:matter-DH}
+
+\subsection{从“全部源”的写法出发}
+把物质的贡献全部当作源，宏观平均场 $\vb E$、$\vb B$ 满足与真空相同形式的方程，只是右端出现了全部电荷与电流：
+\begin{align}
+\nabla\cdot(\varepsilon_0\vb E)&=\rho_f-\nabla\cdot\vb P,\label{eq:allsourcegauss}\\
+\nabla\times\frac{\vb B}{\mu_0}&=\vb J_f+\partial_t\vb P+\nabla\times\vb M+\varepsilon_0\partial_t\vb E.\label{eq:allsourceampere}
+\end{align}
+第二式右端最后一项 $\varepsilon_0\partial_t\vb E$ 是真空位移电流，不是任何电荷的运动（\secref{sec:matter-displacement} 会解释它为什么必须存在）。
+
+这种写法完全正确，但有一个实际困难：束缚源 $\vb P$、$\vb M$ 本身取决于场，在求出场之前是未知的。我们通常只知道外部注入的自由电荷与自由电流。于是把含 $\vb P$、$\vb M$ 的项移到左边，与场合并：
+\begin{gather}
+\nabla\cdot(\varepsilon_0\vb E+\vb P)=\rho_f,\qquad
+\nabla\times\Bigl(\frac{\vb B}{\mu_0}-\vb M\Bigr)=\vb J_f+\partial_t(\varepsilon_0\vb E+\vb P).
+\end{gather}
+括号里的两个组合各起一个名字：
+\begin{keyeq}
+\vb D=\varepsilon_0\vb E+\vb P,\qquad \vb H=\frac{\vb B}{\mu_0}-\vb M,
+\label{eq:materialdefinitions}
+\end{keyeq}
+得到只含自由源的两条方程
+\begin{equation}
+\nabla\cdot\vb D=\rho_f,\qquad \nabla\times\vb H=\vb J_f+\partial_t\vb D .
+\label{eq:freeDH}
+\end{equation}
+
+\fig{source_bookkeeping}{同一组宏观场的两种记账方式。写法一把极化与磁化当作额外的源，场只用 $\vb E$、$\vb B$；写法二把它们并入 $\vb D$、$\vb H$，右端只留下自由源。物理内容完全相同。}{fig:source_bookkeeping}
+
+\figref{fig:source_bookkeeping} 把这一步画成了“记账方式的转换”。必须记住：$\vb D$、$\vb H$ 并没有消除极化与磁化的物理作用，它们只是把这些作用藏进了定义 \eqref{eq:materialdefinitions} 和下面将要给出的材料关系里。
+
+\subsection{积分形式：两本“自由源账本”}
+对 \eqref{eq:freeDH} 分别使用散度定理 \eqref{id:div} 与 Stokes 定理 \eqref{id:stokes}：
+\begin{equation}
+\oint_{\partial V}\vb D\cdot\vb n\dS=Q_f(V),\qquad
+\oint_C\vb H\cdot\dd\boldsymbol\ell=I_f(S)+\frac{\dd}{\dd t}\int_S\vb D\cdot\vb n\dS.
+\label{eq:DHintegral}
+\end{equation}
+$\vb D$ 穿出\emph{闭合}曲面的总通量等于其中的自由电荷；$\vb H$ 沿闭合回路的环量等于穿过的自由电流（加位移电流）。对任意开曲面积分 $\vb D$，得到的是电位移通量，并不自动等于“所包围的自由电荷”。
+
+\exref{ex:ironcore} 中用到的 $H=n_tI$ 正来自第二本账：沿一个一边在管内、一边在管外的矩形回路积分，只有管内一边有贡献，回路穿过的自由电流为 $n_tI\ell$；铁芯的磁化电流不进入这本账，所以 $H$ 与铁芯无关。
+
+\subsection{无自由电流，H 也可以不为零}
+“$\vb H$ 只由自由电流决定”是最常见的误解。\eqref{eq:freeDH} 只规定了 $\vb H$ 的\emph{旋度}；它的散度 $\nabla\cdot\vb H=-\nabla\cdot\vb M$ 可以不为零，边界条件也会参与决定 $\vb H$。
+
+\fig{sphere_pair}{均匀极化球与均匀磁化球（$\vb P$、$\vb M$ 均向上，无外场、无自由源）。球外两者都是偶极场。球内电场与 $\vb P$ 反向，磁通密度与 $\vb M$ 同向；而 $\vb H$ 与 $\vb M$ 反向，数值恰好对应 $\varepsilon_0\vb E$。下方条形图给出球内各量（有符号，按 $P$ 或 $\mu_0M$ 归一化）；场线疏密只表示方向与拓扑，不作强度比较。}{fig:sphere_pair}
+
+真空中、无外场、指定均匀磁化 $\vb M=M_0\vb e_z$ 的球，内部场为~\cite{demagnetizing}
+\begin{equation}
+\vb H=-\frac13\vb M,\qquad \vb B=\mu_0(\vb H+\vb M)=\frac{2\mu_0}{3}\vb M .
+\label{eq:atlassphere}
+\end{equation}
+完全没有自由电流，$\vb H$ 却不为零，而且与 $\vb M$ 反向，称为\textbf{退磁场}。这不违反安培定律：零旋度不等于零场。均匀极化球给出数值上完全相同的结构：$\varepsilon_0\vb E=-\vb P/3$，$\vb D=2\vb P/3$（\figref{fig:sphere_pair}）。
+
+\begin{deeper}[磁化球内部场的推导]
+无自由电流时各区域都可以用磁标势 $\vb H=-\nabla\psi$（\chref{ch:potentials}）。由轴对称以及 Laplace 方程在球内有界、球外衰减的解，可设
+\begin{equation*}
+\psi_{\rm in}=c\,r\cos\theta,\qquad \psi_{\rm out}=\frac{d\cos\theta}{r^2},
+\end{equation*}
+$\theta$ 从 $+z$ 轴量起。$r=a$ 处切向 $\vb H$ 连续给出 $d=ca^3$。法向 $\vb B$ 连续：球外 $H_r=2d\cos\theta/a^3$，球内 $H_r=-c\cos\theta$，再加上磁化的法向分量 $M_0\cos\theta$，要求 $2c\cos\theta=-c\cos\theta+M_0\cos\theta$，故 $c=M_0/3$。于是 $\vb H_{\rm in}=-\nabla\psi_{\rm in}=-\vb M/3$。所用的两条界面条件将在\chref{ch:interfaces} 推导。
+\end{deeper}
+
+\subsection{E 与 D、B 与 H：各自回答什么问题}
+
+\begin{compare}{$\vb E$ 与 $\vb D$}{$\vb E$：推电荷的场}{$\vb D$：自由电荷的账本}
+\cmprow{定义}{单位静止电荷受的力，V/m}{$\varepsilon_0\vb E+\vb P$，C/m$^2$}
+\cmprow{散度的源}{全部电荷 $\rho_f+\rho_b$}{只有自由电荷 $\rho_f$}
+\cmprow{旋度}{静态为零；一般为 $-\partial_t\vb B$}{静态时 $\nabla\times\vb D=\nabla\times\vb P$，可不为零}
+\cmprow{界面上连续的分量}{切向分量}{法向分量（无自由面电荷时）}
+\cmprow{进入力或功率}{是：$q\vb E$、$\vb E\cdot\vb J$}{否；其时间导数进入安培定律}
+\cmpsum{真空中二者只差常数 $\varepsilon_0$；有极化时，$\vb E$ 管“力”，$\vb D$ 管“自由电荷的通量”。}
+\end{compare}
+
+\begin{compare}{$\vb B$ 与 $\vb H$}{$\vb B$：推运动电荷、穿过回路的场}{$\vb H$：自由电流的账本}
+\cmprow{定义}{运动电荷受力 $q\vb v\times\vb B$，T}{$\vb B/\mu_0-\vb M$，A/m}
+\cmprow{散度}{永远为零}{$-\nabla\cdot\vb M$，可不为零}
+\cmprow{旋度的源}{全部电流（含磁化电流）与位移电流}{只有自由电流与位移电流}
+\cmprow{界面上连续的分量}{法向分量}{切向分量（无自由面电流时）}
+\cmprow{进入力、磁通、感应}{是：洛伦兹力、$\Phi_B$、法拉第定律}{否}
+\cmpsum{$\vb B$ 是物理上“起作用”的磁场；$\vb H$ 是便于由自由电流求场的辅助量，它既不是“外加场”，也不是“去掉材料后的场”。}
+\end{compare}
+
+\section{两种电磁类比}\label{sec:matter-analogy}
+
+学电磁学时常说“电和磁是对称的”，但到底是哪个量对应哪个量？其实有两种不同的对应关系，各有用处，混用就会出错（\figref{fig:em_analogy}）。
+
+\fig{em_analogy}{两种电磁类比。实线：物理类比，按“力”和“物质的偶极密度”配对，$\vb E\leftrightarrow\vb B$、$\vb P\leftrightarrow\vb M$、$\rho_f\leftrightarrow\vb J_f$。虚线：形式类比，按方程与界面条件配对，$\vb E\leftrightarrow\vb H$（环量、切向分量）、$\vb D\leftrightarrow\vb B$（通量、法向分量），两条虚线交叉。}{fig:em_analogy}
+
+\textbf{物理类比}按“谁对电荷施力”配对：$\vb E$ 与 $\vb B$ 同时出现在洛伦兹力 $q(\vb E+\vb v\times\vb B)$ 中，是两个基本场；$\vb P$ 与 $\vb M$ 都是偶极密度；$\rho_f$ 与 $\vb J_f$ 是自由源。用这种类比思考\emph{物理}：磁力来自 $\vb B$，所以要算力、算磁通、算感应，必须用 $\vb B$。
+
+\textbf{形式类比}按“方程长什么样”配对。静电场满足 $\nabla\times\vb E=0$、$\nabla\cdot\vb D=\rho_f$；无自由电流区域的静磁场满足 $\nabla\times\vb H=0$、$\nabla\cdot\vb B=0$。于是 $\vb E\leftrightarrow\vb H$ 都由标势的梯度给出、都是切向分量在界面连续；$\vb D\leftrightarrow\vb B$ 都按通量计算、都是法向分量在界面连续；$\varepsilon\leftrightarrow\mu$。上一节的两个球给出相同的 $-1/3$，正是这种类比的体现。它的价值在于\emph{方法}：无电流区域的磁场问题可以直接借用静电学的解法，例如用磁标势（\chref{ch:potentials}）求解匀场线圈和永磁体周围的场。
+
+\begin{compare}{两种电磁类比}{物理类比}{形式类比}
+\cmprow{配对}{$\vb E\leftrightarrow\vb B$，$\vb P\leftrightarrow\vb M$}{$\vb E\leftrightarrow\vb H$，$\vb D\leftrightarrow\vb B$，$\varepsilon\leftrightarrow\mu$}
+\cmprow{依据}{洛伦兹力与偶极子图像}{静电与无电流静磁的方程、界面条件同形}
+\cmprow{适合用来}{思考力、能量与因果}{借用解法：标势、镜像、退磁因子}
+\cmprow{会误导之处}{以为 $\vb H$ 是 $\vb E$ 的对应物而用它算力}{以为存在“自由磁荷”；忘记它只在无自由电流区域成立}
+\cmpsum{问“谁在推电荷”时用物理类比；问“这个方程怎么解”时用形式类比。}
+\end{compare}
+
+两个定义式本身也提醒了二者的不对称：$\vb D=\varepsilon_0\vb E+\vb P$ 中，物质项是\emph{加}在 $\vb E$ 上；而 $\vb H=\vb B/\mu_0-\vb M$ 中，物质项是从 $\vb B$ 中\emph{减}掉，等价地 $\vb B=\mu_0(\vb H+\vb M)$。这一符号差别正对应偶极子内部场方向的差别。
+
+\section{线性材料：用 χ、ε、μ 闭合方程}\label{sec:matter-linear}
+
+\eqref{eq:freeDH} 有了自由源，却多出了未知量 $\vb P$、$\vb M$。要闭合方程，还需要说明材料怎样响应场，这就是\textbf{本构关系}。最简单的是线性、各向同性、局域、无记忆的材料：
+\begin{equation}
+\vb P=\varepsilon_0\chi_e\vb E,\qquad \vb M=\chi_m\vb H,
+\label{eq:susceptibility}
+\end{equation}
+其中电极化率 $\chi_e$ 与磁化率 $\chi_m$ 无量纲。代入定义 \eqref{eq:materialdefinitions}：
+\begin{equation}
+\vb D=\varepsilon\vb E,\quad \varepsilon=\varepsilon_0(1+\chi_e);\qquad
+\vb B=\mu\vb H,\quad \mu=\mu_0(1+\chi_m).
+\end{equation}
+相对介电常数 $\varepsilon_r=\varepsilon/\varepsilon_0$、相对磁导率 $\mu_r=\mu/\mu_0$ 无量纲。注意又一处不对称：习惯上 $\vb P$ 写成 $\vb E$ 的函数，$\vb M$ 却写成 $\vb H$ 的函数。
+
+数量级差别很大。普通介质的 $\chi_e$ 为正，常在 1 到 100 的量级；多数非磁性物质的 $|\chi_m|$ 只有 $10^{-5}$ 量级——抗磁材料（例如水）为负，顺磁材料为正\cite{griffiths}；软磁材料的有效 $\mu_r$ 可达 $10^3$ 至 $10^5$\cite{fitzgerald}，但强烈依赖场强与历史，不再是常数（\chref{ch:bh}）。这也是为什么生物组织中的磁场几乎等于真空中的磁场，而铁芯可以把磁通“引导”到想要的地方。
+
+各向异性材料中，$\varepsilon$、$\mu$ 要换成张量，$\vb D$ 与 $\vb E$ 不必平行。在导电材料中还有第三个本构关系——欧姆定律 $\vb J_c=\sig\vb E$（\secref{sec:electric-ohm}）。三者回答三个不同的问题：
+
+\begin{compare}{三个本构关系}{$\vb J_c=\sig\vb E$ 与 $\vb D=\eps\vb E$}{$\vb B=\boldsymbol\mu\vb H$}
+\cmprow{连接}{电场 $\to$ 传导电流；电场 $\to$ 电位移}{磁场强度 $\to$ 磁通密度}
+\cmprow{单位}{$\sigma$：S/m；$\varepsilon$：F/m}{$\mu$：H/m}
+\cmprow{能量含义}{$\sigma$：耗散（发热）；$\varepsilon$：储存电能}{储存磁能（线性无损时）}
+\cmprow{典型例子}{电阻（$\sigma$ 主导）；电容器介质（$\varepsilon$ 主导）}{磁芯、磁轭}
+\cmpsum{$\sigma$、$\varepsilon$、$\mu$ 单位不同、物理意义不同，不是三种可以互换的“导电系数”。高导电的铜磁导率并不大，却能用涡流强烈地阻挡变化的磁场（\chref{ch:eddy}）。}
+\end{compare}
+
+\section{位移电流：补全安培定律}\label{sec:matter-displacement}
+
+\eqref{eq:freeDH} 中的 $\partial_t\vb D$ 从何而来？如果没有它，安培定律会自相矛盾。
+
+\fig{displacement_current}{麦克斯韦的论证。同一个回路 $C$ 可以张出两个曲面：$S_1$ 被导线穿过，传导电流为 $I$；$S_2$ 绕过左极板、从两板之间穿过，没有任何传导电流。$\oint_C\vb H\cdot\dd\boldsymbol\ell$ 只能有一个值，所以穿过 $S_2$ 的位移电流必须恰好等于 $I$。}{fig:displacement_current}
+
+给电容器充电时（\figref{fig:displacement_current}），对同一个回路 $C$，若安培定律只含传导电流，用曲面 $S_1$ 计算得到 $I$，用曲面 $S_2$ 计算却得到零，矛盾。补上 $\partial_t\vb D$ 后，$S_2$ 上的贡献为
+\begin{equation}
+\frac{\dd}{\dd t}\int_{S_2}\vb D\cdot\vb n\dS=\frac{\dd Q}{\dd t}=I ,
+\end{equation}
+因为由 \eqref{eq:DHintegral} 第一式，极板之间 $D=Q/A_c$。两个曲面给出相同结果，矛盾消失。
+
+用微分形式也可以看到同一件事：对任意场，旋度的散度为零 \eqref{id:zeros}，所以 $\nabla\times\vb H$ 的散度必须为零。没有位移电流时，这要求处处 $\nabla\cdot\vb J_f=0$，与电荷可以积累相矛盾；有了位移电流，
+\begin{equation}
+0=\nabla\cdot(\nabla\times\vb H)=\nabla\cdot\vb J_f+\partial_t(\nabla\cdot\vb D)=\nabla\cdot\vb J_f+\partial_t\rho_f,
+\label{eq:continuityfromampere}
+\end{equation}
+恰好就是\chref{ch:electric} 由“数电荷”得到的连续性方程 \eqref{eq:continuity}。
+
+位移电流 $\partial_t\vb D=\varepsilon_0\partial_t\vb E+\partial_t\vb P$ 由两部分组成：$\partial_t\vb P$ 是束缚电荷的真实移动；$\varepsilon_0\partial_t\vb E$ 则不是任何电荷的运动，即使在真空中也存在。为避免歧义，本书把安培定律右端的总量记为
+\begin{equation}
+\vb J_{\rm amp}=\vb J_f+\partial_t\vb D ,
+\end{equation}
+它处处无散。它与“全部物质电流”$\vb J_{\rm mat}=\vb J_f+\partial_t\vb P+\nabla\times\vb M$ 相差 $\varepsilon_0\partial_t\vb E-\nabla\times\vb M$，二者不能都笼统地叫“总电流”。
+
+\section{完整的宏观 Maxwell 方程组}\label{sec:matter-maxwell}
+
+现在，\chref{ch:intro} 开头展示的四条方程中的每一个符号都有了来历。把它们与积分形式并列：
+
+\begin{table}[htbp]\centering\small
+\caption{宏观 Maxwell 方程组：每条方程说了一句什么话。}\label{tab:maxwell}
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+微分形式 & 积分形式 & 用一句话说\\\midrule
+$\nabla\cdot\vb D=\rho_f$ & $\oint_{\partial V}\vb D\cdot\vb n\dS=Q_f$ & 自由电荷是 $\vb D$ 通量的源头。\\
+$\nabla\cdot\vb B=0$ & $\oint_{\partial V}\vb B\cdot\vb n\dS=0$ & 磁通没有源头，进入多少就流出多少。\\
+$\nabla\times\vb E=-\partial_t\vb B$ & $\oint_C\vb E\cdot\dd\boldsymbol\ell=-\frac{\dd}{\dd t}\int_S\vb B\cdot\vb n\dS$ & 变化的磁通产生环流电场。\\
+$\nabla\times\vb H=\vb J_f+\partial_t\vb D$ & $\oint_C\vb H\cdot\dd\boldsymbol\ell=I_f+\frac{\dd}{\dd t}\int_S\vb D\cdot\vb n\dS$ & 自由电流与位移电流产生环流 $\vb H$。\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+四条方程并非彼此独立的规则。对安培定律取散度得到电荷守恒 \eqref{eq:continuityfromampere}；对法拉第定律取散度得到 $\partial_t(\nabla\cdot\vb B)=0$——只要初始时刻磁场无散，旋度方程的演化就会一直保持它。两条散度方程可以看作对初始状态的约束，两条旋度方程描述演化。
+
+但它们仍不足以确定场：还需要本构关系（\secref{sec:matter-linear}）告诉我们材料怎样响应，还需要界面与边界条件告诉我们不同区域如何衔接。后者正是下一章的主题。
+
+\begin{takeaways}
+\begin{itemize}
+\item 物质的作用等价于额外的源：$\rho_b=-\nabla\cdot\vb P$、$q_{b,s}=\vb P\cdot\vb n$；$\vb J_M=\nabla\times\vb M$、$\vb K_M=\vb M\times\vb n$。均匀材料内部没有束缚源，表面仍有。
+\item 电偶极子内部的场与 $\vb p$ 反向，电流环内部的场与 $\vb m$ 同向；这解释了介质削弱电场、铁芯增强磁场（在各自保持自由源不变的条件下）。
+\item $\vb D=\varepsilon_0\vb E+\vb P$、$\vb H=\vb B/\mu_0-\vb M$ 是记账变量，使方程右端只剩自由源；力、磁通和感应仍由 $\vb E$、$\vb B$ 决定。
+\item 物理类比 $\vb E\leftrightarrow\vb B$ 用来思考力与因果；形式类比 $\vb E\leftrightarrow\vb H$、$\vb D\leftrightarrow\vb B$ 用来借用解法。
+\item 位移电流使安培定律与电荷守恒相容；四条 Maxwell 方程加上本构关系与边界条件，才构成可解的问题。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 均匀极化的平板体内没有束缚电荷。它还会改变板内的电场吗？为什么？
+\item 一根沿轴均匀磁化的长永磁棒，体内没有束缚电流。它周围的磁场像什么熟悉的装置产生的场？
+\item 电容器接在恒压源上，板间插满 $\varepsilon_r=4$ 的介质。$E$、$D$、$Q$ 各变为原来的多少倍？若改为先充电再断开电源，结果如何？
+\item 有人说：“$\vb H$ 是外加场，$\vb B$ 是总场。”用磁化球的结果说明这句话错在哪里。
+\item 为什么 $\oint\vb D\cdot\vb n\dS=Q_f$ 只对\emph{闭合}曲面成立？对一块开曲面积分 $\vb D$ 得到的是什么？
+\item 在\exref{ex:ironcore} 中把铁芯换成 $\chi_m=-9\times10^{-6}$ 的水\cite{griffiths}，束缚面电流与绕组电流之比是多少？方向如何？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item 会。两个表面上的束缚面电荷 $\mp P_0$ 产生与 $\vb P$ 反向的退极化场；体内无电荷不等于没有电场的源。
+\item 像一个长螺线管：均匀磁化等价于侧面上绕轴流动的面电流 $K_M=M$，正是一层“看不见的绕组”。
+\item 恒压：$E=V/d$ 不变；$D=\varepsilon E$ 变为 4 倍；$Q=DA_c$ 也变为 4 倍（电源补充电荷）。先充电再断开：$Q$、$D$ 不变，$E$ 与 $V$ 变为 $1/4$。见\exref{ex:dielectriccap}。
+\item 磁化球没有任何外加场和自由电流，球内 $\vb H=-\vb M/3$ 却不为零；$\vb H$ 也受材料的磁化与几何影响，并不是“外加”的。
+\item 散度定理只把\emph{闭合}曲面上的通量与体内的源联系起来；开曲面上的积分只是电位移通量，它的时间导数是穿过该曲面的位移电流。
+\item $K_M/(n_tI)=\chi_m=-9\times10^{-6}$：大小约为绕组电流的十万分之一，方向与绕组电流相反（抗磁），使管内磁场略微减弱。
+\end{answers}

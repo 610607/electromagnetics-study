@@ -1,0 +1,259 @@
+\chapter{TMS：给定磁源的感应}\label{ch:tms}
+
+\begin{chapterguide}
+\guidequestion{头部组织几乎是非磁性的，组织里的感应电流又弱得改变不了线圈的磁场。为什么同一个线圈放在形状、电导率不同的头上，组织里的电场却可以大不相同？}
+\begin{guidegoals}
+\item 从线圈的矢势出发，推导次级电势方程 $\nabla\cdot(\sig\nabla\phi)=\nabla\cdot(\sig\vb E_p)$ 和它的绝缘边界条件，并说出源项到底分布在哪里；
+\item 区分两种反馈：感应电流的磁场（在组织中可以忽略）与积累电荷的电场（不能忽略），用它解释核心问题；
+\item 用标量分部积分（V7）把方程写成加权投影，并用正交性检查一个数值解；
+\item 写出离散算子 $\vb e=[\vb I-\vb G\vb K^{-1}\vb G^{\mathsf T}\vb W]\vb P\vb d$，判断哪些操作保持、哪些操作破坏源线性；
+\item 正确地给单位场图归一化（每 A/s 还是每 A/μs），并在同一网格上对照 TES 与 TMS 的异同。
+\end{guidegoals}
+\guideprereq{\secref{sec:magnetic-faraday}、\secref{sec:solenoid}（感应电场）；\secref{sec:interfaces-surfacecharge}（界面电荷）；\secref{sec:regimes-oneway}（单向耦合）；\secref{sec:potentials-gauge}（规范）；\chref{ch:tes}（电导方程与边界）。}
+\end{chapterguide}
+
+\section{同一个磁场，不同的电场}\label{sec:tms-scene}
+
+\chref{ch:intro} 描述过 TMS 的因果链：线圈电流产生磁场，变化的磁通感应出电场，电场推动组织中的电荷，电荷在边界和界面上堆积，堆积的电荷又改写电场。前两步只与线圈有关；后几步与组织有关。
+
+组织几乎不影响前两步。它的磁化率只有 $10^{-5}$ 量级（\secref{sec:matter-linear}），磁性可以忽略；它的电导率又低，感应电流产生的磁场比线圈的磁场小得多——用\chref{ch:regimes} 的教学数值（$3\,\mathrm{kHz}$、$0.5\,\mathrm{S/m}$、$0.2\,\mathrm m$），磁扩散尺度 $\eta_m$ 只有约 $4.7\times10^{-4}$ \eqref{eq:scales}。所以组织里的 $\vb B$ 几乎就是线圈在空气中的磁场。
+
+可是电场不同。\chref{ch:magnetic} 算过：在均匀变化的磁场 $\partial_tB_z=1000\,\mathrm{T/s}$ 中，离轴 $8\,\mathrm{cm}$ 处的感应电场是 $40\,\mathrm{V/m}$ \eqref{eq:uniforminduction}。现在把一根截面为 $16\,\mathrm{cm}\times16\,\mathrm{cm}$ 的方形长导体柱放在这个磁场里，轴与磁场平行。柱里的磁场还是一样，每条边中点离轴恰好 $8\,\mathrm{cm}$。下面会算出：那里的电场约为 $54\,\mathrm{V/m}$，比 $40\,\mathrm{V/m}$ 大约 35\%；而四个角上，原本 $57\,\mathrm{V/m}$ 的电场几乎变成了零。
+
+磁场没有变，电场为什么变了？本章的回答是：组织对线圈有两种反馈。磁反馈——感应电流的磁场——确实很小；电反馈——边界与界面上的电荷——却一点也不小。
+
+\section{从线圈矢势到次级电势方程}\label{sec:tms-equations}
+
+\subsection{初级场与次级场}
+我们做与\chref{ch:tes} 相同的传导假设（组织静止、线性，电流平衡中可忽略电荷积累与位移电流），再加上\textbf{单向耦合}假设：组织电流对线圈磁场的反馈可以忽略（\secref{sec:regimes-oneway}）。于是线圈的磁矢势 $\vb A_p$ 可以单独算出来，例如用 \eqref{eq:Agreen} 对线圈电流积分，它在一个固定的规范中与组织无关。定义\textbf{初级电场}
+\begin{equation}
+\vb E_p=-\frac{\partial\vb A_p}{\partial t}.
+\end{equation}
+由 \eqref{eq:Etwopotentials}，总电场还要加上一个梯度项，它就是\textbf{次级电场}：
+\begin{keyeq}
+\vb E=\vb E_p-\nabla\phi,\qquad \vb J=\sig\bigl(\vb E_p-\nabla\phi\bigr).
+\label{eq:tmsE}
+\end{keyeq}
+$\vb E_p$ 只由线圈决定；$\phi$ 是未知数，由组织决定。
+
+\subsection{方程与边界条件}
+传导电流不生不灭，$\nabla\cdot\vb J=0$。把 \eqref{eq:tmsE} 代进去，未知的 $\phi$ 留在左边，已知的 $\vb E_p$ 移到右边：
+\begin{keyeq}
+\nabla\cdot(\sig\nabla\phi)=\nabla\cdot(\sig\vb E_p).
+\label{eq:tmspde}
+\end{keyeq}
+左端与 TES 的 \eqref{eq:tespde} 完全相同，只是右端多了一个源。理想的 TMS 线圈与身体没有电接触，外表面绝缘，$\vb n\cdot\vb J=0$：
+\begin{keyeq}
+\vb n\cdot\sig\bigl(\vb E_p-\nabla\phi\bigr)=0 .
+\label{eq:tmsboundary}
+\end{keyeq}
+这个标量电势方程是 TMS 有限元体导体计算的标准出发点~\cite{simnibs}。
+
+\begin{pitfall}[“外边界是绝缘的，所以 $\partial\phi/\partial n=0$”]
+绝缘要求的是\emph{总}电流的法向分量为零，即 $\vb n\cdot\sig\nabla\phi=\vb n\cdot\sig\vb E_p$，而不是 $\phi$ 的法向导数为零。初级场一般有穿出边界的法向分量（\figref{fig:induction_correction} 左），正是 $\nabla\phi$ 的法向分量把它抵消掉。写成齐次的 $\partial_n\phi=0$，等于允许初级场把电流推出身体。
+\end{pitfall}
+
+\subsection{源项藏在哪里}
+用乘积法则 \eqref{id:product} 展开右端：
+\begin{equation}
+\nabla\cdot(\sigma\vb E_p)=\sigma\,\nabla\cdot\vb E_p+\vb E_p\cdot\nabla\sigma .
+\end{equation}
+线圈在身体外面时，在库仑规范下 $\nabla\cdot\vb A_p=0$，于是 $\nabla\cdot\vb E_p=0$，第一项消失。剩下的 $\vb E_p\cdot\nabla\sigma$ 只在电导率变化的地方不为零——组织界面上。再加上外边界上的 \eqref{eq:tmsboundary}，在电导率分片常数的模型中，TMS 的“源”实际上全部集中在\emph{电导率跳变的面上}：初级场在哪里推着电流穿过一个电导率跳变，哪里就要积累电荷。即使初级场光滑、在均匀自由空间中无散，电导率界面也能产生很强的次级场。
+
+这里有两个细节。第一，$\vb E_p$ 必须在整个导体内按线圈公式计算，不能依组织标签“裁剪”：在组织边界处用掩膜截断 $\vb A_p$ 会改变它的空间导数，并不是无害的规范变换（\secref{sec:potentials-gauge}）。第二，“初级场是 $-\partial_t\vb A_p$”依赖于所选规范。换一个规范，$\vb E_p$ 与 $\phi$ 会一起改变，二者之和——总电场——不变；所以解析源矢势、有限元右端项和重建的电势必须使用同一个规范约定。
+
+\section{为什么 B 几乎不变，E 却明显改变}\label{sec:tms-charges}
+
+\subsection{两种反馈}
+组织中的感应电流有两个后果。它们产生磁场，这个磁场会反过来改变 $\partial_t\vb B$；它们在边界和界面上堆积电荷，电荷的电场会反过来改变 $\vb E$。前者的相对大小由 $\eta_m$ 衡量，在组织中约为 $10^{-4}$ 量级，可以忽略；后者却不受任何小参数的约束。\secref{sec:interfaces-surfacecharge} 已经看到，几个 $\mathrm{nC/m^2}$ 的电荷就足以造成数百 V/m 的电场跳变。
+
+\begin{compare}{两种反馈}{磁反馈：感应电流的磁场}{电反馈：积累电荷的电场}
+\cmprow{由什么产生}{组织中流动的电流}{电流在边界、界面上留下的电荷}
+\cmprow{改变什么}{$\vb B$，进而改变 $\partial_t\vb B$}{$\vb E$（加上 $-\nabla\phi$）}
+\cmprow{大小由什么衡量}{$\eta_m=\omega\mu\sigma\ell^2$}{无小参数：电荷积累到电流守恒为止}
+\cmprow{在头部组织中}{约 $10^{-4}$，可以忽略}{与初级场同量级，不能忽略}
+\cmprow{忽略它意味着}{单向耦合（\secref{sec:regimes-oneway}）}{求错了电场：电流会穿出绝缘边界}
+\cmprow{在金属屏蔽中}{可能是主导效应（\chref{ch:eddy}）}{同样存在}
+\cmpsum{“组织不改变磁场”只说明可以忽略磁反馈，并不允许省略电势的求解。}
+\end{compare}
+
+\subsection{梯度改变了场，却不改变环量}
+次级场是一个梯度，梯度的旋度为零 \eqref{id:zeros}：
+\begin{equation}
+\nabla\times\vb E=\nabla\times\vb E_p=-\partial_t\vb B .
+\end{equation}
+所以修正丝毫不改变法拉第定律规定的东西：沿任何闭合回路，$\oint\vb E\cdot\dd\boldsymbol\ell$ 仍等于 $-\dd\Phi_B/\dd t$。它改变的是电场\emph{沿回路怎样分配}：一处多一些，另一处就少一些。
+
+\fig{induction_correction}{均匀变化磁场中绝缘方块的电场（$\partial_tB_z>0$，指出纸面；P1 有限元计算，三幅图用同一箭头比例）。左：初级场绕中心顺时针转圈，在边界上有穿出、穿入的法向分量。中：梯度修正 $-\nabla\phi$；浅紫色为等势线（实线 $\phi>0$，虚线 $\phi<0$），边界外的 $\pm$ 号标出各半边上电荷的符号。右：两者之和，在边界上只剩切向分量，在 $\sigma=10$ 的夹杂内明显变弱。坐标与场均已归一化。}{fig:induction_correction}
+
+\figref{fig:induction_correction} 把这个分解画了出来。初级场的圆圈不管边界在哪里，在每条边上都有一半推着电流向外、一半向内。电流在向外推的半边留下正电荷，在向内推的半边留下负电荷；电荷的场 $-\nabla\phi$ 在边界附近指向内或外，恰好抵消初级场的法向分量。夹杂的边界上也有电荷（这里看不清，\figref{fig:tes_tms_compare} 中可以看到它们的位置）。最后剩下的总电场沿着边界流动。
+
+\begin{example}{均匀变化磁场中的方形导体柱}\label{ex:tms-square}
+截面边长 $L=0.16\,\mathrm m$ 的均匀方形长导体柱，侧面绝缘，处在轴向均匀的 $\partial_tB_z=1000\,\mathrm{T/s}$ 中（磁通相对柱轴对称）。求每条边中点与四个角上的初级电场与总电场，以及沿柱周界一圈电场切向分量的平均值。（教学数值。）
+\solution
+\emph{初级场。}以柱轴为中心，$\vb A_p=\tfrac12\vb B\times\vb r$ 给出 $|\vb E_p|=\tfrac r2\,\partial_tB_z$。边中点 $r=0.08\,\mathrm m$，$|\vb E_p|=40\,\mathrm{V/m}$，方向沿着边；角上 $r=0.08\sqrt2\,\mathrm m$，$|\vb E_p|\approx57\,\mathrm{V/m}$，方向与两条边都成 $45^\circ$，对每条边都有一个与切向分量同样大的法向分量。
+\emph{缩放。}问题是线性的，而且只有一个长度尺度：在边长为 1、$\partial_tB_z=1$ 的归一化方块上解 \eqref{eq:tmspde} 与 \eqref{eq:tmsboundary}，再把电场乘以 $L\,\partial_tB_z=160\,\mathrm{V/m}$ 即可。电导率均匀时，$\sigma$ 的数值不影响电场（见\secref{sec:tms-vs-tes}）。
+\emph{总电场。}有限元给出：边中点的归一化电场约 $0.338$，即约 $54\,\mathrm{V/m}$，比初级场大约 35\%；角上总电场趋于零——两条边都不允许法向电流，角上的电场在两个方向上都必须为零。
+\emph{平均值。}沿周界一圈，梯度的环量为零，所以总电场切向分量的平均值与初级场相同：每条边上都是 $40\,\mathrm{V/m}$。数值解给出的平均值在网格加密时趋于这个数（$0.2486$、$0.2493$，对应网格 128 与 256；准确值 $0.25$）。
+\end{example}
+
+这个例子把核心问题的答案摆得很清楚：磁场处处相同，法拉第定律规定的平均值也相同，但电荷把电场从角上“搬”到了边的中部。同一个线圈放在不同的头上，头的形状和电导率分布不同，电荷的位置和多少也不同，电场就不同。
+
+\subsection{电导率高，电流多，电场却不一定大}
+\figref{fig:induction_correction} 右图中，夹杂的电导率是周围的 10 倍，夹杂内的电场却变弱了：与没有夹杂的均匀方块相比，夹杂所在区域的平均 $\abs{\vb E}$ 从 $0.080$ 降到 $0.054$（约三分之二），平均电流密度则增大到约 6.7 倍。高电导率区域提供了电流的通路，却不保证那里的电场大。薄层、曲率与电导率对比都会改变整个电势解；只看 $\abs{\vb B}$，或只看某一点的电导率，捕捉不到这种非局部的响应。
+
+\section{修正是一个加权投影}\label{sec:tms-projection}
+
+方程 \eqref{eq:tmspde}–\eqref{eq:tmsboundary} 还有另一种写法。它把“减去一个梯度”变成一个几何操作，也给出了检查数值解的一个好办法。
+
+\subsection{标量分部积分}
+我们需要一个新的恒等式。对任意光滑的标量 $v$ 与矢量场 $\vb F$，把散度定理 \eqref{id:div} 用于乘积 $v\vb F$，再用乘积法则 \eqref{id:product} 展开 $\nabla\cdot(v\vb F)=\nabla v\cdot\vb F+v\nabla\cdot\vb F$：
+\begin{equation}
+\int_Vv\,\nabla\cdot\vb F\dV=\oint_{\partial V}v\,\vb F\cdot\vb n\dS-\int_V\nabla v\cdot\vb F\dV .
+\tag{V7}\label{id:scalaribp}
+\end{equation}
+这就是\textbf{标量分部积分}：导数从 $\vb F$ 上“挪”到 $v$ 上，代价是一个边界项和一个负号。它是标量有限元的关键一步（\chref{ch:femscalar}）。
+
+\subsection{一个功率泛函}
+对绝缘区域，取一个固定的电势参考，考虑泛函
+\begin{keyeq}
+\mathcal F[\phi]=\frac12\int_\Omega\bigl(\vb E_p-\nabla\phi\bigr)^{\mathsf T}\sig\bigl(\vb E_p-\nabla\phi\bigr)\dV .
+\label{eq:tmsfunctional}
+\end{keyeq}
+被积函数正是候选电场 $\vb E_p-\nabla\phi$ 的欧姆损耗密度 \eqref{eq:lossdensity}，所以 $\mathcal F$ 是总耗散功率的一半。让 $\phi$ 沿任意测试函数 $v$ 改变一点，$\phi\to\phi+\epsilon v$，要求 $\mathcal F$ 的一阶变化为零（$\sig$ 对称）：
+\begin{keyeq}
+0=-\int_\Omega\nabla v\cdot\sig\bigl(\vb E_p-\nabla\phi\bigr)\dV\qquad\text{对所有 }v .
+\label{eq:tmsorthogonal}
+\end{keyeq}
+对它用 \eqref{id:scalaribp}，取 $\vb F=\sig(\vb E_p-\nabla\phi)$：
+\begin{equation}
+0=-\oint_{\partial\Omega}v\,\vb n\cdot\sig\bigl(\vb E_p-\nabla\phi\bigr)\dS+\int_\Omega v\,\nabla\cdot\bigl[\sig\bigl(\vb E_p-\nabla\phi\bigr)\bigr]\dV .
+\end{equation}
+先只取在边界上为零的 $v$：边界项消失，体积分对所有这样的 $v$ 都为零，只能是被积函数为零——这就是 \eqref{eq:tmspde}。再取边界上不为零的 $v$：剩下的边界积分也必须为零，于是 $\vb n\cdot\sig(\vb E_p-\nabla\phi)=0$，就是 \eqref{eq:tmsboundary}。绝缘条件没有被施加，它是从变分中\emph{自己出来}的，所以称为\textbf{自然边界条件}。$\sigma$ 分片常数时，在每块组织上分别这样做，相邻两块的边界项合起来，就给出界面上的法向电流连续。
+
+\subsection{几何意义：投影}
+定义两个矢量场的“加权内积” $\langle\vb F,\vb G\rangle_\sigma=\int_\Omega\vb F^{\mathsf T}\sig\vb G\dV$。\eqref{eq:tmsorthogonal} 说的是：总电场 $\vb E=\vb E_p-\nabla\phi$ 与\emph{每一个}梯度场 $\nabla v$ 正交。这正是投影的定义：所有梯度场组成一个“子空间”，求解 $\phi$ 就是把 $\vb E_p$ 在这个子空间上的“影子” $\nabla\phi$ 找出来并减掉，剩下与它垂直的部分。
+
+\begin{intuition}[一个三维空间里的类比]
+把一个箭头分解成“落在桌面内的部分”与“垂直于桌面的部分”。桌面就是所有梯度场的集合，箭头是 $\vb E_p$，垂直部分是总电场 $\vb E$。“垂直”用电导率加权来衡量：电导率高的地方，箭头的分量“更重”。
+\end{intuition}
+
+投影有两个可以检验的推论。其一是勾股定理：$\norm{\vb E_p}_\sigma^2=\norm{\vb E}_\sigma^2+\norm{\nabla\phi}_\sigma^2$，即
+\begin{equation}
+\int_\Omega\sigma\abs{\vb E_p}^2\dV=\int_\Omega\sigma\abs{\vb E}^2\dV+\int_\Omega\sigma\abs{\nabla\phi}^2\dV .
+\end{equation}
+在\figref{fig:induction_correction} 的方块上，真实的耗散功率只有“假装没有修正”时 $\int\sigma\abs{\vb E_p}^2\dV$ 的约 80\%，等式在舍入误差内成立。其二，在所有旋度相同的候选电场 $\vb E_p-\nabla v$ 中，真实电场的欧姆功率最小——\chref{ch:tes} 中等势电极比均匀电流密度电极耗散少，是同一原理的另一种形式。这只是同一组方程的另一种说法，不是一条新的物理定律：它不意味着神经组织或别的什么在“主动”最小化能量。
+
+\subsection{用正交性检查数值解}
+\eqref{eq:tmsorthogonal} 给出了一个很强的实现检查：对\emph{每一个}离散测试函数，弱内积 $\int\nabla v\cdot\sig\vb E\dV$ 都应接近零。在方块算例中，它的值与舍入误差同量级（约 $10^{-17}$）。看起来平滑的矢量图检查不出这种守恒性质；反过来，一个“好看”但违反正交性的解，一定在某处让电流穿出了边界或在界面上不守恒。
+
+\fig{tms_fem_inclusion}{夹杂中的电场与电流（与\figref{fig:induction_correction} 同一算例）。左：总电场的大小（底色）与电流线（绿，相邻两线间电流相等）。电流线自成闭合回路，在高电导率的夹杂内密集，夹杂内的电场却较弱；边的中部电场最强，四角趋于零。右：沿虚线 a$\to$b 的 $\abs{\vb E}$ 与 $\abs{\vb J}$，实线有夹杂，虚线为均匀方块。在虚线穿过夹杂边界的两处，电流主要沿界面流动，$\abs{\vb E}$ 变化不大而 $\abs{\vb J}$ 突然增大（理想光滑界面上，切向电流恰好跳为 10 倍）；锯齿来自按单元标签近似的界面。}{fig:tms_fem_inclusion}
+
+\section{离散算子与源线性}\label{sec:tms-operator}
+
+\subsection{把投影写成矩阵}
+有限元把 \eqref{eq:tmsorthogonal} 中的 $v$ 取遍所有基函数（\chref{ch:femscalar}）。记 $\vb d$ 为源幅值（例如各线圈的 $\dot I_k$），$\vb P\vb d$ 为在积分点上采样的初级场，$\vb G$ 把节点电势映射为积分点上的梯度，$\vb W$ 包含积分权重与电导率张量。固定电势参考后，
+\begin{equation}
+\vb K=\vb G^{\mathsf T}\vb W\vb G,\qquad \vb K\boldsymbol\phi=\vb G^{\mathsf T}\vb W\vb P\vb d .
+\end{equation}
+于是积分点上的总电场为
+\begin{keyeq}
+\vb e=\bigl[\vb I-\vb G\vb K^{-1}\vb G^{\mathsf T}\vb W\bigr]\vb P\vb d .
+\label{eq:tmsoperator}
+\end{keyeq}
+$\vb K^{-1}$ 表示在固定了参考的子空间上求解线性方程组，不是去形成一个稠密的逆矩阵；若不固定常数零空间，就要用相容的广义逆。只要算子与积分规则一致，方括号里的矩阵就是离散的加权投影：把它作用两次与作用一次结果相同——已经修正过的场，再修正一次不会再变。
+
+$\vb K$ 与 TES 中的刚度矩阵是同一个（\chref{ch:tes}）。TES 的右端是电极上的电流；TMS 的右端是 $\vb G^{\mathsf T}\vb W\vb P\vb d$。\secref{sec:tms-vs-tes} 会把两者并排比较。
+
+\subsection{对源线性，对解剖不线性}
+固定解剖和材料时，\eqref{eq:tmsoperator} 对 $\vb d$ 线性：线圈电流的变化率加倍，电场加倍；两个线圈同时工作，电场相加。解剖则不同：它改变 $\vb W$ 中的电导率、改变网格与区域，从而改变 $\vb K$ 和整个投影，解剖到电场的映射可以高度非线性。
+
+这一区别对代理模型和优化都有直接的含义。一个以几何为条件的模型，可以先生成与几何有关的算子，再线性地作用于源，这样就精确保留了源线性。反过来，几种做法会悄悄破坏本应成立的线性：随源改变的网格、对输出做非线性归一化（例如按每个样本的最大值归一化）、依赖于源的材料系数。用于逆向设计时，这一点尤其重要（\chref{ch:coils}）。
+
+\section{波形、dI/dt 与单位场图}\label{sec:tms-waveform}
+
+\subsection{初级场跟随电流的变化率}
+几何与材料固定且线性时，线圈的矢势与电流成正比，$\vb A_p(\vb r,t)=I(t)\,\vb a(\vb r)$，$\vb a$ 是单位电流产生的矢势（\chref{ch:magnetic} 用过同样的缩放）。于是
+\begin{keyeq}
+\vb E_p(\vb r,t)=-\dot I(t)\,\vb a(\vb r).
+\label{eq:epcoil}
+\end{keyeq}
+$\vb a$ 的单位是 H/m，乘以 A/s 得到 V/m。多个线圈时 $\vb E_p=-\sum_k\dot I_k\vb a_k$。
+
+身体算子不随时间变化且是纯电阻性的（\chref{ch:tes} 的电阻性模型）时，投影 \eqref{eq:tmsoperator} 与时间无关，修正后的场仍可以把空间与时间分开：
+\begin{keyeq}
+\vb E(\vb r,t)=\sum_k\dot I_k(t)\,\vb e_k^{(\dot I)}(\vb r),
+\label{eq:tmswaveform}
+\end{keyeq}
+其中 $\vb e_k^{(\dot I)}$ 是第 $k$ 个线圈以单位电流变化率驱动、\emph{已经包含导体修正}的场图。若需要保留位移电流或材料色散，就要像\chref{ch:tes} 那样逐频求解，\eqref{eq:tmswaveform} 不再成立。
+
+\fig{pulse}{一个合成的阻尼正弦线圈电流（时间常数 $200\,\mu\mathrm s$、频率 $5\,\mathrm{kHz}$）及其导数，各自按自身峰值归一化。在源线性、电阻性的近似下，磁场跟随电流，感应电场跟随导数：电流峰值处电场为零，电流过零附近电场最强。}{fig:pulse}
+
+\figref{fig:pulse} 说明了这对 TMS 意味着什么。电场的时间形状不是电流的形状，而是它的导数：两者的峰值错开大约四分之一周期；电流从零开始，电场却在 $t=0$ 时最大。所以峰值磁场、峰值电场、脉冲宽度和储能是四个不同的观测量。没有空间上的源效率 $\vb e_k^{(\dot I)}$ 和实际的波形，就不能把“目标电场”直接换算成“峰值电流”；而目标的神经效应，还需要膜模型或实验验证（\chref{ch:neuro}）。
+
+\subsection{单位场图的归一化}
+\eqref{eq:tmswaveform} 中的场图必须写清楚是“每 $1\,\mathrm{A/s}$”的场，还是“每 $1\,\mathrm{A}/\mu\mathrm{s}$”的场，或者是每个设备设置单位的场。前两者相差 $10^6$。还要写清楚匝数：$\vb a_k$ 若已经是 $N$ 匝绕组的矢势，$\dot I_k$ 就是端子电流的变化率；若 $\vb a_k$ 是单匝的，$\dot I_k$ 就要换成安匝的变化率。匝数必须计入，而且只能计入一次。
+
+\fig{drive_scaling}{同一个绕组的两种归一化。线圈电流乘以每安培场图得到磁场；电流变化率乘以每 A/s 的场图得到电场，后者已含导体修正，因此取决于组织。示例数值来自\secref{sec:solenoid} 的长螺线管。底部是最常见的单位陷阱。}{fig:drive_scaling}
+
+用\chref{ch:magnetic} 的长螺线管（$n_t=1000\,\mathrm{m^{-1}}$）作例子：管内每安培的磁场是 $b=\mu_0n_t\approx1.26\,\mathrm{mT/A}$；$r=1\,\mathrm{cm}$ 处，每 A/s 的电场是 $\mu_0n_tr/2\approx6.28\times10^{-6}\,(\mathrm{V/m})/(\mathrm{A/s})$，写成每 A/μs 就是 $6.28\,(\mathrm{V/m})/(\mathrm{A}/\mu\mathrm{s})$——同一个场，数字差了 $10^6$。管内若有同轴的均匀圆柱导体，圆形的初级场处处与柱面相切，不会把电流推出边界，导体修正恰好为零，单位场图就等于初级场的单位场图（\figref{fig:drive_scaling}）。
+
+\begin{pitfall}[单位场图的三个陷阱]
+其一，把“每 A/μs”的场图当作“每 A/s”用，结果差 $10^6$。其二，匝数计入两次（场图已含 $N$ 匝，驱动又按安匝给），或者一次都没有计入。其三，把静态的“每安培磁场图”当作电场图使用：中间缺少对时间的求导，也缺少导体修正。
+\end{pitfall}
+
+\section{对照：TES 与 TMS}\label{sec:tms-vs-tes}
+
+现在可以把上一章和本章并排放在一起。\figref{fig:tes_tms_compare} 在同一网格、同一夹杂上算了两个问题。左列是右端项 $\vb b$：TES 的 $\vb b$ 只在电极的节点上不为零；TMS 的 $\vb b$ 只在外边界和夹杂界面上不为零——正是 \eqref{eq:tmspde} 展开后 $\vb E_p\cdot\nabla\sigma$ 所在的地方。右列是解。两者用的是\emph{同一个}刚度矩阵 $\vb K$。
+
+\fig{tes_tms_compare}{同一网格上的 TES 与 TMS。左：右端项 $\vb b$ 的非零节点（橙色为正、蓝色为负，点的大小随 $|b_i|$ 增大）。TES 的源只在电极下；TMS 的源只在电导率跳变处——外边界（导体到空气）与夹杂界面。中间：两者解的是同一个 $\vb K\boldsymbol\phi=\vb b$。右：$\abs{\vb E}$（底色，两行各自归一化）与电流线（相邻两线间电流相等）。TES 的电流从阳极出发、在阴极终止，集中在电极附近；TMS 的电流自成闭合回路，沿边界流动。}{fig:tes_tms_compare}
+
+\begin{compare}{TES 与 TMS}{TES：给定电流}{TMS：给定磁源}
+\cmprow{源在哪里}{边界上：电极注入与引出电流}{体内：变化的磁通推动电荷；其散度只在电导率跳变处出现}
+\cmprow{方程}{$\nabla\cdot(\sig\nabla\phi)=0$}{$\nabla\cdot(\sig\nabla\phi)=\nabla\cdot(\sig\vb E_p)$}
+\cmprow{外边界}{电极下 $\vb n\cdot\sig\nabla\phi=j_{\rm in}$，其余绝缘}{处处绝缘：$\vb n\cdot\sig\nabla\phi=\vb n\cdot\sig\vb E_p$}
+\cmprow{离散形式}{$\vb K\boldsymbol\phi=\vb b_{\rm TES}$，$\vb b$ 只在电极节点上}{$\vb K\boldsymbol\phi=\vb G^{\mathsf T}\vb W\vb P\vb d$，$\vb b$ 在边界与界面上}
+\cmprow{总电场}{$-\nabla\phi$，无旋}{$\vb E_p-\nabla\phi$，旋度为 $-\partial_t\vb B$}
+\cmprow{电流线}{从阳极到阴极，有始有终}{闭合回路，没有起点}
+\cmprow{按什么缩放}{电极电流 $I$}{线圈电流变化率 $\dot I$}
+\cmprow{$\sigma$ 全部乘以 $s$}{恒流时 $\vb E$ 变为 $1/s$，$\vb J$ 不变}{$\vb E$ 不变，$\vb J$ 变为 $s$ 倍}
+\cmprow{单位场图}{$(\mathrm{V/m})/\mathrm A$}{$(\mathrm{V/m})/(\mathrm{A/s})$}
+\cmpsum{同一个 $\vb K$，不同的右端：TES 的源在边界上，TMS 的源在体内，却只在电导率跳变的地方“显形”。}
+\end{compare}
+
+表中“$\sigma$ 全部乘以 $s$”一行值得想一想。TMS 的 \eqref{eq:tmspde} 两边都含 $\sig$，整体缩放后 $\phi$ 不变，电场只取决于电导率的\emph{比值}和几何；TES 的电流由电源规定，电导率整体变大，同样的电流只需要更小的电场。所以组织电导率的整体不确定性对两种刺激的电场影响不同：它直接进入恒流 TES 的电场大小，却不进入 TMS 的电场（但会进入 TMS 的电流密度与发热）。
+
+本章一直假设导体足够“弱”，它的电流改变不了磁场。把头换成一块铜板，或者把线圈放进一个金属圆筒里，这个假设就不再成立：感应电流的磁场会反过来抵消源磁场的变化。下一章讨论这种“耦合”的情形。
+
+\begin{takeaways}
+\begin{itemize}
+\item 单向耦合下，$\vb E=\vb E_p-\nabla\phi$，$\vb E_p=-\partial_t\vb A_p$ 只由线圈决定；$\phi$ 满足 $\nabla\cdot(\sig\nabla\phi)=\nabla\cdot(\sig\vb E_p)$ 与绝缘边界 $\vb n\cdot\sig(\vb E_p-\nabla\phi)=0$——不是齐次的 $\partial_n\phi=0$。
+\item 库仑规范下 $\nabla\cdot\vb E_p=0$，源项 $\vb E_p\cdot\nabla\sigma$ 只在电导率跳变处不为零：TMS 的源“显形”在边界和界面上，那里积累电荷。
+\item 组织对线圈有两种反馈：感应电流的磁场（$\eta_m\sim10^{-4}$，可以忽略）与积累电荷的电场（不能忽略）。梯度修正不改变环量，只重新分配电场：方块边中点的电场比初级场大约 35\%，角上趋于零。
+\item 修正是一个以电导率加权的投影：$\vb E$ 与所有梯度场正交，功率满足勾股定理；正交性 $\int\nabla v\cdot\sig\vb E\dV\approx0$ 是检查数值解的好方法。标量分部积分 \eqref{id:scalaribp} 把它化为方程与自然边界条件。
+\item 离散算子 $\vb e=[\vb I-\vb G\vb K^{-1}\vb G^{\mathsf T}\vb W]\vb P\vb d$ 对源线性、对解剖非线性；$\vb K$ 与 TES 相同。
+\item 磁场跟随 $I$，电场跟随 $\dot I$；单位场图要写明是每 A/s 还是每 A/μs（差 $10^6$），匝数只计入一次。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 有人说：“头部组织的磁导率与空气相同，所以用自由空间的 $-\partial_t\vb A$ 就是组织里的电场。”这句话哪一半对、哪一半错？
+\item 在均匀电导率的导体中，若 $\nabla\cdot\vb E_p=0$，\eqref{eq:tmspde} 的右端是多少？这是否意味着 $\phi=0$？
+\item 在\exref{ex:tms-square} 中，把方块换成同样面积的圆形截面，轴仍在中心。总电场与初级场相比如何？为什么？
+\item \exref{ex:tms-square} 中，若整个导体的电导率加倍，边中点的电场与电流密度各变为多少？若只把一半区域的电导率加倍呢？
+\item 一个有限元解的电场图看起来很平滑，你怎样用 \eqref{eq:tmsorthogonal} 检查它是否正确？
+\item 用投影的观点解释：为什么对一个已经修正过的总电场再求一次修正，结果为零？
+\item 某论文给出的单位场图是“$1.2\,(\mathrm{V/m})/(\mathrm{A}/\mu\mathrm{s})$”，你的波形峰值变化率为 $80\,\mathrm{A}/\mu\mathrm{s}$。峰值电场是多少？若误把场图当作每 A/s，会得到多少？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item 前一半对：组织几乎非磁性，感应电流的磁场也很小，组织里的 $\vb B$ 与 $-\partial_t\vb A_p$ 几乎等于自由空间的值。后一半错：边界与界面上积累的电荷带来 $-\nabla\phi$，它与初级场同量级，必须求解。
+\item 右端 $\sigma\nabla\cdot\vb E_p=0$，但 $\phi$ 一般不为零：外边界条件 $\vb n\cdot\sigma\nabla\phi=\vb n\cdot\sigma\vb E_p$ 仍然驱动它。源从体内“搬”到了边界上。
+\item 圆形截面中，以中心为轴的初级场处处与边界相切，没有法向分量，不会把电流推出边界，所以 $\phi=0$，总电场就等于初级场。方块的修正完全来自它的角与边破坏了这种对称。
+\item 电导率整体加倍：电场不变（约 $54\,\mathrm{V/m}$），电流密度加倍。只改一半区域：电导率之比改变，界面上出现新的电荷，电场分布整体改变，需要重新求解。
+\item 对每个节点的基函数 $v$ 计算 $\int\nabla v\cdot\sig\vb E\dV$（即残差 $\vb K\boldsymbol\phi-\vb b$ 的各分量），它们应在舍入误差量级。某些节点明显不为零，说明那里电流不守恒，例如边界条件施加错误、源场被裁剪、或者网格与积分不一致。
+\item 总电场已经与所有梯度场正交，它在梯度子空间上的“影子”为零，所以再投影时减去的 $\nabla\phi$ 为零。离散地说，投影矩阵满足 $\Pi^2=\Pi$。
+\item 峰值电场 $1.2\times80=96\,\mathrm{V/m}$。若误当作每 A/s，就会用 $80\,\mathrm{A}/\mu\mathrm{s}=8\times10^{7}\,\mathrm{A/s}$ 去乘，得到 $9.6\times10^{7}\,\mathrm{V/m}$，大了 $10^6$ 倍。
+\end{answers}

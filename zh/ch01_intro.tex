@@ -1,0 +1,193 @@
+\chapter{一个问题引出整门课}\label{ch:intro}
+
+\begin{chapterguide}
+\guidequestion{把一块导电的组织样品静止地放在很强的恒定磁场里，它内部不会出现感应电场；TMS 线圈在头皮上方产生的磁场同样穿过大脑，却能让皮层神经元放电。推动组织里离子的电场究竟从哪里来？要把它算出来，需要知道哪些东西？}
+\begin{guidegoals}
+\item 用一条因果链描述线圈附近的导体里发生的事：电流、磁场、变化的磁通、感应电场、电流、边界电荷、总电场；
+\item 用洛伦兹力说明 $\vb E$ 与 $\vb B$ 为什么是两个基本场，以及为什么能让静止离子动起来的只有 $\vb E$；
+\item 用一句话读出四条 Maxwell 方程，并知道每一条在哪一章建立；
+\item 把一个仿真模型拆成定律、材料、表示、观测量四层，判断一次修改改动的是哪一层；
+\item 说出全书反复使用的几个算例各自要回答什么问题。
+\end{guidegoals}
+\guideprereq{微积分、矢量与线性代数。不要求事先具备电磁学直觉。}
+\end{chapterguide}
+
+\section{一个具体场景：线圈、导体与看不见的场}\label{sec:intro-scene}
+
+经颅磁刺激（TMS）的装置并不复杂：一个线圈贴近头皮放置，线圈里通过一个短暂而强的电流脉冲。头部是导体——组织液里有可以移动的离子——但几乎不是磁性材料。我们一步一步地看接下来发生了什么（\figref{fig:coil_block_3d}）。
+
+\fig[.7]{coil_block_3d}{线圈靠近导体时依次出现的四件事（示意，场线形状按线圈的精确场计算，大小已归一化）。图中编号：1 线圈电流 $I(t)$；2 它产生的磁场 $\vb B$ 穿过导体；3 电流变化时，导体顶面出现感应电场 $\vb E_p=-\partial_t\vb A$（蓝色箭头，浅蓝底色表示其大小）；4 $\vb E_p$ 推动的电流在边界处出不去，电荷在那里堆积，并产生次级电场。}{fig:coil_block_3d}
+
+\begin{enumerate}
+\item \textbf{电流产生磁场。}线圈电流 $I(t)$ 在周围产生磁场 $\vb B$。组织的磁性极弱，所以 $\vb B$ 穿过头部时几乎与在空气中一样（\chref{ch:matter} 会给出数量级）。
+\item \textbf{变化的磁通产生电场。}电流变化时，穿过组织中任一小回路的磁通随之变化，组织里于是出现一个沿回路环流的\textbf{感应电场}。只由线圈决定、尚未考虑组织边界的这部分电场，称为\textbf{初级电场} $\vb E_p$。
+\item \textbf{电场推动电荷。}$\vb E_p$ 推动离子运动，形成电流。在导电组织中，电流密度与电场成正比，$\vb J=\sigma\vb E$（\chref{ch:electric}）。
+\item \textbf{边界改写电场。}电流流到头皮与空气的边界，或者流到两种电导率不同的组织之间，不能原样穿过去，电荷便在界面上堆积。这些电荷产生\textbf{次级电场} $\vb E_s$，它反过来改变驱动电流的电场，直到电流在边界上不再“出界”为止。
+\item \textbf{总电场产生效果。}真正作用在神经和组织上的是总电场 $\vb E=\vb E_p+\vb E_s$：它决定神经膜是否被去极化（\chref{ch:neuro}），也决定发热的功率密度 $\vb E\cdot\vb J$（\chref{ch:systems}）。
+\end{enumerate}
+
+另一种常见的做法是经颅电刺激（TES）：把电极贴在头皮上，直接向头部注入电流。那里没有第 1、2 步：推动电荷的电场来自电极和界面上的电荷，而不是变化的磁场；电流从电极进入组织之后，后面的步骤照样发生（\chref{ch:tes}）。
+
+同一幅图景也适用于 MRI 的梯度线圈：梯度快速切换时，变化的磁场在人体内感应出电场，在附近的金属结构里则感应出涡流。如果附近有铁芯或磁轭，第 1 步会被它们的磁化改写；如果导体是导电性极好的金属，感应电流自己的磁场还会反过来抵消一部分源磁场的变化（\chref{ch:eddy}）。系统同时还在储存能量、传递能量，并把一部分能量变成热。这些现象属于\emph{同一个}相互耦合的电磁系统，而不是彼此独立的软件模块~\cite{haus}。
+
+\fig{intro_scene}{初级电场与总电场的区别（二维教学计算：线圈位于一块绝缘边界的薄导电圆片上方，电流正在增大）。虚线是只由线圈决定的初级电场，它绕线圈轴转圈，会穿出圆片的边界；圆片边缘按 $\vb E_p$ 指向外或指向内分别堆积正、负电荷；实线是加上这些电荷的次级场之后的总电场，它在边缘处贴着边界流动。下方是\secref{sec:intro-scene} 的因果链。}{fig:intro_scene}
+
+\figref{fig:intro_scene} 把第 2 步到第 4 步算了出来。注意两点。第一，初级电场的形状只取决于线圈，它“不知道”导体的边界在哪里；第二，导体自己决定了电荷堆积在哪里，从而决定了最终的电场形状。同一个线圈放在不同形状、不同电导率分布的头部上方，初级电场相同，总电场却不同。
+
+\begin{intuition}[电场来自“变化”，形状由“边界”决定]
+核心问题的前一半有了答案：组织里的电场不来自磁场有多强，而来自磁场变化得有多快。恒定磁场再强，穿过静止回路的磁通也不变，就不会感应出电场。\chref{ch:magnetic} 会推导，在一个均匀变化的磁场里，半径为 $r$ 的圆周上感应电场的大小是 $E=\tfrac r2\abs{\dd B/\dd t}$；取 $\dd B/\dd t=1000\,\mathrm{T/s}$、$r=0.08\,\mathrm m$，得到 $E=40\,\mathrm{V/m}$。核心问题的后一半则要靠第 4 步：边界电荷把初级电场改造成总电场，而这一步需要知道组织的几何与电导率。
+\end{intuition}
+
+\section{两个基本场：用力来定义 E 与 B}\label{sec:intro-fields}
+
+上一节反复说到“场”。所谓\textbf{场}，就是在每个位置 $\vb r=(x,y,z)$ 和每个时刻 $t$ 都指定一个值：温度是标量场，风速是矢量场。电磁学里最基本的两个矢量场是电场强度 $\vb E$ 和磁通密度 $\vb B$。它们看不见，但可以通过它们对电荷的作用来定义。
+
+一个电荷为 $q$、速度为 $\vb v$ 的试探电荷受到的电磁力是
+\begin{keyeq}
+\vb F=q\bigl(\vb E+\vb v\times\vb B\bigr).
+\label{eq:lorentz}
+\end{keyeq}
+这就是\textbf{洛伦兹力}。它同时给出了两个场的操作性定义：
+\begin{itemize}
+\item 让试探电荷静止（$\vb v=0$），它受的力除以 $q$ 就是 $\vb E$。所以 $\vb E$ 的单位是 N/C，也就是 V/m。
+\item 让电荷运动，多出来的那部分力与速度有关，并且总是垂直于速度；比例关系 $q\vb v\times\vb B$ 定义了 $\vb B$，单位是特斯拉（T）。
+\end{itemize}
+磁力垂直于速度，因此它对电荷做功的功率 $q(\vb v\times\vb B)\cdot\vb v$ 恒为零：磁力只能让运动电荷转弯，不能让它加速或减速（\chref{ch:magnetic} 会再讨论）。能量的交换只通过 $q\vb E\cdot\vb v$ 进行。
+
+\begin{example}{谁推动了组织里的离子？}\label{ex:intro-ions}
+TMS 线圈下方的组织里，一个原本静止的钠离子同时处在线圈的磁场 $\vb B$ 和感应电场 $\vb E$ 中。线圈电流开始上升的瞬间，离子受到什么力？此后组织发热所需的能量又是由哪个场提供的？
+\solution
+离子静止，$\vb v=0$，由 \eqref{eq:lorentz} 得 $\vb F=q\vb E$：此刻磁场对它没有任何作用，能让它动起来的只有电场。离子运动起来以后，磁力 $q\vb v\times\vb B$ 始终垂直于速度，不做功；电场对单位体积离子做功的功率是 $\vb E\cdot\vb J$。所以无论是启动离子，还是向组织输送能量，起作用的都是 $\vb E$。这就是为什么 TMS 的计算目标是组织里的电场，而不是磁场本身。
+\end{example}
+
+\begin{compare}{用力来认识 $\vb E$ 与 $\vb B$}{电场 $\vb E$}{磁通密度 $\vb B$}
+\cmprow{对静止电荷}{有力：$q\vb E$}{没有力}
+\cmprow{力的方向}{沿 $\vb E$（正电荷）}{垂直于 $\vb v$ 与 $\vb B$}
+\cmprow{做功}{可以做功、传递能量}{不做功，只改变运动方向}
+\cmprow{单位}{V/m（= N/C）}{T（= V·s/m$^2$）}
+\cmprow{本书中的来源}{电荷；变化的磁通}{电流；磁化的物质}
+\cmpsum{两个场同时出现在一个力公式里，却扮演不同角色：$\vb E$ 负责推动与做功，$\vb B$ 负责让运动电荷转弯——以及在变化时产生 $\vb E$。}
+\end{compare}
+
+公式里还会反复出现两个常数：真空介电常数 $\varepsilon_0$（单位 F/m）与真空磁导率 $\mu_0$（单位 H/m）。教学计算取 $\varepsilon_0\simeq8.8542\times10^{-12}\,\mathrm{F/m}$、$\mu_0\simeq4\pi\times10^{-7}\,\mathrm{H/m}$ 已足够；在现行 SI 定义下，后者是测量值的近似，不应当作精确常数。
+
+\section{Maxwell 方程：先认识，后理解}\label{sec:intro-maxwell}
+
+$\vb E$ 和 $\vb B$ 怎样由电荷、电流产生，又怎样相互产生？答案全部写在四条宏观 Maxwell 方程里。这里先把它们“认个脸”，后面几章再一条一条地推出来：
+\begin{tcolorbox}[ams align,enhanced,colback=accent!4,colframe=accent!35,boxrule=0.5pt,arc=1.5pt,
+  left=6pt,right=6pt,top=1pt,bottom=1pt,before skip=9pt,after skip=9pt]
+\nabla\cdot\vb D&=\rho_f, & \nabla\cdot\vb B&=0,\label{eq:gaussboth}\\
+\nabla\times\vb E&=-\partial_t\vb B, & \nabla\times\vb H&=\vb J_f+\partial_t\vb D.\label{eq:curlboth}
+\end{tcolorbox}
+这里 $\rho_f$ 是自由电荷密度，$\vb J_f$ 是自由电流密度，$\partial_t$ 表示对时间求偏导。$\vb D$（电位移）和 $\vb H$（磁场强度）是为了处理物质而引入的两个辅助量，\chref{ch:matter} 才会正式介绍它们。在那之前，你可以把真空中的 $\vb D$ 读作 $\varepsilon_0\vb E$，把 $\vb H$ 读作 $\vb B/\mu_0$，把 $\rho_f$、$\vb J_f$ 读作全部电荷与电流。
+
+$\nabla\cdot$ 叫\textbf{散度}，衡量一个小区域向外净流出多少“通量”；$\nabla\times$ 叫\textbf{旋度}，衡量一个小回路上有多少“环流”。\chref{ch:calculus} 专门讲这两个运算的几何意义。有了这两个词，四条方程都可以用一句话读出来（\figref{fig:maxwell_map}）：
+\begin{itemize}
+\item $\nabla\cdot\vb D=\rho_f$：电荷是电场通量的源头，电场线从正电荷出发、在负电荷终止。
+\item $\nabla\cdot\vb B=0$：磁通没有源头，进入任何闭合曲面多少，就流出多少。
+\item $\nabla\times\vb E=-\partial_t\vb B$：变化的磁通产生环流的电场——这正是\secref{sec:intro-scene} 的第 2 步。
+\item $\nabla\times\vb H=\vb J_f+\partial_t\vb D$：电流（以及位移电流 $\partial_t\vb D$）产生环流的磁场——这是第 1 步。
+\end{itemize}
+
+\fig{maxwell_map}{四条 Maxwell 方程的“图标”。上排是散度方程，说明通量从哪里来；下排是旋度方程，说明环流由什么驱动。左列关于电场，右列关于磁场。每个小标签给出本书建立该方程的章节。}{fig:maxwell_map}
+
+\begin{compare}{散度方程与旋度方程}{散度方程（上排）}{旋度方程（下排）}
+\cmprow{回答的问题}{通量从哪里出发、在哪里终止}{环流由什么驱动}
+\cmprow{“探针”}{一个闭合曲面：数净流出}{一条闭合回路：数环流}
+\cmprow{电场}{$\nabla\cdot\vb D=\rho_f$：电荷是源}{$\nabla\times\vb E=-\partial_t\vb B$：变化的磁通驱动}
+\cmprow{磁场}{$\nabla\cdot\vb B=0$：没有源}{$\nabla\times\vb H=\vb J_f+\partial_t\vb D$：电流驱动}
+\cmprow{积分形式用到}{散度定理（\chref{ch:calculus}）}{Stokes 定理（\chref{ch:calculus}）}
+\cmpsum{一个场由“源”和“涡”两类信息共同刻画：散度方程管源，旋度方程管涡；只知道其中一类，场还定不下来。}
+\end{compare}
+
+四条方程并不是四条互不相干的规定。对第四条取散度，可以推出电荷守恒：一个区域里的电荷只能通过电流流进流出而改变（\chref{ch:electric} 用“数电荷”的办法直接得到它，\chref{ch:matter} 再从 Maxwell 方程推出）。对第三条取散度，则得到 $\partial_t(\nabla\cdot\vb B)=0$：只要磁场一开始无散，以后就一直无散。
+
+\begin{pitfall}[“先算 $\vb E$，再算 $\vb D$、$\vb H$，按顺序一路算下去”]
+方程组的写法并不意味着存在一个普遍适用的单向计算顺序。\secref{sec:intro-scene} 的第 4 步就是反例：电流改变了电荷分布，电荷又改变了驱动电流的电场。只有当某个经过论证的近似允许忽略一部分耦合时（例如组织里的感应电流太弱，不足以改变线圈的磁场，\chref{ch:regimes}），才可以把问题拆成先后两步；否则场与源必须同时满足所有方程。
+\end{pitfall}
+
+\section{一个模型由四层组成：定律、材料、表示、观测量}\label{sec:intro-layers}
+
+有了 Maxwell 方程，还不能直接开始计算。方程只说明“什么样的场是允许的”，并没有说明：
+\begin{itemize}
+\item 物质怎样响应场——组织的电导率是多少，铁芯的 B--H 曲线是什么形状；
+\item 源是什么——线圈里的电流波形、电极上的电流或电压、永磁体的剩磁；
+\item 区域在哪里结束、边界上发生什么，以及瞬态问题的初始状态；
+\item 最后要读出什么——沿神经纤维的电场、穿过线圈的磁通、成像区域的均匀度、损耗功率，还是受力。
+\end{itemize}
+本构关系，例如传导电流 $\vb J_c=\sig\vb E$ 或 $\vb B=\boldsymbol\mu\vb H$，只说明\emph{场已知时}物质在局部怎样响应；Maxwell 方程和边界条件则决定\emph{怎样的空间场能够存在}。二者缺一不可。把这些要素按角色分组，就得到\figref{fig:whole_problem} 的四层结构。
+
+\fig{whole_problem}{一个场问题的四层结构。定律对所有问题都相同；材料描述具体物质；表示是求解时选用的未知量；观测量是最终要读出的结果。各层共享同一份几何、源、边界条件与初始条件。层与层之间是数学上的依赖关系，并不是计算的先后顺序。}{fig:whole_problem}
+
+“表示”这一层需要多说一句。除了直接求 $\vb E$ 和 $\vb B$，还可以引入以伏特为单位的电标势 $\phi$ 和以韦伯每米为单位的磁矢势 $\vb A$，用它们重建场：
+\begin{equation}
+\vb B=\nabla\times\vb A,\qquad \vb E=-\nabla\phi-\partial_t\vb A .
+\label{eq:intro-potentials}
+\end{equation}
+势函数不是额外的力，而是同一组物理场的另一套“坐标”。\figref{fig:coil_block_3d} 中的 $\vb E_p=-\partial_t\vb A$ 就是用这种方式写出的。同一组场可以对应许多组不同的 $(\phi,\vb A)$，这种不唯一性叫\textbf{规范自由度}；只要分清了“物理场”和“它的表示”，它就是建模的便利，而不是什么神秘的不确定性（\chref{ch:potentials}）。
+
+四层划分的用处，是让我们在修改模型时说清楚自己改动了什么。
+
+\begin{example}{这次修改改动了哪一层？}\label{ex:intro-layers}
+对一个 TMS 或 TES 模型做下面四种修改，各自改动的是哪一层？哪些修改意味着做了一个不同的实验？
+(a) 把头部换成一块钢制磁轭；(b) 把直接求电场改为先求 $\vb A$ 与 $\phi$；(c) 电极从固定电压改为固定电流；(d) 输出从“皮层中最大的 $\abs{\vb E}$”改为“沿某条神经纤维的 $\vb E$ 分量”。
+\solution
+(a) 改的是材料层：Maxwell 定律不变，电导率与磁化规律变了，场当然也会变——这显然是另一个实验。(b) 改的是表示层：物理实验没有变，只是换了一套未知量；只要两种做法都正确，算出的 $\vb E$、$\vb B$ 应当一致。(c) 改的是源与边界条件，这同样是一个\emph{不同的实验}，只是不像 (a) 那样显眼：例如组织电导率改变时，固定电压下电流会跟着变，固定电流下电压会跟着变，组织中的场也就按不同的方式变化（\chref{ch:tes}）。(d) 改的是观测量：场解本身不变，只是读法不同——但不同的读法可能对网格和误差提出完全不同的要求。
+\end{example}
+
+\begin{intuition}[遇到一个新符号时，先问四个问题]
+它测量什么，单位是什么？它属于场、源、材料响应、势函数，还是积分得到的观测量？通过什么运算可以把它和已经理解的量联系起来？这种联系在哪些假设下成立？——本书引入每个新量时，都会尽量回答这四个问题；读者自己遇到新符号时，也可以用它们来检查是否真的理解了。
+\end{intuition}
+
+\section{本书的路线与贯穿全书的算例}\label{sec:intro-route}
+
+本书按“先理解场，再建立问题，再求解，再应用”的顺序展开。第一部分（本章与\chref{ch:calculus}）提供语言与数学工具；第二部分（\chref{ch:electric}--\chref{ch:systems}）并排讲电与磁，再讲物质、界面，最后把它们压缩成电容、电阻、电感和磁路；第三部分讨论时间尺度、近似和势函数；第四部分逐一求解 TES、TMS、涡流和铁磁问题，包括集总磁路与磁体；第五部分把方程变成有限元矩阵；第六部分把同一套场解用于 MRI、线圈设计、神经响应和射频；第七部分做综合项目并讨论怎样验证结果。前言中的学习路线图标出了主线和可以按需选读的章节。
+
+为了让概念真正连起来，本书反复使用少数几个简单算例（\tabref{tab:intro-examples}）。它们都小到可以手算，又恰好暴露一个重要概念；同一组数字会在不同章节中被重新使用，而不是每次换一个新例子。
+
+\begin{table}[H]\centering\small
+\caption{贯穿全书的算例。}\label{tab:intro-examples}
+\begin{tabularx}{\linewidth}{@{}l Y l@{}}
+\toprule
+算例 & 它帮助回答的问题 & 主要出现在\\\midrule
+平行板电容器 & 电场与电势、电荷与电位移、介质的作用、电容与电场能 & \chref{ch:electric}、\chref{ch:matter}、\chref{ch:systems}\\
+双层导体 & 为什么电流连续而电场跳变；界面电荷；电阻与发热 & \chref{ch:electric}、\chref{ch:interfaces}、\chref{ch:systems}\\
+长螺线管 & 为什么外部没有磁场却有感应电场；电感与磁能；铁芯 & \chref{ch:magnetic}、\chref{ch:matter}、\chref{ch:systems}\\
+带气隙的铁芯 & 磁动势为什么主要降在气隙上；非线性工作点；永磁体 & \chref{ch:systems}、\chref{ch:lumped}、\chref{ch:magnets}\\
+含夹杂的导电方块 & TES 与 TMS 在同一网格上有何异同；次级电场 & \chref{ch:tes}、\chref{ch:tms}、\chref{ch:projects}\\
+两单元导电棒 & 弱形式、组装与边界反力怎样一步步得到 & \chref{ch:femscalar}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+回到本章的核心问题。我们已经知道：组织里的电场来自磁通的\emph{变化}，它的形状由组织的\emph{边界与电导率}决定，要算出它需要定律、材料、源、边界和观测量这几层信息。下一章先补上读懂 Maxwell 方程所需的语言：一张矢量场图里，“源头”和“漩涡”分别在哪里，怎样用散度和旋度把它们说出来。
+
+\begin{takeaways}
+\begin{itemize}
+\item 线圈附近的导体中依次发生：电流产生磁场，变化的磁通产生感应电场，电场推动电流，电流在边界上堆积电荷，电荷的次级场改写总电场。这是一个耦合的整体。
+\item 洛伦兹力 $\vb F=q(\vb E+\vb v\times\vb B)$ 定义了 $\vb E$ 与 $\vb B$。磁力不做功；推动静止离子、向组织输送能量的是 $\vb E$。
+\item 恒定磁场不在静止导体中感应电场；感应电场的大小取决于磁通变化得多快，而不是磁场多强。
+\item 四条 Maxwell 方程：两条散度方程说明通量的源，两条旋度方程说明环流的驱动；它们互相关联，不能当作单向的计算流程。
+\item 一个模型由定律、材料、表示、观测量四层构成，共享几何、源、边界与初始条件。修改模型前先问：改的是哪一层，是否换了一个实验。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 一块永磁体静止地放在一杯盐水旁边，盐水里有感应电场吗？如果把磁体迅速移近盐水呢？
+\item 有人说：“TMS 是用磁场直接推动大脑里的离子。”这句话错在哪里？
+\item 用一句话分别读出 $\nabla\cdot\vb B=0$ 和 $\nabla\cdot\vb D=\rho_f$，并说出二者最关键的区别。
+\item 判断下列修改分别属于哪一层：把组织电导率从标量改为各向异性张量；把网格加密；把线圈电流从正弦波改为单个脉冲；计算沿神经纤维的电场分量。
+\item 按\secref{sec:intro-scene} 引用的结果 $E=\tfrac r2\abs{\dd B/\dd t}$：若磁场的峰值不变，但上升到峰值所用的时间减半，感应电场大约怎样变化？
+\item 在\figref{fig:intro_scene} 中，初级电场的圆圈会穿出圆片边界，总电场却不会。圆片边缘的电荷是从哪里来的？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item 静止时没有：穿过盐水中任何回路的磁通都不变。迅速移近时有：盐水中各点的 $\vb B$ 随时间变化，$\partial_t\vb B\neq0$，于是出现环流电场。
+\item 离子起初是静止的，磁力 $q\vb v\times\vb B$ 为零，而且磁力从不做功。真正推动离子、输送能量的是线圈电流变化所感应的电场 $\vb E$（\exref{ex:intro-ions}）。
+\item 前者：磁通没有源头，进入闭合曲面多少就流出多少；后者：电荷是电位移通量的源头。区别在于存在“电荷”，却不存在“磁荷”。
+\item 材料层；表示层（离散化属于“怎样表示和求解”，不改变物理）；源（实验条件改变）；观测量层。
+\item 磁通变化率约加倍，感应电场约加倍。决定电场的是变化快慢，而不是峰值大小。
+\item 来自导体内部被电场推到边缘的电荷。初级电场有指向边界外的分量，电流却不能离开绝缘边界，于是电荷在边缘堆积；它们的次级场恰好抵消了电场的法向分量。
+\end{answers}

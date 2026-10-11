@@ -1,0 +1,271 @@
+\chapter{MRI 的磁场观测量}\label{ch:mri}
+
+\begin{chapterguide}
+\guidequestion{成像需要一个沿 $x$ 线性变化的主磁场分量：$B_z=B_0+Gx$。能不能设计一个梯度线圈，让它在成像区里\emph{只}产生 $b_z=Gx$、其他分量都为零？如果不能，多出来的那部分场会在图像里留下什么？}
+\begin{guidegoals}
+\item 说出 MRI 中几个电磁问题各自需要的近似与观测量；
+\item 由无源区域的 Maxwell 方程推出梯度矩阵对称、无迹，解释为什么 $b_z=Gx$ 必须伴随横向分量，以及为什么线性梯度只有五个独立参数；
+\item 推导伴随场 $(b_x^2+b_y^2)/(2B_0)$，区分伴随场与梯度非线性，估算它在 $0.1\,\mathrm T$ 低场中的大小；
+\item 由场图计算相位与 $k$，说出哪些效应会破坏线性编码；
+\item 用 RMS 与峰峰值正确地报告均匀度，写明区域、权重与参考场；判断一张有限场图不能告诉你什么。
+\end{guidegoals}
+\guideprereq{\secref{sec:potentials-scalar}（磁标势与 Laplace 方程）；\chref{ch:eddy}（涡流）；\chref{ch:magnets}（磁体的场模型）；\chref{ch:framework}（线性、二次与非线性读出）。}
+\end{chapterguide}
+
+\section{MRI 里不止一个电磁问题}\label{sec:mri-problems}
+
+以一台 $0.1\,\mathrm T$ 的开放式永磁 MRI 为例（结构见\figref{fig:multipillar_3d}）。上下两块极靴之间是成像区，主磁场沿竖直方向；梯度线圈做成两块平板，贴在极靴内侧；射频线圈围着病人。它们由同一组 Maxwell 方程描述，却落在不同的近似里，回答不同的问题（\tabref{tab:mri-problems}）。
+
+
+本章只讨论低频的磁场观测量。把总的低频磁场写成
+\begin{equation}
+\vb B(\vb r,t)=B_0\,\vb e_z+\vb b(\vb r,t),
+\label{eq:mri-bias}
+\end{equation}
+$B_0$ 是均匀的参考偏置场，$\vb b$ 包含梯度、匀场以及残余的不均匀场。$z$ 只是“偏置场方向”的记号：在上述开放式磁体中它是竖直方向，梯度线圈的平面与它垂直。若偏置场明显不均匀，或者方向随位置变化（例如成像区边缘），就要保留实际的矢量偏置，不能默认它处处平行于 $z$。
+
+\begin{table}[H]\centering\small
+\caption{一台 MRI 中的几个电磁问题（Larmor 频率由质子的 $\gamma/2\pi=42.58\,\mathrm{MHz/T}$ 算出）。}\label{tab:mri-problems}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{.2\linewidth} >{\raggedright\arraybackslash}p{.17\linewidth} Y Y >{\raggedright\arraybackslash}p{.11\linewidth}@{}}
+\toprule
+子系统 & 时间尺度 & 近似 & 关心的量 & 本书\\\midrule
+主磁体：永磁体、磁轭、极靴 & 静态 & 静磁；非线性 B--H，剩磁 & 成像区的 $B_0$ 与均匀度、漏磁、受力 & 第 13--15 章\\
+梯度与动态匀场线圈 & 切换约 $0.1\,\mathrm{ms}$ & 磁准静态；附近导体中的涡流要耦合 & 梯度矩阵、线性度、电感、涡流时间常数 & 第 12、19、20 章\\
+梯度在人体中的电场 & 同上 & 指定源感应（单向耦合） & 组织中的 $\vb E$、外周神经刺激 & 第 11、21 章\\
+射频发射与接收 & $0.1\,\mathrm T$ 时 $4.26\,\mathrm{MHz}$，$1.5\,\mathrm T$ 时 $63.9\,\mathrm{MHz}$ & 可能需要全波 & 旋转磁场分量、SAR & 第 22 章\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Maxwell 方程约束所有可实现的梯度}\label{sec:mri-maxwell}
+
+\subsection{成像区里的场是调和的}
+成像区里没有电流；病人是非磁性的，组织中感应电流对磁场的反馈也可以忽略（\secref{sec:regimes-oneway}）。在这样一个无源、磁导率均匀的区域里，静磁或适当的 MQS 近似给出
+\begin{keyeq}
+\nabla\cdot\vb b=0,\qquad \nabla\times\vb b=\vb 0 .
+\label{eq:roiMaxwell}
+\end{keyeq}
+对第二式再取旋度，用 \eqref{id:curlcurl} 并代入第一式，得到 $\nabla^2\vb b=\vb 0$：$\vb b$ 的每个笛卡儿分量都是调和函数。这个结论只在那个无源均匀区域里成立；绕组内部、跨过磁性界面，或者射频的传播场，都不适用。
+
+\subsection{梯度矩阵只有五个自由参数}
+理想的梯度场对位置线性：$\vb b=\vb G\vb r$，矩阵元 $G_{ij}=\partial b_i/\partial x_j$，单位 T/m。把它代入 \eqref{eq:roiMaxwell}：散度是矩阵的迹，旋度的三个分量是 $G_{ij}-G_{ji}$。于是
+\begin{keyeq}
+\operatorname{tr}\vb G=0,\qquad \vb G=\vb G^{\mathsf T}.
+\label{eq:gradientmatrix}
+\end{keyeq}
+一个对称、无迹的 $3\times3$ 矩阵只有 $9-3-1=5$ 个独立参数。九个“梯度”不能随意指定。
+
+编码只关心 $b_z$。目标 $b_z=G_xx+G_yy+G_zz$ 规定了矩阵的第三行，由对称性也就规定了第三列；剩下的五减三等于两个参数——$G_{xx}-G_{yy}$ 与 $G_{xy}$——只影响横向分量 $b_x$、$b_y$，在 $b_z$ 里完全看不见。它们由线圈的具体设计决定，下一节会看到它们并非无关紧要。
+
+\subsection{x 梯度与 z 梯度}
+要 $b_z=G_xx$，矩阵中 $G_{zx}=G_x$，对称性要求 $G_{xz}=G_x$，即 $b_x$ 中必须有 $G_xz$ 这一项。最简单的相容场是
+\begin{keyeq}
+\vb b=(G_xz,\;0,\;G_xx).
+\label{eq:xgradient}
+\end{keyeq}
+附加的 $b_x=G_xz$ 让 $\partial_zb_x=\partial_xb_z$，旋度为零。轴对称的 $z$ 梯度可以写成
+\begin{equation}
+\vb b=\Bigl(-\frac{G_zx}{2},\;-\frac{G_zy}{2},\;G_zz\Bigr).
+\label{eq:zgradient}
+\end{equation}
+这里横向分量的作用是让散度为零。
+
+\fig{gradient_maxwell}{无源区域中的两种线性梯度，以及一个不可实现的目标（$x$--$z$ 截面，归一化单位；底色为 $b_z$，橙正蓝负；未画主磁场）。(a) $x$ 梯度 \eqref{eq:xgradient}：磁力线是双曲线 $z^2-x^2=$ 常数，相邻两线之间磁通相等。(b) 轴对称 $z$ 梯度 \eqref{eq:zgradient}（$G_z>0$）：$y=0$ 截面上的磁力线为 $x^2z=$ 常数；横向分量 $-G_zx/2$ 指向轴线，磁通从两侧汇入、沿 $\pm z$ 离开，使散度为零。(c) 只要 $b_z=Gx$、不要横向分量：散度为零，但绕虚线回路的环量不为零，只有成像区里存在电流才可能。}{fig:gradient_maxwell}
+
+\figref{fig:gradient_maxwell}c 说明了只要 $b_z=Gx$ 为什么不行。$\vb b=(0,0,Gx)$ 的散度为零，旋度却是 $-G\,\vb e_y$。由安培定律 \eqref{eq:amperevac}，它需要成像区里处处流着 $G/\mu_0$ 的电流密度——$G=10\,\mathrm{mT/m}$ 时约 $7.96\times10^3\,\mathrm{A/m^2}$，而成像区里只有病人。同样，只要 $(0,0,G_zz)$ 的 $z$ 梯度散度为 $G_z\ne0$，违反 $\nabla\cdot\vb B=0$ \eqref{eq:divB}，连电流都救不了它。
+
+\figH[.85]{gradient_3d}{$x$ 梯度的完整场（\eqref{eq:xgradient}，归一化单位）。$y=0$ 截面上的颜色是编码分量 $b_z=G_xx$：$x<0$ 一侧为蓝（负），$x>0$ 一侧为橙（正），中线 $x=0$ 上为零。箭头是同一截面上的完整场 $\vb b=(G_xz,0,G_xx)$，长度正比于 $|\vb b|$：$z>0$ 的一半带有沿 $+x$ 的分量，$z<0$ 的一半带有沿 $-x$ 的分量，原点（小球）处场为零。场不随 $y$ 变化，所以这一张截面就代表了整个成像区。只看颜色会以为场处处沿 $z$；完整的场却在 $x$--$z$ 平面内转向，这正是 Maxwell 方程要求的横向分量。}{fig:gradient_3d}
+
+\subsection{用磁标势生成梯度}
+无源区域可以用磁标势 $\vb b=-\mu_0\nabla\psi$（\secref{sec:potentials-scalar}），$\psi$ 满足 Laplace 方程。例如
+\begin{equation}
+\begin{aligned}
+\psi&=-\frac{G_x}{\mu_0}\,xz &&\Longrightarrow\quad \vb b=(G_xz,\,0,\,G_xx),\\
+\psi&=-\frac{G_z}{2\mu_0}\Bigl(z^2-\frac{x^2+y^2}{2}\Bigr) &&\Longrightarrow\quad \vb b=\Bigl(-\frac{G_zx}{2},\,-\frac{G_zy}{2},\,G_zz\Bigr).
+\end{aligned}
+\end{equation}
+两个 $\psi$ 都满足 $\nabla^2\psi=0$。用调和函数（或它们的线性组合）写目标场，Maxwell 相容性就自动得到保证；这比先优化一个不相容的目标、事后再补横向分量要自然得多。\chref{ch:coils} 的逆向设计正是从这样的目标出发。
+
+\subsection{空间梯度与时间导数}
+“梯度”一词在 MRI 里还常被用来指另一件事：$\vb b$ 随时间的变化率。二者单位不同，进入的物理也不同。设梯度在 $0.1\,\mathrm{ms}$ 内从零升到 $10\,\mathrm{mT/m}$（教学值），切换率为 $100\,\mathrm{T/(m\,s)}$。在 $x=0.2\,\mathrm m$ 处 $\partial_tb_z=20\,\mathrm{T/s}$；但在 $x=z=0.2\,\mathrm m$ 处还有横向分量的变化，$|\partial_t\vb b|=28.3\,\mathrm{T/s}$。决定组织中感应电场的是\emph{完整}的 $\partial_t\vb B$（\chref{ch:tms}、\chref{ch:neuro}），不是编码分量。
+
+\begin{compare}{空间梯度与时间变化率}{空间梯度 $G_{ij}=\partial b_i/\partial x_j$}{时间变化率 $\partial_t\vb b$}
+\cmprow{单位}{T/m}{T/s；切换率为 $\mathrm{T/(m\,s)}$}
+\cmprow{受什么约束}{\eqref{eq:gradientmatrix}：对称、无迹}{法拉第定律：$\nabla\times\vb E=-\partial_t\vb B$}
+\cmprow{决定什么}{空间编码、成像几何}{感应电场、外周神经刺激、涡流}
+\cmprow{相关的分量}{编码只用 $b_z$}{三个分量都算，横向分量不能丢}
+\cmpsum{同一个线圈，空间导数决定“图像在哪里”，时间导数决定“身体里感应多大的电场”。}
+\end{compare}
+
+\section{伴随场与梯度非线性}\label{sec:mri-concomitant}
+
+\subsection{自旋响应的是模长}
+质子自旋绕\emph{总}磁场进动，进动频率正比于 $|\vb B|$。偏置场很强时，把模长展开：
+\begin{equation*}
+\abs{B_0\vb e_z+\vb b}=B_0\sqrt{1+\frac{2b_z}{B_0}+\frac{b_x^2+b_y^2+b_z^2}{B_0^2}}
+=B_0\Bigl[1+\frac{b_z}{B_0}+\frac{b_x^2+b_y^2+b_z^2}{2B_0^2}-\frac{1}{8}\Bigl(\frac{2b_z}{B_0}\Bigr)^2+\cdots\Bigr].
+\end{equation*}
+二阶项中的 $b_z^2$ 恰好相消，剩下横向分量的平方：
+\begin{keyeq}
+\abs{B_0\vb e_z+\vb b}=B_0+b_z+\frac{b_x^2+b_y^2}{2B_0}+O\!\Bigl(\frac{|\vb b|^3}{B_0^2}\Bigr).
+\label{eq:concomitant}
+\end{keyeq}
+最后一项称为\textbf{伴随场}（concomitant field），记作 $b_c$。上一节已经证明，横向分量是 Maxwell 方程强加的，所以即使梯度在空间上完美线性、线圈完美无缺，伴随场也照样存在~\cite{concomitant}。
+
+把 \eqref{eq:xgradient} 与 \eqref{eq:zgradient} 代进去：
+\begin{equation}
+x\text{ 梯度：}\ b_c=\frac{G_x^2z^2}{2B_0},\qquad
+z\text{ 梯度：}\ b_c=\frac{G_z^2(x^2+y^2)}{8B_0}.
+\end{equation}
+两者同时工作时，$b_x$ 中的两部分相乘，再多出一个交叉项 $-G_xG_z\,xz/(2B_0)$。
+三个特点一眼可见：伴随场与梯度的平方成正比，不随梯度的符号改变；它与 $B_0$ 成反比，相对于 $B_0$ 则与 $B_0^2$ 成反比；横向梯度的伴随场沿主磁场方向（$z$）增长，与编码方向无关（\figref{fig:concomitant}）。
+
+\begin{example}[label=ex:mri-concomitant]{低场与高场的伴随场}
+教学值：$G=10\,\mathrm{mT/m}$，$B_0=0.1\,\mathrm T$ 与 $1.5\,\mathrm T$。求 $x$ 梯度在 $z=10\,\mathrm{cm}$ 处、$z$ 梯度在离轴 $r=10\,\mathrm{cm}$ 处的伴随场；它相当于把像素沿 $x$ 移动多少？一个持续 $1\,\mathrm{ms}$ 的梯度波瓣在 $z=10\,\mathrm{cm}$ 处积累多少额外相位？
+\solution
+$x$ 梯度：$b_x=Gz=1\,\mathrm{mT}$，$b_c=b_x^2/(2B_0)$。$0.1\,\mathrm T$ 时 $b_c=5\,\mu\mathrm T$，即 $50\,\mathrm{ppm}$；$1.5\,\mathrm T$ 时 $0.333\,\mu\mathrm T$，即 $0.22\,\mathrm{ppm}$。轴对称 $z$ 梯度在 $r=10\,\mathrm{cm}$ 处：$0.1\,\mathrm T$ 时 $1.25\,\mu\mathrm T$，$1.5\,\mathrm T$ 时 $0.083\,\mu\mathrm T$。
+
+伴随场与编码场 $Gx$ 叠加，等效于把等频率面沿 $x$ 移动 $b_c/G$：$0.1\,\mathrm T$ 时 $z=10\,\mathrm{cm}$ 处移动 $0.5\,\mathrm{mm}$，$1.5\,\mathrm T$ 时只有 $0.033\,\mathrm{mm}$。等频率面不再是平面 $x=$ 常数，而是弯成抛物面 $x=c-Gz^2/(2B_0)$。
+
+相位：$\theta=2\pi(\gamma/2\pi)b_c\,\Delta t$。$0.1\,\mathrm T$ 时为 $1.34\,\mathrm{rad}$（$77^\circ$），$1.5\,\mathrm T$ 时为 $0.089\,\mathrm{rad}$（$5.1^\circ$）。若用一对正负相反的波瓣（各 $1\,\mathrm{ms}$）做流速编码，线性的编码相位相互抵消，伴随场的相位却因为与 $G^2$ 成正比而\emph{相加}：$0.1\,\mathrm T$ 时达到 $2.68\,\mathrm{rad}$（$153^\circ$）。相位对比成像在低场必须校正伴随场，原因就在这里~\cite{concomitant}。
+\end{example}
+
+\fig{concomitant}{线性梯度的伴随场 $b_c=(b_x^2+b_y^2)/(2B_0)$（教学值 $G=10\,\mathrm{mT/m}$）。(a) $x$ 梯度，$B_0=0.1\,\mathrm T$，$x$--$z$ 截面：$b_c$ 只随主磁场方向的坐标 $z$ 变化；蓝色虚线是编码场 $b_z=Gx$ 的等值线（间隔 $0.5\,\mathrm{mT}$），黑圆为直径 $20\,\mathrm{cm}$ 的 DSV。(b) 轴对称 $z$ 梯度：$b_c=G^2r^2/(8B_0)$ 只随离轴距离变化，蓝色虚线为 $b_z=Gz$ 的等值线。两图色标相同，细橙线为 $1$、$5$、$10\,\mu\mathrm T$ 等值线。(c) $10\,\mathrm{cm}$ 处的 $b_c$ 随 $B_0$ 的变化：$b_c$ 与 $B_0$ 成反比，相对值与 $B_0^2$ 成反比。}{fig:concomitant}
+
+\subsection{看不见的两个参数}
+\secref{sec:mri-maxwell} 说过，$b_z$ 的梯度只规定了矩阵的三个参数，另外两个由线圈决定。它们正好进入伴随场。例如 $z$ 梯度的横向部分可以写成 $\vb b=(-\alpha G_zx,\,-(1-\alpha)G_zy,\,G_zz)$，任何 $\alpha$ 都满足 \eqref{eq:roiMaxwell}，伴随场却变成 $G_z^2[\alpha^2x^2+(1-\alpha)^2y^2]/(2B_0)$。轴对称的圆柱线圈 $\alpha=\tfrac12$；若横向场全部沿 $x$（$\alpha=1$），$x=10\,\mathrm{cm}$ 处的伴随场就从 $1.25$ 增大到 $5\,\mu\mathrm T$。双平面线圈和其他不具备旋转对称的结构，$\alpha$ 一般不等于 $\tfrac12$；可靠的做法是从实际场图中拟合出完整的梯度矩阵，再用 \eqref{eq:concomitant} 计算。
+
+\subsection{二阶展开何时不够}
+\eqref{eq:concomitant} 的误差是 $|\vb b|/B_0$ 的三阶小量。在\exref{ex:mri-concomitant} 中 $|\vb b|/B_0\approx0.01$，展开与精确模长的差别只有伴随场本身的百分之一左右。若 $|b_\perp|/B_0=0.3$（$b_z=0$），二阶项的相对误差已达 $2.2\%$；再大就应直接计算完整的 $|\vb B|$，必要时在实际的矢量场中求解自旋动力学。低场、强梯度、大视野同时出现时，要保留全部三个场分量——无论是测量还是仿真。
+
+\subsection{梯度非线性是另一回事}
+\textbf{梯度非线性}指编码分量 $b_z$ 本身偏离了 $\vb G\cdot\vb r$：线圈的电流分布有限，$b_z$ 里总含有更高阶的调和项。线圈可以对电流严格线性，在空间上却不线性；反过来，空间上完美线性的梯度也会因为横向分量而产生伴随场。\chref{ch:coils} 的教学设计中，DSV 球面上 $b_z$ 的 RMS 偏差为 $1\%$ 时，最大偏差为 $1.6\%$——这是梯度非线性，与伴随场无关。
+
+\begin{compare}{伴随场与梯度非线性}{伴随场}{梯度非线性}
+\cmprow{来源}{Maxwell 方程强加的横向分量 $b_x,b_y$}{$b_z$ 中的高阶调和项，来自有限的线圈}
+\cmprow{理想线圈中}{仍然存在}{不存在}
+\cmprow{大小}{$\propto G^2/B_0$，与梯度符号无关}{$\propto G$，随梯度反号}
+\cmprow{随 $B_0$}{相对值 $\propto1/B_0^2$，低场突出}{相对于编码场的比例与 $B_0$ 无关}
+\cmprow{能否靠线圈设计消除}{不能（只能改变那两个参数，或在序列中补偿）}{可以减小（更大的线圈、更多的功率，\chref{ch:coils}）}
+\cmprow{怎样处理}{由完整梯度矩阵计算，相位校正或序列设计}{测量或计算场图，在重建中校正几何}
+\cmpsum{伴随场是“$|\vb B|$ 不等于 $B_z$”造成的，梯度非线性是“$B_z$ 不等于 $\vb G\cdot\vb r$”造成的；前者连完美的线圈也逃不掉。}
+\end{compare}
+
+\section{从场图到相位与 k 空间}\label{sec:mri-kspace}
+
+令旋磁比 $\gamma$ 的单位为 $\mathrm{rad/(s\,T)}$。局部的场偏移 $\Delta B(\vb r,t)$（在旋转坐标系中相对于参考频率）使自旋积累相位
+\begin{equation}
+\theta(\vb r,t)=\gamma\int_0^t\Delta B(\vb r,t')\,\dd t' .
+\label{eq:mri-phase}
+\end{equation}
+理想的编码场 $\Delta B=\vb g(t)\cdot\vb r$（$\vb g$ 单位 T/m）把相位变成位置的线性函数：
+\begin{keyeq}
+\theta=2\pi\,\vb k(t)\cdot\vb r,\qquad \vb k(t)=\frac{\gamma}{2\pi}\int_0^t\vb g(t')\,\dd t' ,
+\label{eq:mri-k}
+\end{keyeq}
+$\vb k$ 的单位是“周每米”。$10\,\mathrm{mT/m}$ 的梯度持续 $1\,\mathrm{ms}$，$k=425.8\,\mathrm{m^{-1}}$，相距 $1\,\mathrm{mm}$ 的两点相位差 $2.68\,\mathrm{rad}$（$153^\circ$）。这个数与\exref{ex:mri-concomitant} 中双极波瓣的伴随相位相同，原因是：$z=10\,\mathrm{cm}$ 处的伴随场相当于把像素移动 $b_c/G=0.5\,\mathrm{mm}$，双极波瓣再加倍，$2b_c$ 恰好等于 $G\times1\,\mathrm{mm}$。
+\eqref{eq:mri-k} 依赖两个假设，实际系统中都会被打破：
+\begin{itemize}
+\item \emph{空间线性}：有梯度非线性或伴随场时，相位不再是 $\vb k\cdot\vb r$ 的单一线性函数，重建必须用更一般的编码算子（相位图逐点给出）。
+\item \emph{时间上照指令}：涡流使实际的 $\vb g(t)$ 滞后于命令的波形。\exref{ex:eddy-shell} 的薄壳模型中，$0.1\,\mathrm{ms}$ 的上升沿结束时孔内场只有目标的约 $31\%$；所以 $\vb k(t)$ 必须用实际的场来积分。
+\end{itemize}
+每安培的静态场图规定了线性线圈的空间响应，但它不包含放大器的动态、屏蔽中涡流的冲激响应或序列的时序。这些需要另外标定，例如直接测量梯度系统对已知输入波形的时间响应。
+
+\section{调和匀场与均匀性指标}\label{sec:mri-shim}
+
+\subsection{匀场用的调和函数}
+主磁场的不均匀部分在成像区里同样满足 \eqref{eq:roiMaxwell}，所以可以用调和函数展开。常用的纵向匀场目标有：常数，$x$、$y$、$z$，$xy$、$xz$、$yz$、$x^2-y^2$、$2z^2-x^2-y^2$。这些标量多项式都是调和的；但和梯度一样，产生它们的完整矢量场还必须满足 \eqref{eq:roiMaxwell}。例如 $b_z=c\,(2z^2-x^2-y^2)$ 最简单的相容完整场是 $\vb b=c\,(-2xz,\,-2yz,\,2z^2-x^2-y^2)$（和梯度一样，还可以再加不含 $b_z$ 的横向调和场）。一般地，产生 $n$ 次场分量的磁标势是 $n+1$ 次的。
+
+\subsection{两种均匀度}
+设在区域中取了一组采样点 $\vb r_i$，每点有一个非负的体积或积分权重 $w_i$。加权平均 $\overline B=\sum_iw_iB_z(\vb r_i)/\sum_iw_i$，以 ppm 表示的 RMS 均匀度为
+\begin{keyeq}
+\epsilon_{\rm RMS}=10^6\,\frac{1}{B_{\rm ref}}\sqrt{\frac{\sum_iw_i\bigl[B_z(\vb r_i)-\overline B\bigr]^2}{\sum_iw_i}},
+\qquad
+\epsilon_{\rm pp}=10^6\,\frac{\max_iB_z-\min_iB_z}{B_{\rm ref}},
+\label{eq:mri-rms}
+\end{keyeq}
+$B_{\rm ref}>0$ 是明确指定的参考场。两者回答不同的问题，不能互换；比较两个磁体或线圈时，区域、用 $B_z$ 还是 $|\vb B|$、是否扣除拟合的常数、权重怎样取，都必须一致。
+
+对调和的场还有一个有用的性质：调和函数在一个区域里的最大值和最小值都落在区域的边界上（极值原理）。$B_z$ 是调和的，所以在 DSV 球面上测得的 $B_z$ 峰峰值就是整个球内的峰峰值；RMS 却取决于在哪里、怎样平均。（$|\vb B|$ 严格说不是调和函数，但 $B_0$ 很强时它与 $B_0+b_z$ 只差伴随场量级的小量 \eqref{eq:concomitant}。）
+
+\begin{example}[label=ex:mri-homogeneity]{同一个误差，三个 RMS}
+某 $0.1\,\mathrm T$ 磁体在直径 $20\,\mathrm{cm}$ 的 DSV 中只剩下一个 $Z_2$ 形的误差 $c\,(2z^2-x^2-y^2)$，峰峰值为 $30\,\mathrm{ppm}$（教学值）。分别在 (1) DSV 球面上，(2) 整个球体内（按体积加权），(3) 一个每层球壳点数相同、半径等间距的网格上（每点权重相同），计算 RMS 均匀度。
+\solution
+$Z_2$ 在半径 $R$ 的球面上从 $-cR^2$（赤道）变到 $+2cR^2$（两极），峰峰值 $3cR^2$；由极值原理，球内的峰峰值也是它。
+
+(1) 球面上 $2z^2-x^2-y^2=2r^2P_2(\cos\theta)$，平均值为零，均方值为 $4c^2R^4/5$。峰峰值与 RMS 之比为 $3/\sqrt{4/5}=3.35$，RMS $=8.94\,\mathrm{ppm}$。
+
+(2) 体积加权时还要对 $r^4$ 平均，$\langle r^4\rangle=3R^4/7$，比值变为 $5.12$，RMS $=5.86\,\mathrm{ppm}$。
+
+(3) 半径等间距、每层点数相同的网格把太多权重给了球心附近（误差最小的地方），$\langle r^4\rangle=R^4/5$，比值变为 $7.5$，RMS 只有 $4.0\,\mathrm{ppm}$。
+
+同一个磁场，三个“RMS 均匀度”相差一倍以上。$30\,\mathrm{ppm}$ 在 $0.1\,\mathrm T$ 中是 $3\,\mu\mathrm T$，对应质子频率差 $128\,\mathrm{Hz}$。蒙特卡罗采样验证了三个闭式结果。
+\end{example}
+
+\begin{compare}{RMS 均匀度与峰峰值均匀度}{RMS（$\epsilon_{\rm RMS}$）}{峰峰值（$\epsilon_{\rm pp}$）}
+\cmprow{衡量什么}{整个区域的“平均”偏离}{最坏的两点之差}
+\cmprow{依赖权重吗}{依赖：球面、体积、网格各不相同}{不依赖（只要采到了极值点）}
+\cmprow{对调和场}{随采样区域与权重改变}{球内的值等于球面上的值}
+\cmprow{对 $Z_2$ 误差}{球面 $0.298$、体积 $0.195$ 倍峰峰值}{$3cR^2$}
+\cmprow{适合}{评价图像整体的频率分散}{判断有无局部严重失匀、设定规格}
+\cmpsum{峰峰值说“最坏有多坏”，RMS 说“平均有多坏”；报告 RMS 必须同时写明区域与权重，否则数字不能比较。}
+\end{compare}
+
+\begin{pitfall}[“有限元网格的节点值直接求 RMS”]
+不规则网格在细节多的地方节点密集，每个节点等权，会过度计入网格加密的区域，就像\exref{ex:mri-homogeneity} 的情形 (3)。应按单元或积分点的权重积分，或者用写明方法的插值重采样到规则的球面或体网格上。网格加密不应悄悄改变优化目标。
+\end{pitfall}
+
+\chref{ch:magnets} 的二维磁体截面在半径 $0.1\,\mathrm m$ 的圆内有 $2.5\%$ 的场变化，离 ppm 量级的成像要求差得很远；极面形状设计与匀场（\chref{ch:coils}）都在这套调和语言里进行。在 $0.1\,\mathrm T$ 下，$1\,\mathrm{ppm}$ 只是 $0.1\,\mu\mathrm T$、$4.26\,\mathrm{Hz}$。
+
+\section{有限场图本身不能确定什么}\label{sec:mri-limits}
+
+假设我们手里有一张很好的场图：在 DSV 内精确地测到了 $\vb B$ 的全部三个分量。它能告诉我们什么，不能告诉我们什么？
+
+\emph{它能确定 DSV 内部的场。}场在无源区域里调和，球面上的值（Dirichlet 数据）唯一确定球内的场。这就是匀场测量通常只在 DSV 球面上采样的原因。
+
+\emph{它不能唯一确定源。}球外不同的电流分布可以在球内产生完全相同的场——逆源问题不唯一。即使源已经选定，$\vb A$ 还有规范自由度（\secref{sec:potentials-gauge}）。
+
+\emph{它不能告诉我们切换时身体里的电场。}感应电场来自 $\vb E_p=-\partial_t\vb A$ 以及导体的修正（\chref{ch:tms}），而 $\vb A$ 取决于整个源的几何，不只取决于 DSV 内的 $\vb B$。两个在 DSV 内场完全相同的梯度线圈，在病人肩膀处的电场可以相差很大，外周神经刺激的阈值也就不同（\chref{ch:neuro}）。
+
+\emph{只测 $B_z$ 的场图还会漏掉横向分量。}在 $0.1\,\mathrm T$ 中加一个均匀的横向场 $b_x=1\,\mathrm{mT}$，$B_z$ 图上什么也看不见，$|\vb B|$ 却变化了 $5\,\mu\mathrm T$（$50\,\mathrm{ppm}$）。
+
+\emph{非线性磁轭的场图属于一个特定的工作点。}磁轭被主磁场偏置以后，梯度或匀场线圈的场图只在这个偏置附近有效 \eqref{eq:biaslinearization}；温度或装配改变了偏置，场图也就变了。
+
+\begin{pitfall}[“有了一张 $B_z$ 场图，就有了完整的电磁模型”]
+一张场图是某个装置在某个状态下、在某个区域里的一个线性读出。它不包含区域外的源、感应电场、放大器与涡流的动态、偏置工作点，只测 $B_z$ 时还缺横向分量。用场图训练代理模型或做设计之前，先列清楚它\emph{没有}包含什么。
+\end{pitfall}
+
+到这里，我们已经知道一个好的目标场必须满足什么。下一章把问题反过来：既然知道想要什么场，怎样找出一个真的能绕出来、又不会烧掉的线圈？
+
+\begin{takeaways}
+\begin{itemize}
+\item 成像区无源、磁导率均匀，$\nabla\cdot\vb b=0$、$\nabla\times\vb b=\vb 0$，各分量调和。线性梯度矩阵对称、无迹，只有五个独立参数。
+\item $b_z=Gx$ 必须伴随 $b_x=Gz$；只给 $b_z$、不给横向分量的目标需要成像区里有电流，不可实现。用调和的磁标势写目标，自动满足 Maxwell。
+\item 伴随场 $b_c=(b_x^2+b_y^2)/(2B_0)$ 来自 Maxwell 强加的横向分量，与 $G^2/B_0$ 成正比：$10\,\mathrm{mT/m}$、$10\,\mathrm{cm}$ 处，$0.1\,\mathrm T$ 时 $5\,\mu\mathrm T=50\,\mathrm{ppm}$，$1.5\,\mathrm T$ 时只有 $0.22\,\mathrm{ppm}$。它不同于梯度非线性。
+\item 相位 $\theta=2\pi\vb k\cdot\vb r$ 依赖空间线性与时间上照指令；伴随场、非线性与涡流都会打破它。
+\item 均匀度：峰峰值由 DSV 球面决定；RMS 随区域与权重变化，同一个 $Z_2$ 误差可以给出 $8.9$、$5.9$ 或 $4.0\,\mathrm{ppm}$。报告时写明区域、分量、权重与参考场。
+\item 有限场图确定区域内的场，不确定源、感应电场、动态与偏置；只测 $B_z$ 还会漏掉横向分量。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 有人提出 $z$ 梯度的目标场 $\vb b=(0,0,G_zz)$。它违反哪一条方程？最少要加什么才能让它可以实现？
+\item 写出一个产生 $b_z=G_yy$ 的相容场，以及生成它的磁标势。
+\item $B_0=0.05\,\mathrm T$、$x$ 梯度 $20\,\mathrm{mT/m}$，$z=10\,\mathrm{cm}$ 处的伴随场是多少？相对于 $B_0$ 是多少 ppm？二阶展开还可用吗？
+\item 流速编码用一对正负相反的梯度波瓣。为什么编码相位抵消了，伴随场的相位却加倍？
+\item 厂家甲报告“体积 RMS $5\,\mathrm{ppm}$”，厂家乙报告“DSV 球面峰峰值 $10\,\mathrm{ppm}$”。能直接说甲更好吗？若两者的误差都是纯 $Z_2$ 形，结论如何？
+\item 一个霍尔探头只测 $B_z$，测得 DSV 内完全均匀。为什么 $|\vb B|$ 仍可能不均匀？
+\item 两个梯度线圈在 DSV 内的场完全相同。它们的外周神经刺激阈值一定相同吗？为什么？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item 违反 $\nabla\cdot\vb b=0$（散度为 $G_z$）。加上横向分量，例如 $(-G_zx/2,-G_zy/2,0)$，或更一般的 $(-\alpha G_zx,-(1-\alpha)G_zy,0)$。
+\item $\vb b=(0,\,G_yz,\,G_yy)$，$\psi=-G_y\,yz/\mu_0$。它的散度与旋度都为零。
+\item $b_x=2\,\mathrm{mT}$，$b_c=b_x^2/(2B_0)=40\,\mu\mathrm T$，即 $800\,\mathrm{ppm}$。$|\vb b|/B_0=0.04$，二阶展开仍然可用，但伴随场已远大于常见的均匀度要求。
+\item 编码相位与 $G$ 成正比，符号相反的两个波瓣相互抵消；伴随场与 $G^2$ 成正比，两个波瓣的伴随相位同号，所以相加。
+\item 不能，二者衡量的东西不同。若都是纯 $Z_2$ 误差，乙的 $10\,\mathrm{ppm}$ 峰峰值对应的体积 RMS 只有 $1.95\,\mathrm{ppm}$，反而更好。
+\item 横向分量 $b_x$、$b_y$ 不出现在 $B_z$ 中，却以 $(b_x^2+b_y^2)/(2B_0)$ 进入 $|\vb B|$。$B_z$ 处处均匀并不排除横向分量随位置变化：例如 $\vb b=a\,(x,-y,0)$ 无散、无旋、$b_z\equiv0$，却使 $|\vb B|$ 按 $a^2(x^2+y^2)/(2B_0)$ 变化。量级上，$0.1\,\mathrm T$ 中 $1\,\mathrm{mT}$ 的横向场使 $|\vb B|$ 变化 $5\,\mu\mathrm T$。
+\item 不一定。感应电场取决于完整的矢势和导体修正，而矢势取决于 DSV 外的源几何；DSV 内相同的场不能确定身体其他部位的电场。
+\end{answers}

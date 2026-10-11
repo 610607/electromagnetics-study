@@ -1,0 +1,290 @@
+\chapter{界面：什么连续，什么跳变}\label{ch:interfaces}
+
+\begin{chapterguide}
+\guidequestion{电流从高电导率的组织流进低电导率的组织时，电场为什么会突然变大？界面上并没有电池，到底是什么在那里改变了电场？}
+\begin{guidegoals}
+\item 用“薄盒”和“窄回路”两种探针，从 Maxwell 方程推出全部界面条件；
+\item 判断 $\vb E$、$\vb D$、$\vb J$、$\vb B$、$\vb H$ 的法向与切向分量哪些连续、哪些跳变，以及跳变由什么决定；
+\item 计算电导率界面上电流线的“折射”，以及双层导体中的场、压降、电阻与功率；
+\item 解释法向电流连续时界面上为什么仍有电荷，以及这些电荷为什么是次级电场的来源；
+\item 说明为什么边界条件是物理模型的一部分，而不是数值上的附加项。
+\end{guidegoals}
+\guideprereq{\secref{sec:calc-div}、\secref{sec:calc-curl}（散度定理与 Stokes 定理）；\secref{sec:electric-current}、\secref{sec:electric-ohm}（电荷守恒、欧姆定律）；\chref{ch:matter}（$\vb D$、$\vb H$ 与束缚源）。}
+\end{chapterguide}
+
+\section{一层看不见的电荷}\label{sec:interfaces-puzzle}
+
+把两块导体串联起来：先是 $8\,\mathrm{mm}$ 厚、电导率 $0.2\,\mathrm{S/m}$ 的一层，再是 $2\,\mathrm{mm}$ 厚、电导率只有它十分之一的一层。让 $1\,\mathrm{mA}$ 的电流依次穿过两层。稳态下两层里的电流密度相同——电荷不能在任何地方无限地堆积下去；可是由欧姆定律 $J=\sigma E$，第二层里的电场必须是第一层的十倍。
+
+于是在两层交界的那个几何平面上，电场突然跳了十倍。电场的跳变需要电荷：高斯定律说，电场线只能在电荷上开始或结束。界面上一定有一层电荷。\secref{sec:interfaces-surfacecharge} 会算出它的大小：每平方米只有约 $4\,\mathrm{nC}$，少得几乎测不到，却撑起了每米数百伏的电场跳变。
+
+头皮、颅骨、脑脊液之间，铁芯与空气之间，到处都有这样的界面。本章回答三个问题：在一个无限薄的界面上，场的哪些分量必须连续，哪些可以跳变？跳变由什么决定？这些跳变又怎样影响整个场？
+
+\begin{intuition}[界面条件不是新定律]
+界面条件只是把已经知道的四条 Maxwell 方程，用在一个“厚度趋于零”的小区域上。散度方程用小盒子去“称”，旋度方程用小回路去“绕”——与\chref{ch:calculus} 理解散度和旋度的方式完全相同。
+\end{intuition}
+
+\section{两种探针：薄盒与窄回路}\label{sec:interfaces-probes}
+
+设界面两侧为材料 1 和材料 2，单位法向 $\vb n$ 从 1 指向 2。我们用两种“探针”去检查界面（\figref{fig:interface_probes_3d}）。
+
+\fig[.92]{interface_probes_3d}{推导界面条件的两种探针。左：薄盒跨在界面上，高度趋于零后只剩上下两个端面，比较的是两侧的法向分量 $\vb D_1\cdot\vb n$ 与 $\vb D_2\cdot\vb n$。右：窄回路的两条长边分别位于两种材料中，宽度趋于零后只剩两条长边，比较的是两侧的切向分量 $E_{1t}$ 与 $E_{2t}$。薄盒配合散度方程，窄回路配合旋度方程。}{fig:interface_probes_3d}
+
+\subsubsection{薄盒：散度方程管法向} 设某个场满足 $\nabla\cdot\vb F=s$。取一个跨在界面上的扁圆柱，端面积 $\Delta A$，高 $h$。由散度定理 \eqref{id:div}，穿出盒面的通量等于盒内源的总量。让 $h\to0$：侧面面积正比于 $h$，只要场有限，它的贡献就消失；剩下顶面的 $+\vb F_2\cdot\vb n\,\Delta A$ 和底面的 $-\vb F_1\cdot\vb n\,\Delta A$（底面的外法向是 $-\vb n$）。盒内若只有有限的体密度 $s$，总量随体积一起趋于零；若界面上集中着一层面密度 $s_s$，则剩下 $s_s\Delta A$。于是
+\begin{equation}
+\nabla\cdot\vb F=s\quad\Longrightarrow\quad \vb n\cdot(\vb F_2-\vb F_1)=s_s .
+\label{eq:probe-div}
+\end{equation}
+\emph{法向分量的跳变，等于界面上源的面密度。}没有面源，法向分量就连续。
+
+\subsubsection{窄回路：旋度方程管切向} 设 $\nabla\times\vb F=\vb g$。取一个矩形回路，两条长为 $\Delta\ell$ 的边平行于界面，分别在两侧；两条短边长 $h$，垂直于界面。由 Stokes 定理 \eqref{id:stokes}，回路上的环量等于穿过它的 $\vb g$ 的通量。让回路沿下边以切向 $\vb t$ 前进、沿上边返回，它的法向就是 $\vb t\times\vb n$。令 $h\to0$：短边的贡献消失，两条长边给出 $(\vb F_1-\vb F_2)\cdot\vb t\,\Delta\ell$；右端只有集中在界面上的面密度 $\vb g_s$ 能留下来，贡献 $\vb g_s\cdot(\vb t\times\vb n)\,\Delta\ell$。由于 $\vb t$ 可以取界面内的任何方向，两者相等的条件写成矢量形式为
+\begin{equation}
+\nabla\times\vb F=\vb g\quad\Longrightarrow\quad \vb n\times(\vb F_2-\vb F_1)=\vb g_s .
+\label{eq:probe-curl}
+\end{equation}
+\emph{切向分量的跳变，等于界面上的面“电流”。}没有这种面源，切向分量就连续。
+
+两条规则有一个共同的前提：方程中所有有限的体积项——包括 $\partial_t\vb B$、$\partial_t\vb D$ 这类时间导数——都会随盒子或回路的厚度一起趋于零，只有真正集中在面上的源能留下来。若要把一层很薄但有限厚的导电片当作一个“面”来建模，或者人为指定了不连续的场，就需要单独的、更一般的处理。
+
+\section{四条界面条件，外加电荷守恒}\label{sec:interfaces-four}
+
+把两条规则逐条用到 Maxwell 方程（\tabref{tab:maxwell}）上。
+
+两条散度方程 $\nabla\cdot\vb D=\rho_f$、$\nabla\cdot\vb B=0$ 用薄盒：
+\begin{keyeq}
+\vb n\cdot(\vb D_2-\vb D_1)=q_s,\qquad \vb n\cdot(\vb B_2-\vb B_1)=0 ,
+\label{eq:normalbc}
+\end{keyeq}
+$q_s$ 是界面上的自由面电荷密度，单位 $\mathrm{C/m^2}$。
+
+两条旋度方程 $\nabla\times\vb E=-\partial_t\vb B$、$\nabla\times\vb H=\vb J_f+\partial_t\vb D$ 用窄回路。右端的 $\partial_t\vb B$ 与 $\partial_t\vb D$ 都是有限的体积项，在回路压扁后消失；只有自由面电流 $\vb K_f$（单位 A/m）能留下：
+\begin{keyeq}
+\vb n\times(\vb E_2-\vb E_1)=0,\qquad \vb n\times(\vb H_2-\vb H_1)=\vb K_f .
+\label{eq:tangentbc}
+\end{keyeq}
+
+第五条来自电荷守恒 \eqref{eq:continuity}，它也是一条散度方程。用薄盒，体电荷的变化率变成面电荷的变化率：
+\begin{equation}
+\vb n\cdot(\vb J_{f,2}-\vb J_{f,1})=-\frac{\partial q_s}{\partial t}.
+\label{eq:jnormal}
+\end{equation}
+它说的是：从材料 1 流到界面的电流若多于从界面流进材料 2 的电流，多出来的电荷就留在界面上（这里假设沿界面本身没有一层会把电荷搬走的面电流）。稳态，或者传导占主导、电荷积累可以忽略的准静态模型中，左端为零，\emph{法向传导电流连续}。在保留位移电流的电准静态模型中，连续的是法向\emph{总}电流 $\vb n\cdot(\vb J_c+\partial_t\vb D)$；它的正弦稳态（相量）写法见\secref{sec:regimes-eqs}。
+
+\subsection{E 记全部电荷，D 只记自由电荷}
+\chref{ch:matter} 说过，$\vb E$ 的散度源是全部电荷，$\vb D$ 的散度源只有自由电荷。对 $\nabla\cdot(\varepsilon_0\vb E)=\rho_f+\rho_b$ 用薄盒，得到
+\begin{equation}
+\varepsilon_0\,\vb n\cdot(\vb E_2-\vb E_1)=q_s+q_{b,s},
+\label{eq:Enjump}
+\end{equation}
+$q_{b,s}=-\vb n\cdot(\vb P_2-\vb P_1)$ 是界面上的束缚面电荷——两侧法向极化之差 \eqref{eq:boundcharge}。所以 $E_n$ 的跳变反映界面上\emph{全部}的电荷，$D_n$ 的跳变只反映其中的自由部分。磁场一侧完全对称：$\vb B$ 切向分量的跳变反映全部面电流（自由电流加磁化电流 $\vb K_M$，\eqref{eq:boundcurrent}），$\vb H$ 切向分量的跳变只反映自由面电流。\chref{ch:matter} 推导磁化球的内部场时用到的“$B_n$ 连续、$H_t$ 连续”，正是 \eqref{eq:normalbc} 与 \eqref{eq:tangentbc} 在没有自由面电流时的形式。
+
+\section{对照总表：哪个分量连续}\label{sec:interfaces-table}
+
+把五个场的法向与切向分量列在一起（\tabref{tab:interfaces-summary}），并注明在线性各向同性材料中，跳变的那个分量由什么决定。
+
+\begin{table}[htbp]\centering\small
+\caption{界面上各场分量的行为（$\vb n$ 从材料 1 指向材料 2；线性各向同性材料）。}\label{tab:interfaces-summary}
+\begin{tabularx}{\linewidth}{@{}l Y Y@{}}
+\toprule
+场 & 法向分量 & 切向分量\\\midrule
+$\vb E$ & 跳变：$\varepsilon_0(E_{2n}-E_{1n})$ 等于全部面电荷 & \textbf{连续}（总是）\\
+$\vb D$ & $D_{2n}-D_{1n}=q_s$；无自由面电荷时\textbf{连续} & 跳变：$D_t=\varepsilon E_t$，随 $\varepsilon$ 改变\\
+$\vb J$ & $J_{2n}-J_{1n}=-\partial_tq_s$；稳态时\textbf{连续} & 跳变：$J_t=\sigma E_t$，随 $\sigma$ 改变\\
+$\vb B$ & \textbf{连续}（总是） & 跳变：$B_t=\mu H_t$，随 $\mu$ 改变\\
+$\vb H$ & 跳变：$H_n=B_n/\mu$，随 $\mu$ 改变 & $\vb n\times(\vb H_2-\vb H_1)=\vb K_f$；无自由面电流时\textbf{连续}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+表中有一个规律：\emph{每个场都恰好有一个分量受到 Maxwell 方程的直接约束，另一个分量则由材料关系决定。}$\vb D$、$\vb B$、$\vb J$ 来自散度方程，受约束的是法向分量；$\vb E$、$\vb H$ 来自旋度方程，受约束的是切向分量。
+
+\begin{compare}{法向条件与切向条件}{法向分量}{切向分量}
+\cmprow{探针}{薄盒（\figref{fig:interface_probes_3d} 左）}{窄回路（\figref{fig:interface_probes_3d} 右）}
+\cmprow{来自}{散度方程（通量平衡）}{旋度方程（环量平衡）}
+\cmprow{跳变的来源}{面电荷}{面电流}
+\cmprow{总是连续}{$B_n$}{$E_t$}
+\cmprow{无面源时连续}{$D_n$（无自由面电荷）、$J_n$（稳态）}{$H_t$（无自由面电流）}
+\cmprow{受约束的场}{“通量型”：$\vb D$、$\vb B$、$\vb J$}{“环量型”：$\vb E$、$\vb H$}
+\cmpsum{通量型的量管法向，环量型的量管切向——这正是\secref{sec:matter-analogy} 形式类比中 $\vb D\leftrightarrow\vb B$、$\vb E\leftrightarrow\vb H$ 的配对。}
+\end{compare}
+
+\section{电导率界面：电流线的“折射”}\label{sec:interfaces-conductivity}
+
+现在回到导电组织。在稳态或传导主导的准静态问题中，界面上 $J_n$ 连续、$E_t$ 连续。对各向同性电导率 $\sigma_1$、$\sigma_2$，代入 $\vb J=\sigma\vb E$ \eqref{eq:jfrome}：
+\begin{keyeq}
+\sigma_1E_{1n}=\sigma_2E_{2n},\qquad E_{1t}=E_{2t}.
+\label{eq:einterface}
+\end{keyeq}
+法向电场与电导率成反比地跳变；切向电场不变。电流密度正好反过来：$J_n$ 不变，$J_t=\sigma E_t$ 随电导率成正比地跳变。
+
+两条条件合起来决定了电流线在界面上怎样转向。设 $\theta_1$、$\theta_2$ 为两侧电流线（也是电场线）与法向的夹角，$\tan\theta=E_t/E_n$，于是
+\begin{equation}
+\frac{\tan\theta_2}{\tan\theta_1}=\frac{E_{1n}}{E_{2n}}=\frac{\sigma_2}{\sigma_1}.
+\label{eq:refraction}
+\end{equation}
+
+\fig{interface}{两种界面上的“折射”，两幅图的数学结构完全相同。左：电导率界面（$\sigma_2=\sigma_1/4$）。蓝色为 $\vb E$，绿色为 $\vb J$；虚线把矢量分解为切向与法向分量。$E_t$ 与 $J_n$ 在两侧相同，$E_n$ 变为 4 倍，$J_t$ 变为 $1/4$。入射角 $60^\circ$ 的电流线在低电导率一侧偏向法向，夹角变为 $23.4^\circ$。右：磁导率界面（$\mu_2=4\mu_1$），$\vb B$ 为深色、$\vb H$ 为浅色。$B_n$ 与 $H_t$ 在两侧相同，$B_t$ 变为 4 倍，$H_n$ 变为 $1/4$；进入高磁导率一侧的磁场线偏离法向。背景细线为两侧的场线。}{fig:interface}
+
+\figref{fig:interface} 左图取 $\sigma_2=\sigma_1/4$、$\theta_1=60^\circ$，由 \eqref{eq:refraction} 得 $\theta_2\approx23.4^\circ$：电流进入电导率较低的材料时\emph{偏向法向}，更“笔直”地穿过它；反过来，在紧贴低电导率层的良导体中，电流更多地沿着界面流动。
+
+\begin{pitfall}[“界面处电场不连续，说明数值解出了问题”]
+在电导率跳变的地方，$E_n$ 本来就应该跳变，而且跳变倍数恰好是电导率之比；该连续的是 $J_n$ 与 $E_t$。检查一个导电问题的数值解时，应该看界面两侧的\emph{法向电流}是否一致，而不是看电场图是否平滑。把电场图“平滑”掉，反而破坏了守恒。
+\end{pitfall}
+
+\subsubsection{各向异性材料} 若电导率是张量 $\sig$ \eqref{eq:sigmatensor}，正确的条件是
+\begin{equation}
+\vb n\cdot\sig_1\vb E_1=\vb n\cdot\sig_2\vb E_2,\qquad \vb n\times\vb E_1=\vb n\times\vb E_2 .
+\end{equation}
+张量可以把法向与切向分量耦合在一起：一侧的切向电场也会贡献法向电流。因此不存在像 \eqref{eq:einterface} 那样普遍适用的标量比值规则，也没有 \eqref{eq:refraction} 那样简单的折射定律。
+
+\section{双层导体：电流连续，电场跳变}\label{sec:interfaces-twolayer}
+
+开头的双层导体是全书反复使用的算例。这里把它完整地算一遍。
+
+\begin{example}{双层导体}\label{ex:twolayer}
+两层导体串联，公共截面积 $A_c=10^{-4}\,\mathrm{m^2}$；第 1 层厚 $d_1=8\,\mathrm{mm}$、$\sigma_1=0.2\,\mathrm{S/m}$，第 2 层厚 $d_2=2\,\mathrm{mm}$、$\sigma_2=0.02\,\mathrm{S/m}$。两端电极注入 $I=1\,\mathrm{mA}$，电流垂直于界面。求两层中的 $J$、$E$、电势分布、总压降、电阻与耗散功率。（这些是一维的合成教学参数，不是组织数据。）
+\solution
+\emph{电流。}稳态下 $J_n$ 连续，两层的电流密度都是
+\begin{equation*}
+J=\frac{I}{A_c}=10\,\mathrm{A/m^2}.
+\end{equation*}
+\emph{电场。}由 $E=J/\sigma$，
+\begin{equation*}
+E_1=\frac{J}{\sigma_1}=50\,\mathrm{V/m},\qquad E_2=\frac{J}{\sigma_2}=500\,\mathrm{V/m}.
+\end{equation*}
+\emph{电势与压降。}积分 $E=-\dd\phi/\dd x$：第 1 层压降 $E_1d_1=0.4\,\mathrm V$，第 2 层压降 $E_2d_2=1.0\,\mathrm V$，
+\begin{equation*}
+\Delta V=E_1d_1+E_2d_2=1.4\,\mathrm V,\qquad R=\frac{\Delta V}{I}=1400\,\Omega .
+\end{equation*}
+电势在界面处连续，斜率却突然变陡。
+\emph{功率。}总功率可以从端子上算，也可以对场积分：
+\begin{equation*}
+P=I\Delta V=1.4\,\mathrm{mW},\qquad P=A_c\sum_{i=1}^2\sigma_iE_i^2d_i=I^2\sum_{i=1}^2\frac{d_i}{\sigma_iA_c}.
+\end{equation*}
+功率密度 $p=\vb E\cdot\vb J$ 在第 1 层为 $500\,\mathrm{W/m^3}$，在第 2 层为 $5000\,\mathrm{W/m^3}$；两层分别耗散 $0.4\,\mathrm{mW}$ 与 $1.0\,\mathrm{mW}$。
+\end{example}
+
+\fig{conduction_profiles}{双层导体中各量的剖面，界面在 $x=8\,\mathrm{mm}$。从上往下看：$J$ 在两层相同；$E$ 在界面处跳变 10 倍；电势 $\phi$ 连续，但斜率改变，薄薄的第 2 层承担了 $1.0\,\mathrm V$ 的压降；功率密度 $p$ 在第 2 层大 10 倍。顶部示意图中界面上的“$+$”号表示那里的一层正电荷（\secref{sec:interfaces-surfacecharge}）。}{fig:conduction_profiles}
+
+\figref{fig:conduction_profiles} 值得逐行对照着看：同一个界面上，$J$ 连续，$E$ 跳变，$\phi$ 连续但折弯，$p$ 跳变。只有 $2\,\mathrm{mm}$ 厚的第 2 层，承担了约 71\% 的压降和同样比例的发热。两层串联，电阻也串联：$R=400\,\Omega+1000\,\Omega$，这一点\chref{ch:systems} 还会用到。
+
+\subsection{“低电导率层更热”还是“高电导率层更热”？}
+上例中低电导率层的功率密度大 10 倍。可是另一个常见的说法是：$p=\sigma E^2$，电导率越高发热越多。两者都对，比较的是不同的控制条件。
+
+上例中电流\emph{垂直}穿过界面，界面条件管住的是 $J_n$，两层的 $J$ 相同，所以 $p=J^2/\sigma$ 在低电导率层更大。若把两层\emph{并排}放在同一对电极之间，电流沿着界面流动，界面条件管住的是 $E_t$，两层的 $E$ 相同，于是 $p=\sigma E^2$ 在高电导率层更大。
+
+\begin{compare}{电流垂直于界面与平行于界面}{串联：电流穿过界面}{并联：电流沿着界面}
+\cmprow{起作用的条件}{$J_n$ 连续}{$E_t$ 连续}
+\cmprow{两层相同的量}{$J$}{$E$}
+\cmprow{两层不同的量}{$E=J/\sigma$}{$J=\sigma E$}
+\cmprow{功率密度}{$p=J^2/\sigma$：低 $\sigma$ 层更热}{$p=\sigma E^2$：高 $\sigma$ 层更热}
+\cmprow{等效电路}{电阻串联，$R=R_1+R_2$}{电阻并联}
+\cmpsum{哪一层更热，取决于电流相对界面的方向；两种说法其实是两条界面条件的两种后果。}
+\end{compare}
+
+\section{界面电荷：次级电场的来源}\label{sec:interfaces-surfacecharge}
+
+现在回答开头的问题：界面上到底有什么？
+
+\subsection{电荷为什么会出现，又为什么停止增加}
+假设界面上一开始没有电荷。那么 $E_n$ 连续，两侧的 $J_n=\sigma E_n$ 就不相等：从良导体流到界面的电流，多于从界面流进不良导体的电流。由 \eqref{eq:jnormal}，多出来的电荷留在界面上。这层电荷产生的电场在不良导体一侧与原电场同向，在良导体一侧与之反向：它把不良导体中的电场推高，把良导体中的电场压低。这个调整一直持续到两侧的 $J_n$ 相等为止——这时 $\partial_tq_s=0$，电荷不再增加，但\emph{已经积累的电荷留在那里}。这个过程的快慢由电荷弛豫时间决定（\eqref{eq:relaxation}，\secref{sec:regimes-scales}）。
+
+所以，法向电流连续约束的是电荷\emph{积累的速率}，不是电荷本身。稳态时界面上有一层静止的电荷，正是它让电场在界面上跳变。
+
+\begin{intuition}[界面电荷是一个自动调节阀]
+电流守恒要求法向电流在界面两侧相等，而欧姆定律在两侧给出的电流不同。两个要求之间的矛盾，由界面上自动积累的电荷来调和：电荷积累到恰好使两侧电流相等时，就停下来。
+\end{intuition}
+
+\subsection{有多少电荷？}
+由 \eqref{eq:Enjump}，界面上的全部面电荷（自由加束缚）只取决于两侧的法向电场，与介电常数无关。双层导体中，电流从良导体流向不良导体，$E_n$ 从 $50$ 跳到 $500\,\mathrm{V/m}$：
+\begin{equation}
+q_{s}+q_{b,s}=\varepsilon_0(E_{2n}-E_{1n})=8.85\times10^{-12}\times450\,\mathrm{C/m^2}\approx4.0\,\mathrm{nC/m^2},
+\end{equation}
+相当于每平方毫米约 $2.5\times10^4$ 个元电荷，符号为正。其中多少算自由电荷、多少算束缚电荷，取决于两层的介电常数；但总量不取决于它们。
+
+这点电荷少到在电流的账上可以忽略：它的积累早已结束，$\partial_tq_s\approx0$。可在电场的账上，它一点也不能忽略：正是它造成了 $450\,\mathrm{V/m}$ 的跳变。“电荷很少”和“电荷的作用很大”并不矛盾：$\varepsilon_0\approx8.85\times10^{-12}\,\mathrm{F/m}$ 很小，一点点电荷就能产生可观的电场。
+
+\begin{pitfall}[“法向电流连续，所以界面上没有电荷”]
+$J_n$ 连续只说明电荷不再增加。$\vb n\cdot(\vb D_2-\vb D_1)=q_s$ 是另一条独立的条件，它并不因为 $J_n$ 连续而变为零。只要两侧电导率不同，稳态电流就会在界面上留下一层电荷；其中自由电荷的部分为 $q_s=\varepsilon_2E_{2n}-\varepsilon_1E_{1n}=J_n(\varepsilon_2/\sigma_2-\varepsilon_1/\sigma_1)$，只有两侧 $\varepsilon/\sigma$ 恰好相同时才为零。
+\end{pitfall}
+
+\begin{deeper}[电导率连续变化时，电荷在哪里]
+若 $\sigma$ 在空间中连续变化而没有尖锐的界面，用乘积法则 \eqref{id:product} 展开稳态条件 $\nabla\cdot(\sigma\vb E)=0$：
+\begin{equation*}
+\sigma\nabla\cdot\vb E+\vb E\cdot\nabla\sigma=0\quad\Longrightarrow\quad \varepsilon_0\nabla\cdot\vb E=-\varepsilon_0\,\vb E\cdot\nabla\ln\sigma .
+\end{equation*}
+左端是全部电荷的体密度。所以稳态导电介质中，电荷只出现在电导率沿电场方向变化的地方。把它积分穿过一个尖锐的界面（$\sigma E_n=J_n$ 不变），右端给出 $\varepsilon_0J_n(1/\sigma_2-1/\sigma_1)=\varepsilon_0(E_{2n}-E_{1n})$，回到 \eqref{eq:Enjump}。
+\end{deeper}
+
+\subsection{同样的机制产生 TMS 的次级电场}
+TMS 线圈在头部产生的感应电场 $-\partial_t\vb A$（\secref{sec:magnetic-faraday}）只由线圈决定，它并不知道头部的边界在哪里。在头皮与空气的交界处，它一般有一个法向分量，会驱动电流流出头部——这是绝缘边界不允许的。于是电荷在头部表面和各组织界面上积累，直到法向电流满足所有界面条件。这些电荷的电场就是“次级电场” $-\nabla\phi$；总电场是两者之和。\chref{ch:tms} 会把这一图像写成方程 \eqref{eq:tmsboundary}。
+
+\section{磁界面：B 的法向与 H 的切向}\label{sec:interfaces-magnetic}
+
+在没有自由面电流的线性各向同性磁介质之间，\eqref{eq:normalbc} 与 \eqref{eq:tangentbc} 给出
+\begin{equation}
+\mu_1H_{1n}=\mu_2H_{2n},\qquad H_{1t}=H_{2t}.
+\label{eq:hinterface}
+\end{equation}
+它与 \eqref{eq:einterface} 一字不差，只是把 $\sigma$ 换成 $\mu$、$\vb E$ 换成 $\vb H$、$\vb J$ 换成 $\vb B$。磁场线因此也服从同样的折射规律，$\tan\theta_2/\tan\theta_1=\mu_2/\mu_1$（\figref{fig:interface} 右）。
+
+\subsubsection{铁与空气} 设材料 1 为空气，材料 2 为 $\mu_r=1000$ 的软铁（与\exref{ex:ironcore} 相同的线性教学值）。即使铁中的磁场线与法向成 $89^\circ$，几乎贴着表面走，空气一侧的夹角也只有
+\begin{equation*}
+\theta_{\rm air}=\arctan\frac{\tan89^\circ}{1000}\approx3.3^\circ .
+\end{equation*}
+所以\emph{空气中的磁场线几乎总是垂直地进出铁的表面}。在磁路和磁体设计中，铁极面附近的气隙磁场近似垂直于极面，原因就在这里（\chref{ch:lumped}）。
+
+\subsubsection{非线性材料} 铁磁材料的 $\mu$ 不是常数（\chref{ch:bh}）。这时界面条件仍然是 Maxwell 方程给出的那两条——$B_n$ 连续、$H_t$ 连续——再分别配上两侧各自的非线性 B–H 关系；不能套用一个固定的 $\mu_2/\mu_1$ 比值。
+
+\subsubsection{磁化表面} 永磁体或被磁化的铁，表面有束缚面电流 $\vb K_M=\vb M\times\vb n$ \eqref{eq:boundcurrent}。它不是自由电流，不进入 \eqref{eq:tangentbc}：$H_t$ 仍然连续，跳变的是 $B_t$。
+
+\begin{compare}{电导率界面与磁导率界面}{稳态导电：$\sigma$ 界面}{无电流静磁：$\mu$ 界面}
+\cmprow{场方程}{$\nabla\cdot\vb J=0$，$\nabla\times\vb E=0$，$\vb J=\sigma\vb E$}{$\nabla\cdot\vb B=0$，$\nabla\times\vb H=0$，$\vb B=\mu\vb H$}
+\cmprow{连续的分量}{$J_n$、$E_t$}{$B_n$、$H_t$}
+\cmprow{跳变的分量}{$E_n\propto1/\sigma$，$J_t\propto\sigma$}{$H_n\propto1/\mu$，$B_t\propto\mu$}
+\cmprow{折射}{$\tan\theta_2/\tan\theta_1=\sigma_2/\sigma_1$}{$\tan\theta_2/\tan\theta_1=\mu_2/\mu_1$}
+\cmprow{界面上的源}{积累而成的面电荷（真实电荷）}{磁化面电流（束缚电流）}
+\cmprow{后续用到}{TES、TMS 的体积传导（\chref{ch:tes}、\chref{ch:tms}）}{磁路、磁体（\chref{ch:systems}、\chref{ch:lumped}）}
+\cmpsum{同一套数学，$\sigma\leftrightarrow\mu$、$\vb E\leftrightarrow\vb H$、$\vb J\leftrightarrow\vb B$；这正是磁路能够借用电路语言的原因。}
+\end{compare}
+
+\section{局部方程加边界条件，才是一个物理问题}\label{sec:interfaces-uniqueness}
+
+\chref{ch:calculus} 已经看到，局部方程本身不能确定一个场：均匀场和鞍形场的散度、旋度都是零。界面条件把各个区域里的解“缝”在一起；最外层的边界条件则从所有满足局部方程的场中，挑出实际发生的那一个。
+
+所以边界条件是物理的一部分。同一块导体，侧面绝缘（$\vb n\cdot\vb J=0$）还是侧面接地（$\phi=0$），是两个不同的实验，电流分布完全不同（\chref{ch:tes}）。同样，有限元计算中为了截断无限大的空气区域而设置的外边界，也是在对物理作出选择：在那里规定磁场线只能贴着边界走，或者规定矢势为零，都是在声明边界之外发生了什么。这些人为边界必须离关心的区域足够远，或者有物理上的理由。
+
+界面条件在数值方法里通常不需要单独施加。只要从\emph{散度形式}的方程出发，例如 $\nabla\cdot(\sigma\nabla\phi)=0$ \eqref{eq:tespde}，有限元的弱形式会自动满足 $J_n$ 连续（\chref{ch:femscalar}）。反过来，若在每个区域里写成 $\sigma\nabla^2\phi=0$，再把系数“当作常数”提到导数外面，就丢掉了 \eqref{id:product} 中的 $\nabla\sigma\cdot\nabla\phi$ 一项——而上面的“深入一步”已经说明，这一项正是界面电荷所在。
+
+\begin{takeaways}
+\begin{itemize}
+\item 界面条件来自把 Maxwell 方程用在无限薄的区域上：散度方程配薄盒，管法向分量；旋度方程配窄回路，管切向分量。跳变等于界面上的面源。
+\item 四条条件：$\vb n\cdot(\vb D_2-\vb D_1)=q_s$，$\vb n\cdot(\vb B_2-\vb B_1)=0$，$\vb n\times(\vb E_2-\vb E_1)=0$，$\vb n\times(\vb H_2-\vb H_1)=\vb K_f$；电荷守恒再给出 $\vb n\cdot(\vb J_2-\vb J_1)=-\partial_tq_s$。
+\item 稳态导电界面上 $J_n$ 与 $E_t$ 连续，$\sigma_1E_{1n}=\sigma_2E_{2n}$；电流进入低电导率材料时偏向法向。磁界面上 $B_n$ 与 $H_t$ 连续，数学结构相同。
+\item 双层导体：$J=10\,\mathrm{A/m^2}$，$E$ 从 $50$ 跳到 $500\,\mathrm{V/m}$，$\Delta V=1.4\,\mathrm V$，$R=1400\,\Omega$，$P=1.4\,\mathrm{mW}$。哪一层更热取决于电流垂直还是平行于界面。
+\item 法向电流连续不等于界面无电荷：约 $4\,\mathrm{nC/m^2}$ 的界面电荷造成了电场的跳变。同样的机制产生 TMS 的次级电场。
+\item 局部方程加边界条件才确定唯一的场；边界条件（包括数值计算的截断边界）是物理选择。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 在没有自由面电荷、没有自由面电流的稳态界面上，$\vb E$、$\vb D$、$\vb J$、$\vb B$、$\vb H$ 中哪些分量连续？哪个分量无论如何都连续？
+\item 电流以与法向成 $60^\circ$ 的方向从 $\sigma_1$ 进入 $\sigma_2=\sigma_1/4$ 的材料。进入后与法向的夹角是多少？若 $\sigma_2=4\sigma_1$ 呢（只需说明偏向哪边）？
+\item 把\exref{ex:twolayer} 中两层的顺序对调，电流先经过 $2\,\mathrm{mm}$ 的不良导体。$J$、$E_1$、$E_2$、$\Delta V$、$P$ 有没有变化？界面电荷呢？
+\item 界面电荷只有约 $4\,\mathrm{nC/m^2}$，为什么在计算电场时不能忽略，在计算电流守恒时却可以忽略它的变化？
+\item 两块相同的导电片，一块 $\sigma=0.2\,\mathrm{S/m}$、一块 $\sigma=0.02\,\mathrm{S/m}$，并排夹在同一对平行电极之间。哪一块的功率密度更大？大多少倍？
+\item 空气中的磁场线进入 $\mu_r=1000$ 的铁时，在铁中几乎贴着表面走。为什么铁极面附近气隙里的磁场近似垂直于极面？
+\item 有人在头部模型的整个外表面上设置 $\phi=0$，理由是“电势的参考点总要定一个”。这样做和让头部表面绝缘有什么区别？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item $D_n$、$J_n$、$B_n$、$E_t$、$H_t$ 连续；$E_n$、$H_n$、$D_t$、$J_t$、$B_t$ 一般跳变。$E_t$ 与 $B_n$ 无论有没有面源都连续。
+\item $\tan\theta_2=\tan60^\circ/4$，$\theta_2\approx23.4^\circ$，偏向法向。$\sigma_2=4\sigma_1$ 时 $\tan\theta_2=4\tan60^\circ$，偏离法向、更贴近界面。
+\item $J$、两层各自的 $E$、$\Delta V$、$R$、$P$ 都不变——串联电阻与顺序无关。界面电荷变号：现在电流从不良导体流向良导体，$E_n$ 从 $500$ 降到 $50\,\mathrm{V/m}$，面电荷约 $-4.0\,\mathrm{nC/m^2}$。
+\item 电场的跳变由电荷的\emph{多少}决定，$450\,\mathrm{V/m}$ 的跳变正需要这些电荷；电流守恒只关心电荷的\emph{变化率}，稳态时这层电荷已不再变化。
+\item 并排时电流沿界面流动，$E_t$ 连续，两块中的 $E$ 相同；$p=\sigma E^2$，高电导率的一块功率密度大 10 倍。
+\item 由 $\tan\theta_{\rm air}=\tan\theta_{\rm iron}/\mu_r$，铁中夹角即使接近 $90^\circ$，空气中的夹角也很小（$89^\circ$ 对应约 $3.3^\circ$），所以磁场线几乎垂直地离开极面。
+\item 固定参考只需在一点（或用一个积分约束）去掉电势的常数自由度，不改变电场；在整个表面设 $\phi=0$ 则是一个物理边界条件，它允许电流穿过表面流出头部，而真实头部表面是绝缘的（\chref{ch:tes}）。
+\end{answers}

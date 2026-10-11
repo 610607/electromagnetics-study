@@ -1,0 +1,250 @@
+\chapter{线圈逆向设计}\label{ch:coils}
+
+\begin{chapterguide}
+\guidequestion{上一章已经知道一个好的梯度场应该是什么样子：$b_z=Gx$，再加上 Maxwell 方程要求的横向分量。现在要反过来：怎样找出一个真能绕出来（或刻在电路板上）、电流处处连续、又不会烧掉或把放大器逼到极限的线圈？}
+\begin{guidegoals}
+\item 区分前向与逆向问题，说明为什么逆向设计要先设计“源空间”，再优化系数；
+\item 用表面流函数表示电流，从等值线提取绕组，说出提取之后哪些步骤会改变原设计；
+\item 由同一组基函数写出一致的场矩阵、电阻矩阵与电感矩阵；
+\item 写出正则化目标与精确约束解，读懂误差—功率权衡曲线，解释为什么“罚系数大小”不等于“罚功率”；
+\item 把主动屏蔽、匀场与电压、受力等硬件约束写进设计，并判断场计算该用 Biot--Savart、边界方法、有限元还是学习型算子。
+\end{guidegoals}
+\guideprereq{\secref{sec:potentials-stream}（表面流函数）；\eqref{eq:roiMaxwell}、\eqref{eq:gradientmatrix}（可实现的梯度）；\secref{sec:eddy-circuit}（线圈端电压与屏蔽）；\chref{ch:framework}（电感矩阵、二次型与伴随）。}
+\end{chapterguide}
+
+\section{先设计源空间}\label{sec:coils-sourcespace}
+
+\subsection{逆问题难在哪里}
+前面各章做的都是\textbf{前向问题}：给定源，求场。只要材料与边界条件确定，答案是唯一的。线圈设计却是\textbf{逆向问题}：给定想要的场，求源。它难在两处。
+
+第一，答案不唯一。\chref{ch:mri} 的最后一节说过，成像区外不同的电流分布可以在成像区里产生完全相同的场。所以“哪一个电流”必须由别的标准来挑：功率最小、储能最小、离某些导体远、容易制造……没有这些标准，问题根本没有确定的答案。
+
+第二，目标可能根本不存在。目标场本身必须满足成像区内的 Maxwell 方程 \eqref{eq:roiMaxwell}；只要 $b_z=Gx$、不要横向分量的目标，任何电流都实现不了。优化器不会报错，它只会给出一个“尽量接近”的折中，让你误以为是线圈不够好。
+
+\begin{compare}{前向问题与逆向问题}{前向：源 $\to$ 场}{逆向：想要的场 $\to$ 源}
+\cmprow{已知}{电流、磁体、几何、材料}{目标场（及其区域）、可用的载体曲面、硬件约束}
+\cmprow{解的唯一性}{唯一（材料与边界确定后）}{不唯一：必须用功率、储能等代价来挑选}
+\cmprow{存在性}{总有解}{目标违反 Maxwell 时无精确解}
+\cmprow{对模型误差}{误差大致按比例传到结果}{优化器专找模型最乐观的方向，放大误差}
+\cmprow{典型工具}{Biot--Savart、FEM（\chref{ch:femscalar}、\chref{ch:femvector}）}{流函数基、二次规划、伴随灵敏度（\secref{sec:framework-reciprocity}）}
+\cmprow{最后一步}{报告结果}{对制造出来的真实绕组再做一次前向计算}
+\cmpsum{前向问题问“会发生什么”，逆向问题问“应该选哪一个”；后者的答案取决于你规定的代价与约束，并且一定要回到前向计算去验证。}
+\end{compare}
+
+\subsection{先定源，再定系数}
+所以逆向设计的第一步不是选优化算法，而是规定\textbf{源空间}：电流允许出现在哪里、以什么形式出现。几种常见情形：
+\begin{itemize}
+\item \emph{几何固定的一组线圈}，在线性磁环境中：未知量就是各线圈的电流，场对它们线性（\chref{ch:framework}）。
+\item \emph{连续的电流片}：电流分布在一个载体曲面（平板、圆柱）上，用一组基函数展开，未知量是展开系数。本章的主角。
+\item \emph{非线性磁轭或可移动的磁体}：设计变量到场的映射要么反复做非线性求解，要么在偏置附近用切线模型 \eqref{eq:biaslinearization}。永磁低场磁体的梯度板紧贴着铁质极靴，极靴会响应梯度场；这时“均匀线性背景中的 Biot--Savart”已经不够，至少要把极靴在偏置下的增量响应算进去（\secref{sec:coils-methods}）。
+\end{itemize}
+整个流程画在\figref{fig:inverse_design_flow} 里。注意它是一个回路：最后一步的独立前向复核不通过，就要回到前面修改目标、源空间或约束。
+
+\fig{inverse_design_flow}{从目标场到可制造的绕组。上排：先写出 Maxwell 相容的目标与硬件约束，再规定源空间（流函数基），然后由同一组基算出场、功率与储能矩阵。下排：求解并画出权衡曲线，从等值线提取绕组，最后对真实导线做独立的前向复核；不通过就回到第 1、2 步。}{fig:inverse_design_flow}
+
+\section{流函数保证电流连续}\label{sec:coils-stream}
+
+\subsection{回顾：用标量生成电流}
+\secref{sec:potentials-stream} 引入了表面流函数：在法向为 $\vb n$ 的载体曲面上，
+\begin{equation*}
+\vb K_s=\nabla_s\psi_s\times\vb n\qquad\text{ \eqref{eq:stream}},
+\end{equation*}
+平面 $\vb n=\vb e_z$ 上即 $\vb K_s=(\partial_y\psi_s,-\partial_x\psi_s)$。混合偏导数相等，$\nabla_s\cdot\vb K_s=0$ 自动成立：无论优化器怎样调整 $\psi_s$，电流都不会凭空产生或消失。这正是用它做设计变量的理由。在圆柱或其他弯曲的载体上，同样的守恒仍然成立，但证明要用曲面上的微分恒等式（法向随位置改变），不能直接搬用平面上的笛卡儿公式。三条规则直接来自这个定义~\cite{bfieldtheory}：
+\begin{itemize}
+\item 绝缘的边界上 $\psi_s$ 取常数，电流就不会流出边界；
+\item 曲面上有孔时，每个孔的边界可以取不同的常数，常数之差就是绕孔流动的净电流——多出来的拓扑自由度要单独作为未知量；
+\item 给整个 $\psi_s$ 加一个常数不改变电流，这是源表示的“规范自由”，计算时要去掉。
+\end{itemize}
+
+\begin{intuition}[流函数就是一层磁偶极子]
+$\psi_s$ 的一个正的“鼓包”周围，电流绕着 $\vb n$ 逆时针流动——就像一个小电流环。把曲面切成许多小块，每块是一个磁矩为 $\psi_s\,\dd S\,\vb n$ 的电流环，相邻小环在公共边上的电流相互抵消（与\secref{sec:matter-M} 中磁化的论证一样），只剩 $\vb K_s$。所以 $\psi_s\vb n$ 就是一层\emph{磁偶极子的面密度}，单位是安培。只要 $\psi_s$ 在曲面边缘上为零，它的场就是这层偶极子的场，计算时连 $\psi_s$ 的导数都不用求。
+\end{intuition}
+
+\figH[.8]{stream_cylinder_3d}{一个示意性的横向梯度流函数（只为说明结构，不是优化设计）。圆柱面上取 $\psi_s=\cos\varphi\cdot z\,e^{-z^2/(2s^2)}$（$s$ 为半径的 $0.55$ 倍）。绿色管线是 $\psi_s$ 的等值线，也就是电流路径，箭头按 $\vb K_s=\nabla_s\psi_s\times\vb n$（$\vb n$ 向外）标出电流方向。$\psi_s$ 在 $\varphi=0$ 与 $\varphi=\pi$ 两侧、$z=\pm s$ 处取得极值，形成四个“指纹”：图中是 $\varphi\approx0$ 一侧的两个，它们的电流绕向相反；背面的两个符号再反过来。环向电流 $K_\varphi=\partial\psi_s/\partial z$ 正比于 $\cos\varphi$、关于 $z=0$ 对称——这正是 $x$ 梯度需要的对称性：配套脚本用等效偶极层算出，圆柱中心处只有 $G_{zx}=G_{xz}$ 不为零。}{fig:stream_cylinder_3d}
+
+\figref{fig:stream_cylinder_3d} 是圆柱形横向梯度线圈最典型的“指纹”图样。为什么是四个指纹？$x$ 梯度要求 $b_z$ 关于 $x$ 反对称、关于 $z$ 对称 \eqref{eq:xgradient}。$\cos\varphi$ 让圆柱左右两侧的电流反号，给出关于 $x$ 的反对称；$z\,e^{-z^2/(2s^2)}$ 关于 $z$ 反对称，它的导数——环向电流——就关于 $z$ 对称。两种对称一乘，正好是四个极值。
+
+\subsection{从等值线到导线}
+沿任一条横跨两条等值线的曲线积分横向的面电流，得到的正是两条线上 $\psi_s$ 之差（\secref{sec:potentials-stream} 的例子）。所以若每根导线承载电流 $I_w$，只要在 $\psi_s$ 的值为 $(k+\tfrac12)I_w$（$k=0,\pm1,\pm2,\dots$）处取等值线，每条线就代表一圈导线。等值线越密的地方，面电流越大。
+
+提取出等值线只是绕组的骨架。还要加上：回流引线与相邻圈之间的串联连接（这会破坏完美的对称，引入额外的场）、最小线距与线宽、绝缘、最小弯曲半径；做成印制电路板时，还有铜厚、层数与过孔。双平面线圈的两块板之间也要连起来。每一步都会改变电流分布，所以最终必须对\emph{实际的}导线重新计算场、电阻和电感（\figref{fig:inverse_design_flow} 第 6 步）。
+
+\section{一致的场、电阻与电感算子}\label{sec:coils-operators}
+
+\subsection{三个矩阵来自同一组基}
+把流函数展开为 $\psi_s=\sum_jc_jN_j$，$N_j$ 无量纲，系数 $c_j$ 的单位是安培。每个基函数对应一个单位面电流模式 $\vb k_j=\nabla_sN_j\times\vb n$（单位 $\mathrm m^{-1}$），于是 $\vb K_s=\sum_jc_j\vb k_j$。在均匀线性的背景中，场由面电流的 Biot--Savart 积分给出 \eqref{eq:biotsavart}：
+\begin{equation*}
+\vb B(\vb r)=\frac{\mu_0}{4\pi}\int_S\frac{\vb K_s(\vb r')\times(\vb r-\vb r')}{|\vb r-\vb r'|^3}\dS' .
+\end{equation*}
+在目标点上采样所关心的分量（或导数），得到\textbf{场矩阵} $\vb C$，$\vb b=\vb C\vb c$。每一行都必须对应一个明确的观测量。设载体是电导率 $\sigma$、厚度 $t$ 的薄导体片，电流在厚度上均匀，则耗散功率与储能都是 $\vb c$ 的二次型：
+\begin{keyeq}
+P=\int_S\frac{|\vb K_s|^2}{\sigma t}\dS=\vb c^{\mathsf T}\vb R\,\vb c,\quad R_{ij}=\int_S\frac{\vb k_i\cdot\vb k_j}{\sigma t}\dS;\qquad
+W=\tfrac12\vb c^{\mathsf T}\vb L\,\vb c,\quad L_{ij}=\int_S\vb k_i\cdot\vb a_j\dS ,
+\label{eq:coils-operators}
+\end{keyeq}
+$\vb a_j$ 是模式 $\vb k_j$ 每单位系数产生的矢势。$\vb R$ 的单位是欧姆，$\vb L$ 的单位是亨利。$\vb L$ 就是\chref{ch:framework} 中由磁能定义的电感矩阵，只是“线圈”换成了基函数。注意这里的 $\vb R$ 假设电流铺满整张导体片；离散成导线或 PCB 走线之后，导体只占面积的一部分（走线宽度与间距之比），实际电阻会更大，所以最终的电阻要在离散后的导线上重新计算（\secref{sec:coils-stream}）。
+
+三个矩阵来自同一组基，单位一致，物理意义明确。若用任意的“系数大小”惩罚代替真实的 $\vb R$ 或 $\vb L$，优化结果就会依赖于基函数怎样选、怎样归一化，而不是物理上最省~\cite{bfieldtheory,bfieldsoftware}。下面的例子会给出一个具体的数。
+
+\begin{example}[label=ex:coils-biplanar]{双平面 x 梯度：一个可以复现的教学设计}
+设一台主磁场沿竖直方向 $z$ 的开放式磁体，两块梯度板为边长 $0.6\,\mathrm m$ 的正方形，位于 $z=\pm0.18\,\mathrm m$（\chref{ch:magnets} 的教学磁体极面间隙为 $0.40\,\mathrm m$）。目标：直径 $20\,\mathrm{cm}$ 的 DSV 上 $b_z=Gx$，$G=10\,\mathrm{mT/m}$。导体片按 $1\,\mathrm{mm}$ 厚的铜（$\sigma=5.8\times10^7\,\mathrm{S/m}$，\chref{ch:eddy} 用过的值）计，只有功率的绝对值与这一选择有关。这些都是教学输入，不是某台设备的参数。怎样搭建 $\vb C$、$\vb R$、$\vb L$，又怎样检验它们？
+\solution
+\emph{源空间。}两块板用同一个 $\psi_s$（法向都取 $+z$）：上下两层“偶极层”同向，在中间叠加出 $b_z$。$b_z=Gx$ 关于 $x$ 反对称、关于 $y$ 与 $z$ 对称，所以 $\psi_s$ 取关于 $x$ 反对称、关于 $y$ 对称的形式。基函数取正弦乘积 $\sin\frac{m\pi(x+a)}{2a}\sin\frac{n\pi(y+a)}{2a}$（$a=0.3\,\mathrm m$），$m=2,4,\dots,16$、$n=1,3,\dots,15$，共 64 个。它们在板边上为零：边界是一条等值线，电流不会流出板外。
+
+\emph{场矩阵。}在 DSV 球面上取 400 个点，把 $\psi_s\vb e_z$ 当作偶极层直接积分。另用面电流 $\vb K_s$ 的 Biot--Savart 积分独立地算一遍，两者相差 $8\times10^{-5}$（相对于最大元素）；板上网格加密一倍，变化 $2\times10^{-5}$。
+
+\emph{电阻矩阵。}正弦基两两正交，$\vb R$ 是对角阵，元素有闭式解；数值积分给出同样的结果。
+
+\emph{电感矩阵。}平面电流片的磁能在二维傅里叶空间里有简单的形式（见下面的“深入一步”）。用它算出的两板之间的互感，与直接对 Neumann 双重积分（由 \eqref{eq:Agreen} 与 \eqref{eq:Aflux} 得到）数值积分的结果相比，差别不超过对角元的 $0.1\%$；对两个同轴的环形电流分布，两种算法相差不到 $10^{-5}$。$\vb L$ 对称、正定。
+
+此外，设计的误差不只在拟合用的 400 个点上评价，而是在另外 997 个球面点与 2000 个球内点上评价——标定点与检验点分开（\secref{sec:lumped-validity}）。
+\end{example}
+
+\begin{deeper}[平面电流片的磁能]
+平面 $z=0$ 上的面电流 $\vb K(x,y)$ 产生的矢势，其二维傅里叶变换为 $\widehat{\vb A}(\vb k,z)=\mu_0\widehat{\vb K}(\vb k)\,e^{-k|z|}/(2k)$，因为 $1/(4\pi|\vb r|)$ 在平面上的二维变换是 $e^{-k|z|}/(2k)$。由 Parseval 定理，$W=\tfrac12\int\vb K\cdot\vb A\dS=\frac{\mu_0}{4}\int\frac{|\widehat{\vb K}|^2}{k}\frac{\dd^2k}{(2\pi)^2}$。流函数给出 $|\widehat{\vb K}|^2=k^2|\widehat\psi_s|^2$，于是
+\begin{equation*}
+W=\frac{\mu_0}{4}\int k\,|\widehat\psi_s|^2\,\frac{\dd^2k}{(2\pi)^2}.
+\end{equation*}
+相距 $s$ 的两层之间再加互能项 $\frac{\mu_0}{2}\int k\operatorname{Re}(\widehat\psi_1^*\widehat\psi_2)\,e^{-ks}\frac{\dd^2k}{(2\pi)^2}$。正弦基的傅里叶变换有闭式解，所以 $\vb L$ 的每个元素只是一个光滑的二维积分。高频部分 $k|\widehat\psi_s|^2$ 衰减得慢，积分要取到足够大的 $k$ 并检查收敛。
+\end{deeper}
+
+\section{正则化与精确约束解}\label{sec:coils-regularization}
+
+\subsection{正则化目标}
+有了 $\vb C$、$\vb R$、$\vb L$，最常用的设计目标把场误差、电阻损耗与储能放在一起：
+\begin{keyeq}
+\mathcal J(\vb c)=\frac12\norm{\vb W_b^{1/2}(\vb C\vb c-\vb b_{\rm tar})}^2+\frac{\alpha}{2}\vb c^{\mathsf T}\vb R\,\vb c+\frac{\beta}{2}\vb c^{\mathsf T}\vb L\,\vb c .
+\label{eq:coilobjective}
+\end{keyeq}
+$\vb b_{\rm tar}$ 是目标值，$\vb W_b$ 规定各点、各分量的权重。三项的单位分别是 $\mathrm T^2$（乘以权重的单位）、W 与 J，所以 $\alpha$、$\beta$ 必须带有统一单位的量纲，或者先把每一项除以一个写明的参考尺度；直接把瓦特、焦耳和特斯拉平方相加，结果取决于单位的选择。$\mathcal J$ 是 $\vb c$ 的二次函数，令梯度为零就得到一个对称正定的线性方程组 $(\vb C^{\mathsf T}\vb W_b\vb C+\alpha\vb R+\beta\vb L)\vb c=\vb C^{\mathsf T}\vb W_b\vb b_{\rm tar}$。
+
+\subsection{精确约束}
+另一种提法是：要求目标点上精确满足 $\vb C\vb c=\vb b_{\rm tar}$，在此前提下功率最小。去掉流函数的常数自由度后，设 $\vb R$ 正定、约束彼此独立，引入拉格朗日乘子 $\boldsymbol\lambda$：
+\begin{equation*}
+\mathcal L=\tfrac12\vb c^{\mathsf T}\vb R\,\vb c+\boldsymbol\lambda^{\mathsf T}(\vb C\vb c-\vb b_{\rm tar}).
+\end{equation*}
+驻值条件 $\vb R\vb c+\vb C^{\mathsf T}\boldsymbol\lambda=\vb 0$ 给出 $\vb c=-\vb R^{-1}\vb C^{\mathsf T}\boldsymbol\lambda$；代入约束求出 $\boldsymbol\lambda$，再代回：
+\begin{keyeq}
+\vb c=\vb R^{-1}\vb C^{\mathsf T}\bigl(\vb C\vb R^{-1}\vb C^{\mathsf T}\bigr)^{-1}\vb b_{\rm tar}.
+\label{eq:coils-exact}
+\end{keyeq}
+式中的逆矩阵只是数学写法，实现时用矩阵分解求解。约束秩亏或互不相容时，要改用正则化、伪逆或最小二乘的提法。
+
+\subsection{教学设计的结果}
+对\exref{ex:coils-biplanar} 的模型，让 $\alpha$ 从很小扫到很大（$\beta=0$），每个 $\alpha$ 得到一个设计，记下它在检验点上的 RMS 场误差与功率，就得到一条\textbf{权衡曲线}（\figref{fig:tradeoff_curve}a）。几个读数：
+\begin{itemize}
+\item \emph{没有免费的精度。}误差 $5\%$ 时功率 $237\,\mathrm W$，$1\%$ 时 $513\,\mathrm W$，$0.1\%$ 时 $1283\,\mathrm W$。要把误差压到十分之一，功率要增加到约 $2.5$ 倍。
+\item \emph{$1\%$ 的设计。}DSV 球面上的 RMS 误差为 $1\%$，最大误差为 $1.6\%$；对整个球体按体积平均，RMS 误差只有 $0.58\%$。球内的最大误差不超过球面上的——误差场也是调和的（\chref{ch:mri}）。在 $10\,\mathrm{mT/m}$ 下它储能 $0.557\,\mathrm J$。
+\item \emph{罚什么，就省什么。}把 $\vb R$ 换成 $\vb L$（只罚储能），同样 $1\%$ 误差的设计储能降到 $0.544\,\mathrm J$，功率却升到 $550\,\mathrm W$。每种物理罚项在自己的指标上最优（\figref{fig:tradeoff_curve}a、b）。
+\item \emph{罚系数大小不是物理。}把 $\vb R$ 换成单位矩阵（只罚 $\norm{\vb c}^2$），$1\%$ 误差的设计要 $807\,\mathrm W$，是罚功率设计的 $1.57$ 倍，储能也更大（$0.605\,\mathrm J$）。它在成像区上方多出一串小而密的电流环（\figref{fig:tradeoff_curve}d）：在这个正弦基里，同样大小的系数，高阶模式的面电流（正比于它的波数）要大得多；$\norm{\vb c}^2$ 只看系数，看不到这一点，$\vb c^{\mathsf T}\vb R\vb c$ 看得到。
+\end{itemize}
+
+\figH{tradeoff_curve}{双平面 $x$ 梯度的教学设计（\exref{ex:coils-biplanar}）。(a) 检验点上的 RMS 场误差与耗散功率：三条曲线分别罚功率、罚储能、罚系数范数，圆圈是各自误差为 $1\%$ 的设计；菱形是在 12 个与 20 个点上精确满足目标、功率最小的设计。(b) 同样的设计，误差与 $10\,\mathrm{mT/m}$ 时的储能。(c)、(d) 误差同为 $1\%$ 时一块板上的绕组：每条绿线是一圈导线（每圈 $100\,\mathrm A$），箭头为电流方向，橙色虚线圆为 DSV 的投影。罚系数范数的设计在中部多出一串密集的小环，功率高 $57\%$。}{fig:tradeoff_curve}
+
+\subsection{精确约束为什么常常更贵}
+用 \eqref{eq:coils-exact} 在 DSV 球面的第一卦限取 12 个点（其余点由对称性自动满足），得到的设计在这些点上分毫不差，在检验点上的 RMS 误差却是 $0.58\%$，功率 $1444\,\mathrm W$。正则化设计达到同样的误差只要 $646\,\mathrm W$。约束点增加到 20 个，误差降到 $0.11\%$，功率升到 $4920\,\mathrm W$，而正则化设计在同样误差下只要 $1256\,\mathrm W$。原因有两个：精确约束不管约束点之间的场；它还逼迫解去精确吻合那些代价极高的场模式。
+
+这一点可以用奇异值看清楚。把 $\vb C$ 按功率归一化（右乘 $\vb R^{-1/2}$）后做奇异值分解，第二个奇异值只有第一个的 $0.21$，最小的只有最大的 $2\times10^{-13}$——已到舍入误差的量级，相应的模式在 DSV 上数值上完全看不见。奇异值小的模式，每单位“根号功率”只产生极小的场——它们正是高功率、不稳定设计的来源。正则化把它们压下去；精确约束则可能偏偏要用到它们。
+
+\begin{compare}{正则化与精确约束}{正则化：误差 $+\alpha\cdot$代价}{精确约束：$\vb C\vb c=\vb b_{\rm tar}$，代价最小}
+\cmprow{目标点上}{有残差，大小由 $\alpha$ 控制}{分毫不差}
+\cmprow{目标点之间}{误差在整个采样区域上被平均地控制}{不受控制，要另行检验}
+\cmprow{代价（本例）}{$0.58\%$ 误差需 $646\,\mathrm W$}{同样误差需 $1444\,\mathrm W$}
+\cmprow{数值性质}{总有解，条件数由 $\alpha$ 改善}{约束多或不相容时病态、无解}
+\cmprow{要选的量}{$\alpha$（看权衡曲线）}{约束点的个数与位置}
+\cmprow{适合}{区域上的场目标；探索设计空间}{少数几个必须严格满足的量（例如中心梯度强度）}
+\cmpsum{精确约束只保证“在点上对”，正则化保证“整体上好、而且不贵”；常见的折中是：少数关键量精确约束，其余用正则化。}
+\end{compare}
+
+\begin{pitfall}[“罚 $\norm{\vb c}^2$ 和罚功率差不多”]
+系数的大小取决于基函数怎样归一化：把某个基函数放大一倍，它的系数就减半，$\norm{\vb c}^2$ 随之改变，物理的电流分布却没变。$\vb c^{\mathsf T}\vb R\vb c$ 与 $\vb c^{\mathsf T}\vb L\vb c$ 是功率与储能，不随基的选择改变。本例中两种罚项在同样误差下差了 $57\%$ 的功率。神经网络或其他代理模型的输出若用“系数”参数化，同样的问题会以更隐蔽的方式出现。
+\end{pitfall}
+
+\section{主动屏蔽、匀场与硬件约束}\label{sec:coils-hardware}
+
+\subsection{主动屏蔽：把代价从涡流挪到线圈上}
+\chref{ch:eddy} 的薄壳模型说明，梯度线圈外的导电结构（低温容器、磁体的极靴与磁轭）会产生涡流，拖慢梯度。\textbf{主动屏蔽}在主线圈外再加一层反向电流，让选定的外部区域里的场尽量为零，从源头上减少耦合。在 \eqref{eq:coilobjective} 里，它就是给 $\vb C$ 再加几行：外部区域（最好就是那些真实导体的位置）上的场，目标为零。屏蔽目标应当对应真实的结构与相关的频率，而不是为了方便随手取一个外部球面。
+
+\begin{example}[label=ex:coils-shield]{屏蔽的代价：长螺线管类比}
+沿用\exref{ex:eddy-shell}：半径 $a=0.25\,\mathrm m$ 的长线圈，外面 $R=0.30\,\mathrm m$ 处有铜壳，耦合系数 $\kappa=a^2/R^2=0.694$。在 $b=0.28\,\mathrm m$ 处加一层屏蔽面电流（教学值）。屏蔽电流应取多大？孔内每单位主线圈电流的场变成多少？要得到同样的孔内磁场，储能变为原来的几倍？
+\solution
+每层面电流像一个长螺线管，只在自己内部产生均匀的 $H$。取屏蔽电流 $K_2=-(a^2/b^2)K_1$，任何半径大于 $b$ 的同轴圆所包围的净磁通 $\mu_0\pi(a^2K_1+b^2K_2)=0$：铜壳所围的磁通不再随线圈电流变化，壳中没有涡流，孔内也就没有那条几十毫秒的“尾巴”。
+
+代价：孔内 $H=K_1+K_2=K_1(1-a^2/b^2)=0.203K_1$，同样的电流只剩约五分之一的场。要得到同样的孔内磁场 $H_0$，主线圈电流要乘以 $1/(1-a^2/b^2)$；两层之间还多出一个反向场区。合计储能为 $H_0^2\pi a^2$ 与 $K_2^2\pi(b^2-a^2)$ 之和（乘以 $\mu_0/2$），恰好是不屏蔽时的 $b^2/(b^2-a^2)=4.93$ 倍。
+
+这个类比描述的是均匀场；横向梯度线圈的场随角度变化，外部场衰减得更快，屏蔽的代价也不同，必须用同样的逆向设计方法、在真实几何中计算。它说明的是结构：屏蔽把涡流的代价换成了效率与储能的代价，屏蔽层离主线圈越近，代价越大。
+\end{example}
+
+\subsection{匀场}
+对一组位置固定的匀场线圈，令 $\vb S$ 的每一列是一个线圈每安培的场图，$\vb b_{\rm err}$ 是测得的基线误差。匀场电流 $\vb i$ 可由
+\begin{equation}
+\min_{\vb i,\,c_0}\ \norm{\vb W^{1/2}\bigl(\vb S\vb i+\vb b_{\rm err}-c_0\vb 1\bigr)}^2+\lambda\,\vb i^{\mathsf T}\vb R\,\vb i
+\label{eq:coils-shim}
+\end{equation}
+求出，并加上电流与功率的上下限。若绝对共振频率不是均匀性目标的一部分，$c_0$ 可以作为自由的整体偏移一起拟合——这正是\chref{ch:mri} 中 RMS 均匀度要扣除平均值的原因。权重 $\vb W$ 应当是积分权重，而不是网格节点数（\chref{ch:mri} 的误区框）。
+
+永磁体与磁轭中，$\vb S$ 应当是\emph{实际偏置工作点附近}的增量响应 \eqref{eq:biaslinearization}：极靴和磁轭会以增量磁导率响应匀场线圈的场。若匀场改变较大，或者主磁场随温度漂移，就要在新的工作点重新线性化。
+
+\subsection{电流上限之外的约束}
+只限制电流不能保证线圈可以实现。切换时端电压 $\vb V=\vb R\vb i+\vb L\dot{\vb i}$ \eqref{eq:multicircuit}决定放大器的电压与各通道之间的耦合；局部发热、峰值电流密度、线圈之间的力与力矩、机械支撑与占空比都是额外的约束。
+
+以\exref{ex:coils-biplanar} 的 $1\%$ 设计为例（$\psi_s$ 的最大值 $986\,\mathrm A$）：
+\begin{itemize}
+\item \emph{匝数与电压。}每圈 $100\,\mathrm A$ 时每个瓣约 10 圈，两块板串联后的电感 $L=2W/I_w^2=111\,\mu\mathrm H$，效率 $0.1\,\mathrm{mT/m}$ 每安培；在 $0.1\,\mathrm{ms}$ 内升到 $100\,\mathrm A$（即 $10\,\mathrm{mT/m}$）需要 $L\,\dd I/\dd t=111\,\mathrm V$。改成每圈 $50\,\mathrm A$：匝数加倍，电感变为四倍（$446\,\mu\mathrm H$），电流减半，电压却加倍（$223\,\mathrm V$）。上升沿末端的电压与电流之积 $LI\cdot I/T_r=2W/T_r=11.1\,\mathrm{kW}$（$T_r=0.1\,\mathrm{ms}$ 为上升时间）与匝数无关——它由场的储能和上升时间决定。用大电流换小电感，并不能减少实际的电压—电流需求。
+\item \emph{受力。}面力密度为 $\vb K_s\times\vb B_0$（$\mathrm{N/m^2}$）。本设计的最大面电流 $1.72\times10^4\,\mathrm{A/m}$，在 $0.1\,\mathrm T$ 中对应 $1.72\,\mathrm{kN/m^2}$；同样的电流放进 $1.5\,\mathrm T$ 就是 $25.8\,\mathrm{kN/m^2}$。均匀 $B_0$ 中，每块板受的净力与绕 $z$ 轴的净力矩都严格为零，但板上各处力的大小之和仍有 $202\,\mathrm N$。净力为零不等于局部应力小；详细的机械载荷要用实际的绕组计算，并计入自场与附近的磁性材料。
+\end{itemize}
+
+\section{FEM、边界方法与学习算子}\label{sec:coils-methods}
+
+逆向设计要反复计算 $\vb C$、$\vb R$、$\vb L$，场的计算方法因此格外要紧。几种方法各有适用的位置（\tabref{tab:coils-methods}）。
+
+\begin{table}[htbp]\centering\small
+\caption{线圈设计中三类场计算方法。}\label{tab:coils-methods}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{.17\linewidth} Y Y Y@{}}
+\toprule
+方法 & 擅长 & 必须用它的场合 & 要检查什么\\\midrule
+Biot--Savart、边界与积分方法 & 均匀线性背景中的面电流；不必划分大片空气；$\vb C$、$\vb L$ 可以直接写出 & 线圈周围没有导体与磁性材料，或只需第一轮设计 & 奇异积分（自感）的处理；与独立方法对照\\
+有限元（FEM） & 异质导体、非线性磁轭、永磁体、复杂边界~\cite{mfem} & 梯度板紧贴极靴与磁轭；涡流（\chref{ch:eddy}）；偏置下的增量响应 & 网格与外边界收敛；非线性工作点；源的归一化\\
+学习型算子（代理模型） & 一次训练、大量快速评估 & 需要在很多几何或解剖上反复求解时 & 源线性是否保留；在优化器实际使用的子空间内验证；最终用前向计算复核\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+两类方法常常组合使用：快速的源算子（面电流的 Biot--Savart）给出初级场，有限元只算导体或磁性材料的响应。TMS 线圈的优化就是这样：几何与组织固定时，\chref{ch:tms} 的源到电场算子 \eqref{eq:tmsoperator} 与一组线圈基函数组合，就可以在组织中的场泛函上做优化，同时惩罚电流、储能或外部场。即使解剖到算子的映射是非线性的，源幅值这一方向的物理仍然是线性的（\secref{sec:tms-operator}）。
+
+学习型代理模型值得多说几句，因为逆向设计会把它的弱点放大。代理模型应当保留（或至少显式地检验）源线性；应当保留单位归一化与坐标系；应当在\emph{优化器实际会去的}那部分源空间里验证，而不只是在训练分布上报告一个平均误差。优化器会主动利用欠约束的方向——就像\secref{sec:coils-regularization} 中精确约束会去用那些代价极高的模式一样——所以“前向平均误差 $2\%$”不保证优化出来的设计可靠。最后的候选设计必须经过独立的前向计算、扰动检查，并落实为可以制造的绕组。这与\chref{ch:lumped} 对集总模型的告诫是同一个道理。
+
+线圈造好了，组织里的电场也可以算出来了。可是电场最强的地方，为什么不一定是神经最先兴奋的地方？下一章从场走到神经响应。
+
+\begin{takeaways}
+\begin{itemize}
+\item 逆向问题的解不唯一，目标还可能违反 Maxwell 方程；必须先规定源空间与代价，最后对真实绕组做独立的前向复核。
+\item 流函数 $\vb K_s=\nabla_s\psi_s\times\vb n$ 让电流守恒自动成立；$\psi_s\vb n$ 是一层磁偶极子的面密度。取 $\Delta\psi_s=I_w$ 的等值线就是绕组，但引线、串联与线距都会改变原设计。
+\item $\vb C$、$\vb R$、$\vb L$ 来自同一组基：$P=\vb c^{\mathsf T}\vb R\vb c$，$W=\tfrac12\vb c^{\mathsf T}\vb L\vb c$。罚 $\norm{\vb c}^2$ 依赖于基的选择；教学例中同样 $1\%$ 误差多耗 $57\%$ 的功率。
+\item 正则化目标 \eqref{eq:coilobjective} 给出误差—代价的权衡曲线；精确约束 \eqref{eq:coils-exact} 只保证约束点上对，常常要贵得多。小奇异值对应高代价的场模式。
+\item 主动屏蔽把涡流的代价换成效率与储能的代价；匀场要用积分权重与偏置点处的增量响应；电压—电流之积由储能与上升时间决定，与匝数无关；净力为零不等于局部应力小。
+\item 均匀背景用 Biot--Savart 或边界方法，磁轭、极靴、涡流用有限元；代理模型必须在优化器实际使用的源空间里验证。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 把目标设成 $\vb b=(0,0,Gx)$ 交给最小二乘优化，会发生什么？优化器会报错吗？
+\item 一块带圆孔的平板做载体曲面。除了内部的流函数值，还要多一个什么未知量？它的物理意义是什么？
+\item \exref{ex:coils-biplanar} 的 $1\%$ 设计若改为每圈 $25\,\mathrm A$，每个瓣大约多少圈？线圈电感是多少？在 $0.1\,\mathrm{ms}$ 内升到满电流需要多大的电压？
+\item 把正弦基中的某一个基函数乘以 10，用 $\norm{\vb c}^2$ 正则化与用 $\vb c^{\mathsf T}\vb R\vb c$ 正则化，哪一个结果会变？为什么？
+\item 一个设计在 12 个约束点上精确满足目标。能说它在 DSV 上的误差为零吗？
+\item \exref{ex:coils-shield} 中，若把屏蔽层逐渐移近主线圈（$b\to a$），效率与储能怎样变化？
+\item 同样的绕组电流从 $0.1\,\mathrm T$ 的磁体移到 $1.5\,\mathrm T$ 的磁体中，最大面力密度变为多少？净力呢？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item 不会报错。目标的旋度不为零，任何电流都无法精确实现；优化器只会给出一个最小二乘折中，残差里至少包含目标中不相容的那一部分，往往还伴随很大的功率。应当改用 \eqref{eq:xgradient} 这样相容的目标。
+\item 孔边界上 $\psi_s$ 的常数（相对于外边界）。两条边界上的常数之差就是绕孔流动的净电流，是一个拓扑自由度。
+\item $986/25\approx39$ 圈；$L=2W/I_w^2=2\times0.557/25^2\approx1.78\,\mathrm{mH}$；$L\,\dd I/\dd t=1.78\,\mathrm{mH}\times25\,\mathrm A/0.1\,\mathrm{ms}\approx446\,\mathrm V$。电压与电流之积仍是 $11.1\,\mathrm{kW}$。
+\item 用 $\norm{\vb c}^2$ 的会变：那个系数缩小为十分之一，罚项对它几乎失效，设计会更多地使用这个模式。$\vb c^{\mathsf T}\vb R\vb c$ 是物理功率，与基的缩放无关，设计不变。
+\item 不能。约束点之间的场不受控制；本例 12 点精确约束的设计在检验点上仍有 $0.58\%$ 的 RMS 误差，功率还是同等误差正则化设计的两倍多。
+\item 效率 $1-a^2/b^2\to0$，储能比 $b^2/(b^2-a^2)\to\infty$：屏蔽层与主线圈的场几乎抵消，要很大的电流才能在孔内留下一点场。
+\item 面力密度与 $B_0$ 成正比，从 $1.72$ 增大到 $25.8\,\mathrm{kN/m^2}$。均匀 $B_0$ 中每块板的净力与净力矩仍为零，但局部应力大了 15 倍。
+\end{answers}

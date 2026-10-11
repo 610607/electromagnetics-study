@@ -1,0 +1,387 @@
+\chapter{标量有限元：从守恒到矩阵}\label{ch:femscalar}
+
+\begin{chapterguide}
+\guidequestion{一条偏微分方程怎样变成一个可以求解、可以检验的矩阵方程？软件交回来的一列节点电势，满足的究竟是什么方程——它在什么意义上守恒，在什么意义上只是近似？}
+\begin{guidegoals}
+\item 手算两单元导电棒：组装刚度矩阵，施加给定电势，由边界“反力”读出端子电流，并用三种方法算出同一个功率；
+\item 用测试函数从电流守恒推导弱形式，区分本质边界条件与自然边界条件；
+\item 由线性基函数的梯度计算单元矩阵，解释它为什么对称、行和为零、高度稀疏；
+\item 处理电势参考、电流相容性与完整电极模型，说清固定参考能修复什么、不能修复什么；
+\item 判断节点解守恒什么、不守恒什么，设计一次收敛实验，区分代数残差与离散误差。
+\end{guidegoals}
+\guideprereq{\eqref{eq:tespde} 与\secref{sec:tes-boundary}（电导方程与电流边界）；\secref{sec:tms-projection}（标量分部积分 \eqref{id:scalaribp}、自然边界条件）；\exref{ex:twolayer}（双层导体）；\eqref{eq:cem}（完整电极模型）。}
+\end{chapterguide}
+
+\section{先算一个最小的例子：两单元导电棒}\label{sec:femscalar-bar}
+
+前面几章一再把场的计算交给“有限元”：\chref{ch:tes} 与\chref{ch:tms} 的电导问题，\chref{ch:lumped} 与\chref{ch:magnets} 的二维磁场。按下“求解”之后，软件交回的是网格每个节点上的一个数，它们满足一个矩阵方程 $\vb K\vb u=\vb f$。本章回答几个具体问题：$\vb K$ 的每个元素是什么，$\vb f$ 是什么，边界条件进了哪里，解出来的数又能信到什么程度。
+
+先不谈一般理论，用一个能完全手算的例子把每个符号落到实处。后面所有的抽象，都只是把这个例子推广到三维。
+
+\subsubsection{问题。} 均匀导电棒长 $\ell=0.02\,\mathrm m$，截面积 $A=10^{-4}\,\mathrm{m^2}$，电导率 $\sigma=0.5\,\mathrm{S/m}$，侧面绝缘；左端电势 $\phi(0)=0.4\,\mathrm V$，右端 $\phi(\ell)=0$（教学输入）。电流只沿 $x$ 方向流动，电流守恒化为
+\begin{equation*}
+-\frac{\dd}{\dd x}\Bigl(\sigma A\,\frac{\dd\phi}{\dd x}\Bigr)=0 ,
+\end{equation*}
+答案显然是一条直线。正因为答案已知，它最适合用来看清有限元的每一步。
+
+\subsubsection{第一步：每个单元是一个电阻。} 在中点处把棒切成两段，各长 $h=0.01\,\mathrm m$，称为两个\textbf{单元}；三个端点称为\textbf{节点}，未知量是三个节点电势 $\phi_1$、$\phi_2$、$\phi_3$。假设电势在每个单元内线性变化（\secref{sec:femscalar-basis} 会把这个假设变成一套基函数），一个单元就是一个电导为
+\begin{equation*}
+G=\frac{\sigma A}{h}=5\,\mathrm{mS}\qquad(R=200\,\Omega)
+\end{equation*}
+的电阻。从单元两端的节点 $a$、$b$ 流进单元的电流分别是 $G(\phi_a-\phi_b)$ 与 $G(\phi_b-\phi_a)$，写成矩阵就是
+\begin{equation*}
+\begin{pmatrix}i_a\\ i_b\end{pmatrix}=\frac{\sigma A}{h}\begin{pmatrix}1&-1\\-1&1\end{pmatrix}\begin{pmatrix}\phi_a\\ \phi_b\end{pmatrix}.
+\end{equation*}
+这是一个单元的\textbf{单元矩阵}。它的两行之和为零：从一端流进单元多少电流，就从另一端流出多少。
+
+\subsubsection{第二步：组装。} 节点 2 同时属于两个单元。在每个节点上写基尔霍夫电流定律：从外部注入节点 $i$ 的电流 $f_i$，等于从这个节点流进各相邻单元的电流之和。于是只需把两个单元矩阵按节点编号叠加起来：
+\begin{keyeq}
+\vb K=0.005\begin{bmatrix}1&-1&0\\-1&2&-1\\0&-1&1\end{bmatrix}\mathrm S,\qquad
+\vb K\boldsymbol\phi=\vb f,\qquad
+\boldsymbol\phi=\begin{bmatrix}0.4\\0.2\\0\end{bmatrix}\mathrm V .
+\label{eq:barassembled}
+\end{keyeq}
+（$\boldsymbol\phi$ 的中间值在下一步求出。）$K_{22}=2G$ 是连在节点 2 上的两个电导之和；$K_{12}=K_{21}=-G$ 是节点 1、2 之间的电导取负号；节点 1 与节点 3 不属于同一个单元，$K_{13}=0$。这个矩阵叫\textbf{刚度矩阵}（名字来自结构力学），在电导问题里它就是一个\textbf{电导矩阵}：单位西门子，乘以伏特得到安培。
+
+\subsubsection{第三步：边界。} 两端电势已经给定，未知的只有 $\phi_2$。三行方程中，只有第 2 行是关于未知量的方程。节点 2 在棒的内部，外部没有电流注入，$f_2=0$：
+\begin{equation*}
+G\,(-\phi_1+2\phi_2-\phi_3)=0\quad\Longrightarrow\quad \phi_2=\frac{\phi_1+\phi_3}{2}=0.2\,\mathrm V .
+\end{equation*}
+第 1、3 行呢？那里的 $f_1$、$f_3$ 是电源从两个端子送进来的电流，事先并不知道。它们不是要满足的方程，而是要\emph{读出}的答案。
+
+\subsubsection{第四步：反力就是端子电流。} 把解代回去：
+\begin{equation*}
+\vb K\boldsymbol\phi=(1,\ 0,\ -1)^{\mathsf T}\,\mathrm{mA}.
+\end{equation*}
+第 1 个分量说，电源从左端子注入 $1\,\mathrm{mA}$；第 3 个分量说，右端子把 $1\,\mathrm{mA}$ 送回电源。借用结构力学的说法，这两个数称为\textbf{边界反力}（reaction）：给定位移的支座上有反力，给定电势的端子上有电流。三个分量之和为零，因为 $\vb K$ 的每一列（$\vb K$ 对称，也就是每一行）之和都为零——全局的电流平衡在离散方程里是\emph{精确}成立的。
+
+\begin{pitfall}[“三行都要等于零”]
+如果在给定两端电势的同时，又要求 $\vb K\boldsymbol\phi$ 的三个分量全部为零，第 1 行要求 $\phi_2=0.4\,\mathrm V$，第 3 行要求 $\phi_2=0$，方程组自相矛盾。给定电势的节点上，电流是待求的输出，不能再被规定。反过来，若把右端改为绝缘（$f_3=0$），$\phi_3$ 就必须重新成为未知量。
+\end{pitfall}
+
+\subsubsection{第五步：重建场与功率。} 每个单元内电势线性，电场为常数：
+\begin{equation*}
+E_x=-\frac{\phi_2-\phi_1}{h}=20\,\mathrm{V/m},\quad J_x=\sigma E_x=10\,\mathrm{A/m^2},\quad I=AJ_x=1\,\mathrm{mA},\quad R=\frac{0.4\,\mathrm V}{I}=400\,\Omega .
+\end{equation*}
+由场重建的电流与反力给出的端子电流相同。功率可以从三个角度计算：端子上的电压乘电流，节点电势的二次型，场的体积分。三者完全相等：
+\begin{keyeq}
+P=VI=\boldsymbol\phi^{\mathsf T}\vb K\boldsymbol\phi=\int_0^\ell\sigma A\Bigl(\frac{\dd\phi}{\dd x}\Bigr)^2\dd x=0.4\,\mathrm{mW}.
+\label{eq:barpower}
+\end{keyeq}
+直流功率前面没有 $\tfrac12$（$\tfrac12$ 来自正弦稳态下的峰值约定，\secref{sec:systems-energy}）。第二个等号不是巧合：$\boldsymbol\phi^{\mathsf T}\vb K\boldsymbol\phi=\sum_i\phi_i(\vb K\boldsymbol\phi)_i$ 正是“各节点电势乘以该节点注入电流”之和，只有两个端子有贡献。第三个等号将在\secref{sec:femscalar-basis} 中看到，它就是 $\vb K$ 的定义本身。
+
+\fig{two_element_bar}{两单元导电棒。左上：三个节点电势，两端给定，只有中点的 $\phi_2$ 是未知量。左下：棒、节点与单元，每个单元是一个 $5\,\mathrm{mS}$ 的电导。右：组装后的方程 $\vb K\boldsymbol\phi=\vb f$。第 2 行（灰底）是真正求解的方程，即节点 2 的电流平衡；第 1、3 行（绿底）在求解之后计算，给出两个端子的电流，即边界反力。右下：同一个功率的三种算法。}{fig:two_element_bar}
+
+\begin{intuition}[刚度矩阵就是一张电导网络]
+$\vb K$ 的每一行是一个节点的基尔霍夫电流定律；对角元是连到这个节点上的电导之和，非对角元是两个节点之间的电导取负号。每行之和为零，因为所有节点电势同时加上一个常数，不会驱动任何电流。三维的四面体网格也是这样一张网络，只是每个单元里的“电阻”由几何和电导率张量算出（\secref{sec:femscalar-basis}）。
+\end{intuition}
+
+\section{弱形式：用测试函数表达守恒}\label{sec:femscalar-weak}
+
+两单元棒里，“每个单元是一个电阻”一眼就能看出。三维头模型里，一个四面体在不同方向上连着不同的邻居，电导率还可能是张量，就需要一条系统的规则把方程变成矩阵。这条规则就是弱形式。它的思想其实已经出现在第 2 行里：节点 2 的方程不是“某一点上的微分方程”，而是“围绕节点 2 的一小段棒上，电流进出平衡”。
+
+\subsection{从守恒方程出发}
+设导电区域为 $\Omega$，外法向为 $\vb n$，电导率张量为 $\sig$。为了一次覆盖 TES 与 TMS，允许有一个给定的初级电场 $\vb E_p$（\chref{ch:tms}）：
+\begin{equation}
+\vb J=\sig(\vb E_p-\nabla\phi),\qquad \nabla\cdot\vb J=0\quad\text{在 }\Omega\text{ 内}.
+\label{eq:femscalar-strong}
+\end{equation}
+$\vb E_p=0$ 就是 TES 的 \eqref{eq:tespde}；$\vb E_p=-\partial_t\vb A_p$ 就是 TMS 的 \eqref{eq:tmspde}。边界分成两部分：$\Gamma_D$ 上给定电势（接地端子、给定电压的理想电极）；$\Gamma_N$ 上给定向外的电流密度 $g=\vb J\cdot\vb n$（绝缘处 $g=0$，注入电流的电极下 $g<0$，与 \eqref{eq:tesneumann} 的约定相同）。
+
+现在拿一个任意的函数 $v$ 乘以守恒方程，在整个区域上积分：
+\begin{equation*}
+\int_\Omega v\,\nabla\cdot\vb J\dV=0 .
+\end{equation*}
+$v$ 叫\textbf{测试函数}，可以把它看成一种“称重”的方式。取 $v=1$（在一块子区域上），这句话就是“这块区域的净流出电流为零”；取 $v$ 为棒中节点 2 的帐篷形函数，它就是第 2 行。对\emph{所有}允许的 $v$ 都成立，等价于处处守恒。
+
+\subsection{把导数挪到测试函数上}
+\secref{sec:tms-projection} 用过的标量分部积分 \eqref{id:scalaribp} 说：
+\begin{equation*}
+\int_\Omega v\,\nabla\cdot\vb F\dV=\oint_{\partial\Omega}v\,\vb F\cdot\vb n\dS-\int_\Omega\nabla v\cdot\vb F\dV .
+\end{equation*}
+取 $\vb F=\vb J$，得到 $\int_\Omega\nabla v\cdot\vb J\dV=\oint_{\partial\Omega}v\,\vb J\cdot\vb n\dS$。规定测试函数在 $\Gamma_D$ 上为零（那里的电势已知，不需要那里的方程），边界积分只剩 $\Gamma_N$ 部分，其中 $\vb J\cdot\vb n=g$。再代入 $\vb J=\sig(\vb E_p-\nabla\phi)$：
+\begin{keyeq}
+\int_\Omega(\nabla v)^{\mathsf T}\sig\nabla\phi\dV=\int_\Omega(\nabla v)^{\mathsf T}\sig\vb E_p\dV-\int_{\Gamma_N}v\,g\dS
+\qquad\text{对所有在 }\Gamma_D\text{ 上为零的 }v ,
+\label{eq:scalarweak}
+\end{keyeq}
+同时要求 $\phi$ 在 $\Gamma_D$ 上等于给定值。这就是电导问题的\textbf{弱形式}。$v$ 无量纲时，每一项都是电流（安培）：左边是电势驱动的电流，右边第一项是初级场的驱动，第二项是穿过边界的电流。若改用向内的电流密度 $j_{\rm in}=-g$，它对右端的贡献为正。
+
+\subsection{“弱”在哪里，不弱在哪里}
+\eqref{eq:scalarweak} 只含 $\phi$ 的一阶导数。在电导率跳变的界面上，$\phi$ 的斜率突然改变，二阶导数在经典意义下不存在，原来的微分方程无法逐点使用，弱形式却照样成立。更重要的是，界面上的法向电流连续 $\sigma_1\partial_n\phi_1=\sigma_2\partial_n\phi_2$ \eqref{eq:einterface}不需要另外施加：把 $v$ 分到界面两侧，两侧的边界项正好相互抵消——这正是\chref{ch:interfaces} 与\chref{ch:tes} 说“从散度形式出发，有限元会自动满足法向电流连续”的原因。
+
+所以“弱”只是指对光滑程度要求低，不是指物理守恒变得模糊。弱形式精确地规定了：近似解必须对哪些加权方式满足电荷守恒。有限元的做法是挑一组有限多个基函数，让近似解是它们的组合；再用同样的基函数作测试函数，每个测试函数给出一个方程（Galerkin 方法）。测试函数是对守恒方程的一种允许的“虚拟加权”；自由度是近似解在基函数上的一个系数。
+
+\begin{compare}{本质边界条件与自然边界条件}{本质（Dirichlet）：给定 $\phi$}{自然（Neumann）：给定 $\vb J\cdot\vb n$}
+\cmprow{物理例子}{接地端子；给定电压的理想等势电极}{绝缘的皮肤（$g=0$）；给定电流密度的电极}
+\cmprow{在弱形式中}{写进未知量本身：$\phi=\phi_D$；测试函数在那里取零}{出现在右端的边界积分 $-\int_{\Gamma_N}vg\dS$}
+\cmprow{离散系统中}{这些节点值已知，对应的行不参与求解}{这些节点照常是未知量}
+\cmprow{不设置时}{不会自动成立}{默认就是 $g=0$，即绝缘}
+\cmprow{求解后读出}{该处的电流（反力）}{该处的电势}
+\cmpsum{本质条件规定“值”，把边界节点从未知量里拿走，留下反力；自然条件规定“流”，写进右端。有限元软件里“什么都没设”的外表面，就是绝缘面。}
+\end{compare}
+
+\begin{deeper}[函数空间]
+\eqref{eq:scalarweak} 中的积分要有限，只需要 $\phi$ 与 $v$ 本身及其一阶（弱）导数平方可积，这样的函数组成空间 $H^1(\Omega)$；实对称正定的 $\sig$ 下，没有初级场时 $\int(\nabla\phi)^{\mathsf T}\sig\nabla\phi\dV$ 正是欧姆功率（\eqref{eq:barpower}，也是 \eqref{eq:tmsfunctional} 的两倍）。分片线性而\emph{连续}的函数属于 $H^1$；若函数在单元面上跳变，它的梯度在面上含有集中项，功率为无穷大，不属于 $H^1$。所以相容网格上的节点基函数必须连续。材料跳变只让 $\nabla\phi$ 跳变，并不要求 $\phi$ 本身跳变。
+\end{deeper}
+
+\section{线性基函数与单元矩阵}\label{sec:femscalar-basis}
+
+\subsection{一维：帽函数}
+在一维网格上，给每个节点 $x_i$ 配一个\textbf{帽函数} $N_i(x)$：它在自己的节点上为 1，在其他节点上为 0，在相邻节点之间线性变化（\figref{fig:hat_functions_1d}a）。近似解写成
+\begin{equation*}
+\phi_h(x)=\sum_iu_iN_i(x),
+\end{equation*}
+下标 $h$ 表示它依赖于网格。因为 $N_j(x_i)=\delta_{ij}$，系数 $u_i$ 正是节点电势；$\phi_h$ 就是把各节点值连起来的折线（\figref{fig:hat_functions_1d}b）。所有帽函数之和处处为 1，所以常数可以被精确表示。
+
+把 $\phi_h$ 代入一维的弱形式，测试函数依次取 $v=N_i$，得到 $\vb K\vb u=\vb f$，其中
+\begin{equation*}
+K_{ij}=\int\sigma A\,\frac{\dd N_i}{\dd x}\frac{\dd N_j}{\dd x}\,\dd x .
+\end{equation*}
+在长 $h_k$ 的一个单元上，两个帽函数的导数是 $\mp1/h_k$，积分给出 $(\sigma A/h_k)\bigl[\begin{smallmatrix}1&-1\\-1&1\end{smallmatrix}\bigr]$——这正是\secref{sec:femscalar-bar} 中凭直觉写下的“电阻”，现在由弱形式推了出来。两个帽函数只有在相邻时才同时不为零，所以 $K_{ij}$ 只在相邻节点之间非零，矩阵是三对角的（\figref{fig:hat_functions_1d}c、d）。由此也得到 \eqref{eq:barpower} 的第三个等号：$\boldsymbol\phi^{\mathsf T}\vb K\boldsymbol\phi=\int\sigma A(\dd\phi_h/\dd x)^2\dd x$。
+
+两单元棒的精确解本身是线性的，折线可以精确地表示它，所以节点值是精确的（自测第 2 题用四个单元验证了这一点）。一般问题的解不是分片线性的，$\phi_h$ 只是近似，误差有多大是\secref{sec:femscalar-convergence} 的话题。
+
+\fig{hat_functions_1d}{一维帽函数与刚度矩阵（节点间距故意取得不均匀，$h_k=x_k-x_{k-1}$）。(a) 每个帽函数在自己的节点上为 1、在其他节点上为 0；全部相加处处为 1。(b) 节点值乘以帽函数再相加，得到连接各节点的折线 $u_h$；虚线是被近似的光滑函数（示意）。(c) 两个帽函数的导数只在二者都不为零的那个单元上同时非零。(d) 所以 $K_{ij}$ 只在相邻节点之间非零，矩阵是三对角的；方框标出 $K_{22}$、$K_{23}$ 与 $K_{24}=0$。}{fig:hat_functions_1d}
+
+\subsection{三维：四面体上的重心函数}
+三维网格由四面体组成。给顶点 $i$ 配一个函数 $N_i$：在顶点 $i$ 处为 1，在同一四面体的其他三个顶点处为 0，在四面体内线性变化。它叫\textbf{重心函数}或线性节点基函数，二维的样子见\figref{fig:nodal_basis}：一顶以节点为顶点的“帐篷”。一个面上的函数值只由该面三个顶点的值决定，所以相邻四面体在公共面上自动连续。近似电势
+\begin{equation*}
+\phi_h(\vb r)=\sum_{i=1}^Nu_iN_i(\vb r),
+\end{equation*}
+$N$ 为全局节点数，$u_i$ 是以伏特计的节点电势。线性函数的梯度是常矢量，所以在每个四面体内 $\nabla N_i$ 为常数：它垂直于顶点 $i$ 对面的那个面，指向顶点 $i$，大小等于顶点到该面距离的倒数。于是每个四面体里的电场 $-\nabla\phi_h$ 也是常矢量。
+
+\fig{nodal_basis}{二维网格上的线性节点基函数。左：$N_i$ 是一顶以节点 $i$ 为顶、边缘落在相邻节点上的“帐篷”（颜色随高度加深）；相邻节点 $j$ 的帐篷（蓝，半透明）与它部分重叠。右：俯视图。紫色区域是 $N_i$ 不为零的范围（支集），箭头是 $\nabla N_i$：在每个三角形内为常矢量，指向节点 $i$。斜线区是 $N_i$ 与 $N_j$ 支集的公共部分，$K_{ij}$ 只从这里得到贡献；节点 $k$ 的支集（虚线）与 $N_i$ 不重叠，$K_{ik}=0$。三维中帐篷换成四面体上的重心函数，道理相同。}{fig:nodal_basis}
+
+\subsection{单元矩阵}
+把 $\phi_h$ 代入 \eqref{eq:scalarweak}，取 $v=N_i$。积分按单元拆开；单元 $e$ 的电导率为常数 $\sig_e$、体积为 $V_e$ 时，被积函数在单元内是常数，积分就是乘以体积：
+\begin{keyeq}
+K_{ij}^{(e)}=V_e\,(\nabla N_i)^{\mathsf T}\sig_e\nabla N_j ,\qquad K_{ij}=\sum_eK_{ij}^{(e)} .
+\label{eq:elementmatrix}
+\end{keyeq}
+只有当节点 $i$、$j$ 属于同一个单元时，$K_{ij}$ 才可能不为零。一个节点只与周围少数几个节点相邻，所以 $\vb K$ 的绝大多数元素为零——这就是有限元矩阵稀疏的原因。
+
+\begin{example}[label=ex:femscalar-tet]{参考四面体的单元矩阵}
+四面体的顶点为 $(0,0,0)$、$(a,0,0)$、$(0,a,0)$、$(0,0,a)$，电导率为标量 $\sigma$。求单元矩阵。
+\solution
+四个重心函数为
+\begin{equation*}
+N_0=1-\frac{x+y+z}{a},\qquad N_1=\frac xa,\quad N_2=\frac ya,\quad N_3=\frac za ,
+\end{equation*}
+梯度为 $\nabla N_0=-(1,1,1)/a$，$\nabla N_1=\vb e_x/a$，$\nabla N_2=\vb e_y/a$，$\nabla N_3=\vb e_z/a$；体积 $V_e=a^3/6$。代入 \eqref{eq:elementmatrix}：
+\begin{keyeq}
+\vb K^{(e)}=\frac{\sigma a}{6}
+\begin{pmatrix}
+3&-1&-1&-1\\
+-1&1&0&0\\
+-1&0&1&0\\
+-1&0&0&1
+\end{pmatrix}.
+\label{eq:tetraK}
+\end{keyeq}
+单位是西门子：$\sigma$ 乘以长度。取 $a=1\,\mathrm{cm}$、$\sigma=0.5\,\mathrm{S/m}$，$K_{00}=2.5\,\mathrm{mS}$。
+
+这个小矩阵已经包含了三件核心事实。\emph{局部守恒}：每行之和为零，四个节点电势同加一个常数，不产生电流。\emph{参考零空间}：它有一个零特征值，对应的特征向量是常数，其余特征值为正。\emph{几何决定电导}：节点 1、2 由一条棱相连，$K_{12}$ 却等于零，因为 $\nabla N_1\perp\nabla N_2$——有棱相连不一定有电导耦合，耦合的大小由形状决定。
+\end{example}
+
+\begin{deeper}[三角形单元的“电阻网络”与钝角]
+二维三角形（单位深度）上，由 \eqref{eq:elementmatrix} 可以算出 $K_{ij}=-\tfrac{\sigma}{2}\cot\theta_k$，$\theta_k$ 是棱 $ij$ 所对的内角。直角等腰三角形的单元矩阵为 $\tfrac\sigma2\bigl[\begin{smallmatrix}2&-1&-1\\-1&1&0\\-1&0&1\end{smallmatrix}\bigr]$：直角所对的那条棱上 $\cot90^\circ=0$，没有耦合。顶点 $(0,0)$、$(1,0)$、$(0.5,0.2)$ 的三角形在第三个顶点处的内角为 $136.4^\circ$，对应的非对角元变成 $+0.525\sigma$：网络里出现了一个“负电导”。单元矩阵仍然对称半正定，解仍然收敛；但“每个节点的电势落在相邻节点电势之间”这类性质不再有保证。网格质量影响的不只是精度。
+\end{deeper}
+
+\section{组装、边界与参考}\label{sec:femscalar-assembly}
+
+\subsection{组装与右端}
+组装就是\secref{sec:femscalar-bar} 第二步的推广：逐个单元算出 $\vb K^{(e)}$，按单元顶点的全局编号累加到 $\vb K$ 中。右端由 \eqref{eq:scalarweak} 的右边取 $v=N_i$ 得到：
+\begin{equation}
+\vb K\vb u=\vb f,\qquad
+f_i=\int_\Omega(\nabla N_i)^{\mathsf T}\sig\vb E_p\dV-\int_{\Gamma_N}N_i\,g\dS .
+\label{eq:femscalar-system}
+\end{equation}
+TMS 的右端来自第一项，TES 的右端来自电极上的第二项；两者共用同一个 $\vb K$（\secref{sec:tms-vs-tes}）。\chref{ch:tms} 写成积分点形式的 $\vb K=\vb G^{\mathsf T}\vb W\vb G$ 与 $\vb G^{\mathsf T}\vb W\vb P\vb d$，是同一件事的另一种记法。
+
+\subsection{给定电势：消元}
+把未知量分成自由节点 F 与给定节点 D。已知值所在的列移到右端：
+\begin{equation*}
+\vb K_{FF}\vb u_F=\vb f_F-\vb K_{FD}\vb u_D ,
+\end{equation*}
+求出 $\vb u_F$ 之后，给定节点上的反力 $\vb K_{DF}\vb u_F+\vb K_{DD}\vb u_D-\vb f_D$ 就是从外部流入的电流，正如两单元棒。这样消元保持了 $\vb K_{FF}$ 的对称性。一种常见的简便做法只把给定节点所在的\emph{行}换成单位行，却不处理对应的\emph{列}，矩阵因此不必要地失去对称性，适用于对称正定矩阵的求解器也就不能直接使用。
+
+\subsection{只给电流：相容性与参考}
+如果所有边界都只给电流（例如所有电极都是恒流源），就没有一个节点的电势被固定。这时 $\vb K\vb 1=\vb 0$：所有电势同加一个常数，方程不变，$\vb K$ 奇异。方程有解的条件是右端与这个零空间正交，
+\begin{equation*}
+\vb 1^{\mathsf T}\vb f=\sum_if_i=0 ,
+\end{equation*}
+即注入的电流总和为零。这正是 \eqref{eq:currentcompatibility} 的离散版本。
+
+去掉零空间有两种常用做法：把某个节点的电势固定为零（消元，\secref{sec:femscalar-bar} 的接地节点就是一例），或者要求平均电势为零。两者都只是选参考，不改变电场。但必须记住：\emph{固定参考只消去零空间，不能修复真实输入电流的不平衡}。
+
+\begin{example}[label=ex:femscalar-twolayer]{参考节点会“吞掉”不平衡的电流}
+把\exref{ex:twolayer} 的双层导体用两个单元离散：第 1 层 $8\,\mathrm{mm}$、$\sigma_1=0.2\,\mathrm{S/m}$，第 2 层 $2\,\mathrm{mm}$、$\sigma_2=0.02\,\mathrm{S/m}$，$A=10^{-4}\,\mathrm{m^2}$。(a) 节点 1 注入 $1\,\mathrm{mA}$，节点 3 接地，求节点电势、电阻、功率与节点 3 的反力。(b) 有人把两端都写成给定电流：节点 1 注入 $+1\,\mathrm{mA}$，节点 3 误写成 $-0.9\,\mathrm{mA}$；再令 $\phi_3=0$“定一个参考”。求解器会给出什么？
+\solution
+(a) 两个单元的电导为 $G_1=\sigma_1A/t_1=2.5\,\mathrm{mS}$、$G_2=1\,\mathrm{mS}$。去掉接地节点后，
+\begin{equation*}
+\begin{pmatrix}G_1&-G_1\\-G_1&G_1+G_2\end{pmatrix}\begin{pmatrix}\phi_1\\\phi_2\end{pmatrix}=\begin{pmatrix}1\,\mathrm{mA}\\0\end{pmatrix}
+\quad\Longrightarrow\quad \phi_1=1.4\,\mathrm V,\ \ \phi_2=1.0\,\mathrm V .
+\end{equation*}
+两层中 $E=50$、$500\,\mathrm{V/m}$，$J=10\,\mathrm{A/m^2}$，$R=1400\,\Omega$，$P=\boldsymbol\phi^{\mathsf T}\vb K\boldsymbol\phi=1.4\,\mathrm{mW}$，与\exref{ex:twolayer} 完全一致（精确解是分段线性的）。节点 3 的反力为 $-1\,\mathrm{mA}$。
+
+(b) 给定的电流之和为 $0.1\,\mathrm{mA}\neq0$，这组电流根本没有解。可是令 $\phi_3=0$ 时，节点 3 那一行连同写在那里的 $-0.9\,\mathrm{mA}$ 一起被消去了：求解器只解第 1、2 行，给出与 (a) 相同的电势，不报任何错误。事后计算节点 3 的反力，得到的是 $-1\,\mathrm{mA}$，而不是写进去的 $-0.9\,\mathrm{mA}$——那 $0.1\,\mathrm{mA}$ 的差额被参考节点悄悄“吞掉”了。检查办法很简单：求解后在\emph{所有}节点上计算 $\vb K\boldsymbol\phi-\vb f$，或者在求解前检查 $\vb 1^{\mathsf T}\vb f$。
+\end{example}
+
+每个在电气上互不相连的部分都有自己的零空间，需要各自满足相容条件、各自选参考。
+
+\begin{deeper}[零均值约束与求解器]
+零均值参考可以用一个 Lagrange 乘子 $\lambda$ 写进方程。取 $z_i=\int_\Omega N_i\dV$：
+\begin{equation*}
+\begin{pmatrix}\vb K&\vb z\\\vb z^{\mathsf T}&0\end{pmatrix}
+\begin{pmatrix}\vb u\\\lambda\end{pmatrix}
+=\begin{pmatrix}\vb f\\0\end{pmatrix}.
+\end{equation*}
+这个增广矩阵非奇异，但它是鞍点系统，特征值有正有负，不是正定的（检查脚本对\exref{ex:femscalar-twolayer} 验证了这一点，电场与接地时相同）。相比之下，连通区域上固定参考并消元后的实电导矩阵是对称正定的，适合带预条件的共轭梯度法。复导纳率 $Y=\sigma+\jj\omega\varepsilon$ \eqref{eq:admittivity}给出的复矩阵是复对称而不是 Hermite 正定的，不能因为实数版本用共轭梯度就照搬；直接法、GMRES 或合适的分块方法可能更合适。求解器的选择取决于矩阵的结构，不取决于应用的名称。
+\end{deeper}
+
+\section{完整电极模型的弱形式}\label{sec:femscalar-cem}
+
+\chref{ch:tes} 的完整电极模型 \eqref{eq:cem} 给每块电极 $l$ 一个未知的金属电势 $U_l$、一个面积比接触阻抗 $z_l>0$（单位 $\Omega\,\mathrm{m^2}$）和一个给定的总电流 $I_l$。它怎样进入矩阵？
+
+电极面 $e_l$ 是 $\Gamma_N$ 的一部分，那里向内的电流密度为 $j_{\rm in}=(U_l-\phi)/z_l$，即 $g=-(U_l-\phi)/z_l$。代入 \eqref{eq:scalarweak}（取 $\vb E_p=0$），边界项变成 $\sum_l z_l^{-1}\int_{e_l}(U_l-\phi)\,v\dS$。总电流约束 $\int_{e_l}(U_l-\phi)/z_l\dS=I_l$ 再乘以一个任意的“电极测试值” $V_l$，对 $l$ 求和。两式相加，整理成对称的形式：
+\begin{keyeq}
+\int_\Omega(\nabla v)^{\mathsf T}\sig\nabla\phi\dV+\sum_l\frac1{z_l}\int_{e_l}(\phi-U_l)(v-V_l)\dS=\sum_lI_lV_l .
+\label{eq:cemweak}
+\end{keyeq}
+未知量是组织中的 $\phi$ 与每块电极一个 $U_l$；测试函数是 $v$ 与每块电极一个 $V_l$。接触项对 $(\phi,U)$ 与 $(v,V)$ 对称：它是一层分布在电极下、每单位面积电导为 $1/z_l$ 的“接触电导”，把组织表面与电极金属连起来。右端规定的是每块电极的\emph{总}电流，而不是事先假设一个均匀的面电流密度——电流在电极下怎样分布，由求解决定~\cite{cem}。组织电势与电极电势仍然需要一个共同的参考（例如令某块电极的 $U_l=0$）。
+
+\begin{example}[label=ex:femscalar-cembar]{给导电棒加一个有接触阻抗的电极}
+\secref{sec:femscalar-bar} 的导电棒，右端接地；左端经过一块完整电极模型的电极注入 $I=1\,\mathrm{mA}$，接触阻抗 $z=0.02\,\Omega\,\mathrm{m^2}$（教学输入）。求电极电势 $U$ 与组织一侧的节点电势。
+\solution
+一维中电极面就是棒的截面，$\int_eN_1N_1\dS=A$，接触项化为 $(A/z)(\phi_1-U)(v_1-V)$：节点 1 与电极之间多了一个电导 $G_c=A/z=5\,\mathrm{mS}$（接触电阻 $200\,\Omega$）。以 $(\phi_1,\phi_2,U)$ 为未知量（$\phi_3=0$）：
+\begin{equation*}
+\begin{pmatrix}G+G_c&-G&-G_c\\-G&2G&0\\-G_c&0&G_c\end{pmatrix}
+\begin{pmatrix}\phi_1\\\phi_2\\U\end{pmatrix}=\begin{pmatrix}0\\0\\I\end{pmatrix},
+\qquad G=G_c=5\,\mathrm{mS}.
+\end{equation*}
+矩阵对称。解得 $U=0.6\,\mathrm V$，$\phi_1=0.4\,\mathrm V$，$\phi_2=0.2\,\mathrm V$：$1\,\mathrm{mA}$ 在接触层上降落 $0.2\,\mathrm V$，组织中的电势与\secref{sec:femscalar-bar} 相同。一维里电极只有一个点，完整电极模型真正的作用——电极下电流密度的不均匀与边缘集中——只有在二维、三维中才会出现（\secref{sec:tes-electrodes}）。
+\end{example}
+
+\section{节点解守恒什么，不守恒什么}\label{sec:femscalar-conservation}
+
+假设求解器把 $\vb K\vb u=\vb f$ 解到了 $10^{-13}$ 的相对残差。电流守恒是不是就“精确”了？答案取决于说的是哪一种守恒。
+
+\subsection{精确成立的}
+\begin{itemize}
+\item \emph{节点意义的守恒}：$\vb K\vb u=\vb f$ 的第 $i$ 行，就是以 $N_i$ 为权、围绕节点 $i$ 那一圈单元的电流平衡。它在代数残差的精度内成立。
+\item \emph{全局平衡}：$\vb K$ 的行和为零，所以所有反力与所有注入电流之和为零，误差不超过代数残差。端子电流用反力来读，与求解时满足的是同一组方程。
+\item \emph{能量恒等式}：$\vb u^{\mathsf T}\vb K\vb u=\int_\Omega(\nabla\phi_h)^{\mathsf T}\sig\nabla\phi_h\dV$。
+\item \emph{切向电场连续}：$\phi_h$ 连续，相邻单元的公共面上 $\phi_h$ 相同，沿面求导得到的切向电场也相同。
+\end{itemize}
+
+\subsection{不保证的}
+连续的分片线性电势在每个单元里给出常矢量电场，这个电场在单元之间不连续。切向分量连续，\emph{法向分量}却会跳变；于是单元面两侧的法向电流 $\vb J_h\cdot\vb n$ 一般不相等，即使两侧是同一种均匀材料。在\secref{sec:femscalar-convergence} 的制造解算例中，内部单元面上法向通量的最大跳变（相对于最大梯度）在 $n=8$、$16$、$32$、$64$ 时分别为 $0.53$、$0.27$、$0.14$、$0.069$——网格每加密一倍减半；切向分量的跳变则始终在舍入误差量级。这些跳变是离散误差，随网格加密而减小。
+
+由此得到三条实用的结论。
+\begin{enumerate}
+\item \textbf{面上的失配不是界面电荷。}真实的电导率界面上确实有面电荷（\secref{sec:interfaces-surfacecharge}），但均匀组织内部单元面上的通量失配是离散误差。把每一个失配都解释成“表面电荷”，就把数值误差当成了物理。
+\item \textbf{不要跨界面平均矢量。}把单元电场插值到节点或体素上时，若把界面两侧的矢量直接平均，就抹掉了真实的法向电场跳变 \eqref{eq:einterface}。需要局部守恒的量时，按材料分别插值，用通量积分（例如用反力求端子电流），或者用 $H(\mathrm{div})$ 相容的通量重建（\chref{ch:femvector} 的面空间）。
+\item \textbf{网格必须表达几何。}一层在网格化时就消失了的薄层，不会因为求解器更精确而回来。
+\end{enumerate}
+
+\begin{example}[label=ex:femscalar-thinlayer]{丢失的薄层}
+仍用\exref{ex:twolayer} 的双层导体（总厚 $10\,\mathrm{mm}$，其中 $2\,\mathrm{mm}$ 的低电导层），但改用等长单元，每个单元按其中心所在的层取电导率。分别用 2、4、5 个单元，注入 $1\,\mathrm{mA}$，电阻各是多少？
+\solution
+2 个单元（各 $5\,\mathrm{mm}$）：两个中心都落在第 1 层，低电导层整个消失，$R=500\,\Omega$，功率 $0.5\,\mathrm{mW}$，而真实值是 $1400\,\Omega$、$1.4\,\mathrm{mW}$。4 个单元（各 $2.5\,\mathrm{mm}$）：最后一个单元被标成低电导，低电导层变成了 $2.5\,\mathrm{mm}$，$R=1625\,\Omega$。5 个单元（各 $2\,\mathrm{mm}$）：界面正好落在节点上，$R=1400\,\Omega$，精确。三次计算的相对代数残差都小于 $10^{-14}$。低残差只说明\emph{按这张网格写下的}方程被精确地解了；网格本身描述的是不是那个物体，残差看不出来。
+\end{example}
+
+\begin{compare}{节点上的守恒与单元面上的守恒}{节点意义的守恒}{单元面上的通量守恒}
+\cmprow{说的是什么}{以 $N_i$ 为权，节点 $i$ 周围一圈单元的电流平衡}{每个单元面两侧的法向电流相等}
+\cmprow{节点解是否满足}{满足，精度等于代数残差}{一般不满足；失配随网格加密而减小}
+\cmprow{可靠的用法}{用反力读端子电流；全局电流平衡}{需要局部通量时做通量重建，或用混合方法}
+\cmprow{常见误读}{把它当作“每个单元都守恒”}{把均匀组织里的面失配当作界面电荷}
+\cmpsum{节点解守恒的是“加权的节点平衡”，不是“每个面上的通量”；要用后者，得另外构造。}
+\end{compare}
+
+\section{收敛实验}\label{sec:femscalar-convergence}
+
+代数残差告诉我们 $\vb K\vb u=\vb f$ 解得有多准。可是 $\phi_h$ 离真正的 $\phi$ 有多远？这需要一个答案已知的问题。
+
+\subsection{制造解}
+配套的 \texttt{numerics.py} 在单位正方形上求解
+\begin{equation}
+-\nabla^2u=f,\qquad u|_{\partial\Omega}=0,\qquad
+u_{\rm exact}(x,y)=\sin(\pi x)\sin(\pi y),\qquad f=2\pi^2\sin(\pi x)\sin(\pi y) .
+\end{equation}
+做法是先“制造”一个解，再算出它需要的源项 $f$。这是对实现的数学检验，不是说头部里有这样的体源。每边分成 $n$ 段，网格间距 $h=1/n$，共 $2n^2$ 个三角形；载荷与误差积分都用五次三角形积分公式，保证积分误差不会混进结果。
+
+记误差 $e=u_h-u_{\rm exact}$。电势误差用 $L^2$ 范数 $\norm{e}=(\int e^2\dV)^{1/2}$ 衡量；梯度（也就是电场）误差用 $H^1$ 半范数 $\abs{e}_{H^1}=(\int\abs{\nabla e}^2\dV)^{1/2}$ 衡量。相邻两套网格之间的实测阶数为 $p=\log_2(e_h/e_{h/2})$。结果见\tabref{tab:femscalar-convergence} 与\figref{fig:convergence}。
+
+\begin{table}[htbp]\centering\small
+\caption{制造解的实测误差与阶数（\texttt{numerics.run\_all}）。}\label{tab:femscalar-convergence}
+\begin{tabularx}{\linewidth}{@{}r r r Y Y c c@{}}
+\toprule
+$n$ & 节点数 & 单元数 & $L^2$ 误差 & $H^1$ 半范数误差 & $L^2$ 阶数 & $H^1$ 阶数\\\midrule
+8 & 81 & 128 & $2.1134\times10^{-2}$ & $4.3180\times10^{-1}$ & --- & ---\\
+16 & 289 & 512 & $5.3775\times10^{-3}$ & $2.1754\times10^{-1}$ & 1.975 & 0.989\\
+32 & 1089 & 2048 & $1.3504\times10^{-3}$ & $1.0898\times10^{-1}$ & 1.994 & 0.997\\
+64 & 4225 & 8192 & $3.3799\times10^{-4}$ & $5.4514\times10^{-2}$ & 1.998 & 0.999\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\fig{convergence}{制造解的收敛实验（数据由 \texttt{numerics.py} 计算，见\tabref{tab:femscalar-convergence}）。(a) 网格每加密一倍，电势的 $L^2$ 误差约降为 $1/4$（测得阶数接近 2），梯度（电场）的 $H^1$ 误差只降为 $1/2$（阶数接近 1）；图中数字是相邻两套网格之间测得的阶数，不是画上去的参考斜率。(b) 同样的误差除以精确解的范数，与相对代数残差画在一起：最细网格上残差约 $10^{-13}$，梯度的相对误差仍有 $2.45\%$。}{fig:convergence}
+
+\subsection{读这张表}
+电势误差按 $h^2$ 下降，梯度误差只按 $h$ 下降。TES、TMS 关心的是电场，也就是慢的那一个。在 $n=64$ 时，梯度的相对误差为 $2.45\%$（精确解的 $H^1$ 半范数为 $\pi/\sqrt2$）；按一阶收敛外推，要降到 $1\%$ 约需 $n\approx157$。三维中节点数随 $n^3$ 增长，误差每减半，节点数就要乘 8。
+
+最细网格的相对代数残差约为 $1.4\times10^{-13}$，梯度误差却约为 $5.45\times10^{-2}$，二者相差十一个数量级。它们回答的是两个不同的问题。
+
+\begin{compare}{代数残差与离散误差}{代数残差}{离散误差}
+\cmprow{定义}{$\norm{\vb K\vb u_h-\vb f}/\norm{\vb f}$}{$u-u_h$ 的某种范数，或某个观测量的偏差}
+\cmprow{回答的问题}{线性方程组解得有多准}{离散方程本身离连续问题有多远}
+\cmprow{怎样减小}{更严的求解器容差、更多迭代}{加密网格、提高单元阶次、改进几何}
+\cmprow{本例最细网格}{$1.4\times10^{-13}$}{梯度相对误差 $2.45\%$}
+\cmprow{需要什么才能算}{只需当前这一个解}{已知解，或一系列加密的网格}
+\cmpsum{残差小，只说明“按这张网格写下的方程”解对了；场准不准，要靠加密网格去测。}
+\end{compare}
+
+\subsection{没有精确解时怎样测阶数}
+真实的头模型没有精确解，但仍可以用三套逐次加密的网格测出收敛阶。设关心的量 $Q$（例如某点的电势、某区域的平均场）满足 $Q_h\approx Q+Ch^p$，则
+\begin{equation*}
+\frac{Q_h-Q_{h/2}}{Q_{h/2}-Q_{h/4}}\approx2^p .
+\end{equation*}
+以制造解中心点的值为例：$n=8$、$16$、$32$、$64$ 时 $u_h(\tfrac12,\tfrac12)=0.98725$、$0.99679$、$0.99920$、$0.99980$，由前三个算出 $p=1.99$，由后三个算出 $2.00$——没有用到精确值 1，却得到了正确的阶数。这个推断依赖于网格已经足够细、误差已经由 $h^p$ 项主导。
+
+实测阶数低于预期本身就是有用的信息。尖角与电极边缘处的奇异性、没有被网格分辨的界面、本身不光滑的真解、积分阶数不够、几何表示的误差，都会降低收敛阶。还要分清两件事：制造解验证的是程序的实现，不验证生物电导率模型是否正确（\chref{ch:practice}）。一份可信的收敛记录至少包括：网格序列，所关心的观测量，实测阶数，以及远小于离散误差的求解器容差。
+
+标量电势有一个方便之处：每个节点只放一个数，基函数是帐篷。三维的磁矢势有三个分量，最自然的想法是每个节点放三个数。下一章会看到，这样做丢掉了旋度算子最重要的结构；而非线性的铁，又会让矩阵本身随解而变。
+
+\begin{takeaways}
+\begin{itemize}
+\item 刚度矩阵是一张电导网络：每行是一个节点（以 $N_i$ 加权）的电流平衡，对角元是所连电导之和，非对角元是负的耦合电导，行和为零。给定电势的节点上，那一行在求解后给出端子电流（边界反力）。
+\item 弱形式 \eqref{eq:scalarweak} 只含一阶导数，在电导率跳变处照样成立，并自动包含法向电流连续。本质条件写进未知量，自然条件写进右端；“什么都不设”的表面是绝缘的。
+\item 单元矩阵 $V_e(\nabla N_i)^{\mathsf T}\sig_e\nabla N_j$ 由基函数的梯度直接算出。只有共享单元的节点才耦合，所以 $\vb K$ 稀疏、对称、半正定，常数是它的零空间。
+\item 只给电流时必须 $\vb 1^{\mathsf T}\vb f=0$；固定参考只消去零空间，不修复不平衡的输入。完整电极模型给每块电极增加一个电势未知量和一个对称的接触项。
+\item 节点解精确满足节点加权守恒与全局平衡；单元面上的法向通量只近似连续。网格丢掉的几何，求解器补不回来。
+\item 光滑问题上线性单元的电势误差为 $O(h^2)$，电场误差为 $O(h)$。小的代数残差不等于准确的场，收敛要用一系列网格来证明。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 把\secref{sec:femscalar-bar} 的右端改为绝缘（$\phi_3$ 未知、$f_3=0$），左端仍给定 $0.4\,\mathrm V$。$\phi_2$、$\phi_3$ 与电流各是多少？
+\item 把同一根棒分成四个等长单元。单元电导、节点电势与电阻各是多少？为什么节点电势与两单元时一样精确？
+\item 参考四面体 \eqref{eq:tetraK} 中 $K_{12}=0$，尽管节点 1、2 之间有一条棱。为什么？在二维三角形中，什么情况下非对角元为零，什么情况下为正？
+\item 一个 TES 模型只给了电极电流，求解器报告矩阵奇异。同事把一个节点的电势设为 $0$ 之后就得到了结果。这一步修复了什么，没有修复什么？应该补做什么检查？
+\item 在\exref{ex:femscalar-cembar} 中把接触阻抗加倍到 $z=0.04\,\Omega\,\mathrm{m^2}$。$U$ 与组织中的电势如何变化？在三维的电极下还会有什么变化？
+\item 制造解在 $n=64$ 时梯度相对误差为 $2.45\%$，代数残差为 $1.4\times10^{-13}$。若要电场误差降到 $1\%$，应当收紧求解器容差，还是加密网格？大约需要多大的 $n$？
+\item 均匀组织内部，两个相邻四面体公共面两侧的 $\vb J_h\cdot\vb n$ 不相等。能说那里有表面电荷吗？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item 未知量变为 $\phi_2$、$\phi_3$，第 2、3 行的右端都为零。第 3 行给出 $\phi_3=\phi_2$，第 2 行再给出 $\phi_2=\phi_1$，所以 $\phi_2=\phi_3=0.4\,\mathrm V$，没有电流，左端反力为零。
+\item 每个单元长 $5\,\mathrm{mm}$，$G=10\,\mathrm{mS}$；节点电势为 $0.4$、$0.3$、$0.2$、$0.1$、$0\,\mathrm V$，$R=400\,\Omega$。精确解是线性的，折线可以精确表示它，所以节点值与单元数无关。
+\item $\nabla N_1=\vb e_x/a$ 与 $\nabla N_2=\vb e_y/a$ 互相垂直，$V_e(\nabla N_1)^{\mathsf T}\sigma\nabla N_2=0$。三角形中 $K_{ij}=-\tfrac\sigma2\cot\theta_k$：棱 $ij$ 所对的角为直角时为零，为钝角时为正。
+\item 它消去了常数零空间，使矩阵可解；但没有检查 $\vb 1^{\mathsf T}\vb f=0$。若电极电流不平衡，差额会被参考节点吞掉（\exref{ex:femscalar-twolayer}）。应在求解前检查电流之和，求解后在所有节点上计算 $\vb K\boldsymbol\phi-\vb f$。
+\item 接触电导减半为 $2.5\,\mathrm{mS}$，接触层压降加倍为 $0.4\,\mathrm V$，$U=0.8\,\mathrm V$；组织中的电势仍是 $0.4$、$0.2$、$0\,\mathrm V$。三维中，接触阻抗越大，电极下的电流密度越均匀，边缘集中越弱（\secref{sec:tes-electrodes}）。
+\item 加密网格。残差已经远小于误差，收紧容差没有用。梯度误差按一阶收敛，$n\approx64\times2.45\approx157$。
+\item 不能。均匀材料内部的面通量失配是离散误差，网格加密时按 $h$ 减小；真实的界面电荷只出现在电导率跳变处，而且应当用界面两侧的场按 \eqref{eq:einterface} 计算。
+\end{answers}

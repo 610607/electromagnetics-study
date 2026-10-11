@@ -1,0 +1,415 @@
+\chapter{快与慢：静态、准静态与波}\label{ch:regimes}
+
+\begin{chapterguide}
+\guidequestion{MRI 梯度线圈的电流在快速切换。同样取 $3\,\mathrm{kHz}$，为什么计算人体里的电场时可以不管体内感应电流产生的磁场，计算旁边一块 $2\,\mathrm{mm}$ 厚的铜板时却必须管？频率高到什么程度，连“准静态”也不能用，必须回到完整的波动方程？}
+\begin{guidegoals}
+\item 用峰值相量把时间导数变成乘以 $\jj\omega$，写出复导纳率，并避免把同一份损耗计算两次；
+\item 写出三个无量纲数 $\eta_w$、$\eta_d$、$\eta_m$，说出每一个比较的是哪两种时间，以及长度 $\ell$ 应当怎样选；
+\item 区分静态、电准静态、磁准静态、单向耦合与全波各自保留、略去了 Maxwell 方程中的哪些项；
+\item 从 Maxwell 方程推出磁扩散方程与趋肤深度，并用它们定量回答本章的核心问题；
+\item 推出波动方程，分清“低频”“近场”“准静态”这三个常被混用的标签。
+\end{guidegoals}
+\guideprereq{\secref{sec:matter-displacement} 与\tabref{tab:maxwell}（位移电流与完整的 Maxwell 方程组）；\secref{sec:magnetic-faraday}（法拉第定律）；\chref{ch:interfaces}（界面电荷）；\secref{sec:systems-energy}（峰值与有效值）。}
+\end{chapterguide}
+
+\section{准静态不等于静态}\label{sec:regimes-quasistatic}
+
+设想一台 MRI 的梯度线圈正在切换。为了便于讨论，取一个教学频率 $f=3\,\mathrm{kHz}$，并看两样东西：一是线圈里的人体，用一块电导率 $0.5\,\mathrm{S/m}$、尺寸约 $0.20\,\mathrm m$ 的导体代表它；二是线圈外一块 $2\,\mathrm{mm}$ 厚的铜板，代表导电屏蔽或低温容器的壁。（这些都是教学数值，不对应某个受试者或某台设备。）两者处在同一个变化的磁场里，都会感应出电场和电流。
+
+问题是：这些感应电流产生的磁场，要不要反过来算进总磁场？对人体，答案是不用——\chref{ch:intro} 与\chref{ch:magnetic} 一直是这样做的：先算线圈的磁场，再算它在导体中感应的电场。对铜板，答案却是必须算：铜板里的感应电流会把变化的磁场挡在外面，并拖慢磁场的变化。频率相同，结论相反。本章要找出决定结论的那个量。
+
+先把一个词说清楚。\textbf{静态}问题中没有任何时间导数，场不随时间变化。\textbf{准静态}问题允许场随时间变化——可以振荡，可以向导体内部扩散，甚至可以产生很强的感应——只是在所需的精度内，略去了 Maxwell 方程中\emph{某一条}反馈。略去的是哪一条，决定了是哪一种准静态~\cite{haus,qslimits}。
+
+Maxwell 方程的两条旋度方程各含一个时间导数：
+\begin{equation}
+\nabla\times\vb E=-\frac{\partial\vb B}{\partial t},\qquad
+\nabla\times\vb H=\vb J_f+\frac{\partial\vb D}{\partial t}.
+\label{eq:regimes-curls}
+\end{equation}
+第一个让变化的磁场产生电场（磁 $\to$ 电），第二个让变化的电场产生磁场（电 $\to$ 磁）。导体中还有第三条路：电场驱动传导电流 $\sigma\vb E$，它出现在安培定律的右端，也会产生磁场。几条路同时保留，电与磁就互相“喂”下去，最终形成在空间中传播的波。
+
+\begin{intuition}[近似就是切断一条反馈]
+把 Maxwell 方程想成一个回路：磁场变化 $\to$ 感应电场 $\to$ 电流与位移电流 $\to$ 新的磁场 $\to$ ……。电准静态切断“磁 $\to$ 电”这一环；磁准静态切断位移电流这一环；单向耦合再切断“感应电流 $\to$ 磁场”这一环。近似不是因为某一项“看起来小”就把它删掉，而是论证了切断一条反馈后，所关心的结果几乎不变。
+\end{intuition}
+
+要做这种论证，需要比较时间：驱动变化有多快，每一条反馈起作用又要多久。下一节先准备处理正弦变化的标准工具，然后在\secref{sec:regimes-scales} 引入三把“尺子”。
+
+\section{相量：把时间导数变成乘法}\label{sec:regimes-phasor}
+
+线性系统在单一频率的正弦驱动下，所有场都以同一频率振荡，彼此只差幅值和相位。把幅值和相位打包成一个复数，就是\textbf{相量}。本书采用峰值约定：
+\begin{keyeq}
+\vb E(t)=\operatorname{Re}\bigl\{\widetilde{\vb E}\,e^{\jj\omega t}\bigr\},\qquad
+\frac{\partial}{\partial t}\;\longrightarrow\;\jj\omega .
+\label{eq:phasor}
+\end{keyeq}
+$\omega=2\pi f$ 为角频率（rad/s），$\jj^2=-1$；复矢量 $\widetilde{\vb E}$ 每个分量的模是该分量的峰值，辐角是它的相位。对 $e^{\jj\omega t}$ 求导等于乘以 $\jj\omega$，于是方程中所有的 $\partial_t$ 都变成乘法，时间从方程里消失了。
+
+使用相量时有三件事要记住。
+\begin{itemize}
+\item \emph{相量不是第二种场。}它只是记录幅值与相位的方式，物理场永远是实的 $\vb E(t)$。
+\item \emph{先相加，再求平方。}几个源的场按复矢量相加，之后才能取模、算功率或 SAR。先取模再相加会丢掉相位（\exref{ex:regimes-phasorsum}）。
+\item \emph{峰值与有效值。}二者相差 $\sqrt2$，二次量的周期平均因而相差 2 倍：峰值约定下 $\overline p=\tfrac12\sigma|\widetilde{\vb E}|^2$（\secref{sec:systems-energy} 已用数字算过）。另有一些书和软件采用 $e^{-\mathrm i\omega t}$ 约定，复数的虚部符号与本书相反；读入数据之前要先确认约定。
+\end{itemize}
+
+\begin{example}{两个源的场：先相加，再算热}\label{ex:regimes-phasorsum}
+$\sigma=0.5\,\mathrm{S/m}$ 的导体中某一点，两个线圈通道产生方向相同的电场，峰值相量的模都是 $100\,\mathrm{V/m}$。两者同相、相差 $90^\circ$、相差 $180^\circ$ 时，周期平均损耗密度各是多少？若把两个通道“各自的发热”相加呢？
+\solution
+总相量 $\widetilde E=100\,(1+e^{\jj\Delta})\,\mathrm{V/m}$，$\Delta$ 为相位差。同相：$|\widetilde E|=200\,\mathrm{V/m}$，$\overline p=\tfrac12\times0.5\times200^2=1.0\times10^4\,\mathrm{W/m^3}$。相差 $90^\circ$：$|\widetilde E|^2=2\times10^4\,\mathrm{V^2/m^2}$，$\overline p=5000\,\mathrm{W/m^3}$。反相：$\widetilde E=0$，没有损耗。每个通道单独作用时 $\overline p=2500\,\mathrm{W/m^3}$，二者相加为 $5000\,\mathrm{W/m^3}$——只在相位差恰为 $90^\circ$ 时碰巧正确。原因是热量是场的二次量：
+\begin{equation*}
+\tfrac12\sigma|\widetilde E_1+\widetilde E_2|^2=\tfrac12\sigma|\widetilde E_1|^2+\tfrac12\sigma|\widetilde E_2|^2+\sigma\operatorname{Re}\{\widetilde E_1\widetilde E_2^{*}\},
+\end{equation*}
+最后的交叉项可正可负。\chref{ch:framework} 会把它写成矩阵形式 \eqref{eq:sarQ}。
+\end{example}
+
+\subsection{复导纳率：传导电流与位移电流放在一起}
+线性材料中，正弦稳态下的传导电流 $\widetilde{\vb J}_c=\sig\widetilde{\vb E}$ 与位移电流 $\jj\omega\widetilde{\vb D}=\jj\omega\eps\widetilde{\vb E}$ 都正比于电场，可以合并：
+\begin{keyeq}
+\widetilde{\vb J}_c+\jj\omega\widetilde{\vb D}=\bigl(\sig+\jj\omega\eps\bigr)\widetilde{\vb E}\equiv\boldsymbol Y\widetilde{\vb E},
+\qquad Y=\sigma+\jj\omega\varepsilon\quad\text{（各向同性）}.
+\label{eq:admittivity}
+\end{keyeq}
+$\boldsymbol Y$ 叫\textbf{复导纳率}，单位 S/m。$\sigma$ 与 $\omega\varepsilon$ 单位相同，它们的比值 $\omega\varepsilon/\sigma$ 比较的是同一块材料中耗散性的传导电流与反应性的位移电流，而不是 $E$ 与 $B$ 谁大谁小；它本身也不是完整的准静态判据（\secref{sec:regimes-mqs}）。
+
+\begin{compare}{传导电流与位移电流}{传导电流 $\sig\widetilde{\vb E}$}{位移电流 $\jj\omega\widetilde{\vb D}$}
+\cmprow{是什么在动}{自由载流子的漂移}{束缚电荷的位移 $\partial_t\vb P$，加上不对应任何电荷运动的 $\varepsilon_0\partial_t\vb E$}
+\cmprow{与 $\widetilde{\vb E}$ 的相位}{同相（实 $\sigma$）}{超前 $90^\circ$（实 $\varepsilon$）}
+\cmprow{能量}{耗散为热}{储存、再归还（$\varepsilon''$ 的部分除外）}
+\cmprow{随频率}{$\sigma$ 本身可随频率变}{多一个因子 $\omega$}
+\cmprow{真空中}{没有}{仍然存在}
+\cmpsum{两者之比记作 $\eta_d=\omega\varepsilon/\sigma$（\secref{sec:regimes-scales}），它回答：在这个频率下，这块材料更像导体还是更像电介质。}
+\end{compare}
+
+材料参数一般随频率变化。在时域里，这意味着材料有“记忆”：此刻的响应还取决于过去的场。介电损耗也要记账。采用 $e^{\jj\omega t}$ 约定时，无源材料的介电损耗写成 $\widetilde\varepsilon=\varepsilon'-\jj\varepsilon''$，$\varepsilon''\ge0$；代入 \eqref{eq:admittivity}，总导纳率 $\sigma+\omega\varepsilon''+\jj\omega\varepsilon'$ 的实部多出 $\omega\varepsilon''$，它和 $\sigma$ 一样产生热。
+
+\begin{pitfall}[“数据库给了电导率，又给了介电损耗，两个都填进模型才完整”]
+有些数据库已经把介电损耗折算进了一个“有效电导率”；再把 $\omega\varepsilon''$ 另外加一次，同一份损耗就算了两遍，热会被高估。必须记录：输入的 $\sigma$ 是直流传导电导率，还是某个频率下包含全部损耗的有效系数。IT'IS 数据库分别提供随频率变化的介电参数与低频电导率汇编，并给出来源和变异范围。它们是有用的输入，却不保证代表某一个具体的受试者；对缺少直接测量的组织，所用的数据来源与替代规则也要记录~\cite{itisdielectric,itislf}。
+\end{pitfall}
+
+\section{三把尺子：三个时间尺度}\label{sec:regimes-scales}
+
+每一条反馈起作用都需要时间。把这些时间与驱动变化的时间 $1/\omega$ 比较，就能判断哪一条可以切断。导体中有三个基本的时间尺度。
+
+\subsection{电荷弛豫时间}
+把一团自由电荷放进导体内部，会发生什么？考虑均匀、各向同性的介质，$\sigma$、$\varepsilon$ 为常数，没有外加电流，$\vb J=\sigma\vb E$、$\vb D=\varepsilon\vb E$。由乘积法则 \eqref{id:product}（$\sigma$ 为常数，$\nabla\sigma=0$）与高斯定律，$\nabla\cdot\vb J=\sigma\nabla\cdot\vb E=\sigma\rho_f/\varepsilon$。代入连续性方程 \eqref{eq:continuity}：
+\begin{equation}
+\frac{\partial\rho_f}{\partial t}+\frac{\sigma}{\varepsilon}\rho_f=0,
+\qquad
+\rho_f(t)=\rho_f(0)\,e^{-t/\tau_q},
+\qquad \tau_q=\frac{\varepsilon}{\sigma}.
+\label{eq:relaxation}
+\end{equation}
+体内的自由电荷按时间常数 $\tau_q$ 指数衰减：它们被自己的电场推开，流到表面和界面上去。\secref{sec:interfaces-surfacecharge} 中界面电荷的积累也是这样一种弛豫过程，时间尺度同样是 $\varepsilon/\sigma$ 的量级。
+
+推导的假设都写在了上面，这很重要。$\tau_q$ 描述的是这种简单介质中体电荷的衰减；它不是神经膜的时间常数，也不意味着界面上的面电荷为零——只要材料不同、边界条件要求，稳态下界面上就有电荷（\chref{ch:interfaces}）。强色散的组织或分层介质，其完整的时间响应未必能用一个 $\varepsilon/\sigma$ 描述。这个推导的价值在于，它明确说出了哪些简化让 Maxwell 方程退化为传导主导的电流平衡~\cite{haus}。
+
+\subsection{磁扩散时间}
+导体里的磁场不能突然改变：磁场一变，导体中就感应出电流，而感应电流的磁场总是抵抗这个变化（楞次定律）。结果是，表面的磁场变化要经过一段时间才能“渗”进导体内部。\secref{sec:regimes-diffusion} 会证明，渗过厚度 $\ell$ 所需的时间为
+\begin{equation}
+\tau_m=\mu\sigma\ell^2 .
+\end{equation}
+电导率越高、磁导率越大、导体越厚，磁场渗入得越慢，感应电流对磁场的改写也越显著。
+
+\subsection{电磁波渡越时间}
+电磁扰动以有限的速度传播，穿过长度 $\ell$ 需要 $\tau_{em}=\ell\sqrt{\mu\varepsilon}$。在真空中穿过 $0.20\,\mathrm m$ 约需 $0.67\,\mathrm{ns}$。
+
+\subsection{三个无量纲数}
+把三个时间分别除以驱动时间 $1/\omega$：
+\begin{keyeq}
+\eta_w=\omega\ell\sqrt{\mu\varepsilon}=\omega\tau_{em},
+\qquad
+\eta_d=\frac{\omega\varepsilon}{\sigma}=\omega\tau_q,
+\qquad
+\eta_m=\omega\mu\sigma\ell^2=\omega\tau_m .
+\label{eq:scales}
+\end{keyeq}
+\begin{itemize}
+\item $\eta_w$ 比较电磁传播时间与驱动时间。它小，说明在物体尺度上看不出波的延迟。
+\item $\eta_d$ 比较导体中的位移电流与传导电流（正是上一节的 $\omega\varepsilon/\sigma$）。它小，说明电荷弛豫远快于驱动，电荷分布时时刻刻跟得上驱动。
+\item $\eta_m$ 估计长度 $\ell$ 上导电的磁反馈有多强。一个量级估计可以说明它的含义：源磁场 $B$ 在尺寸 $\ell$ 上感应的电场约为 $\omega B\ell$，电流密度约为 $\sigma\omega B\ell$，这些电流在尺度 $\ell$ 上产生的磁场约为 $\mu\sigma\omega B\ell^2=\eta_mB$。所以 $\eta_m\ll1$ 时，它就是“感应电流的磁场与源磁场之比”的量级；$\eta_m\gtrsim1$ 时这种逐级估计不再成立，感应电流会显著改写源磁场。
+\end{itemize}
+对这些均匀介质的估计，三者并不独立：
+\begin{equation}
+\eta_w^2=\eta_d\,\eta_m ,
+\end{equation}
+因为两边都等于 $\omega^2\mu\varepsilon\ell^2$。若 $\eta_d$ 与 $\eta_m$ 都很小，$\eta_w$ 必然也很小。
+
+\begin{intuition}[每个 $\eta$ 都是“反馈有多慢”与“驱动有多快”之比]
+$\eta\ll1$：反馈要么极快地完成（电荷弛豫），要么弱到在一个驱动周期内来不及积累（磁扩散、波的传播），都可以按“瞬时”或“可忽略”处理。$\eta\gtrsim1$：反馈与驱动同时进行，必须保留。
+\end{intuition}
+
+\subsubsection{长度 $\ell$ 选哪一个？} $\ell$ 不会自动等于网格间距。它可能是身体的直径、金属板的厚度、线圈的尺寸，或者闭合电流路径的大小——取决于要估计的是哪一条反馈。估计铜板的屏蔽时，磁场要穿过的是板的\emph{厚度}。
+
+\begin{example}{3 kHz 下的三把尺子}\label{ex:regimes-scales}
+取\secref{sec:regimes-quasistatic} 的两个教学导体：$\sigma=0.5\,\mathrm{S/m}$、$\ell=0.20\,\mathrm m$；铜 $\sigma=5.8\times10^7\,\mathrm{S/m}$、$\ell=2\,\mathrm{mm}$；$f=3\,\mathrm{kHz}$，$\mu=\mu_0$。(a) 两者的 $\eta_m$ 是多少？(b) 线圈周围空气中、尺度 $0.20\,\mathrm m$ 上的 $\eta_w$ 是多少？(c) 前一个导体的相对介电常数要多大，位移电流才与传导电流相当？
+\solution
+$\omega=2\pi f\approx1.885\times10^4\,\mathrm{rad/s}$。
+(a) $\eta_m=\omega\mu_0\sigma\ell^2$：前者为 $4.74\times10^{-4}$，铜为 $5.50$，相差约一万倍。前者感应电流的磁场只有源磁场的万分之几（量级），可以不管；铜的值大于 1，说明这种逐级估计已经失效：感应电流的磁场与源磁场同量级，会显著抵消并改写源磁场，必须保留。这正是核心问题前一半的关键数字（\secref{sec:regimes-oneway}）。
+(b) 空气中 $\eta_w=\omega\ell/c\approx1.26\times10^{-5}$：在这个尺度上完全看不出波的延迟（自由空间波长约 $100\,\mathrm{km}$）。
+(c) $\eta_d=\omega\varepsilon_0\varepsilon_r/\sigma=1$ 给出 $\varepsilon_r=\sigma/(\omega\varepsilon_0)\approx3.0\times10^6$；要 $\eta_d<0.01$，需 $\varepsilon_r<3.0\times10^4$。组织的有效介电常数随频率强烈变化，必须按所用频率从数据库或测量中取值再代入，不能凭印象估计~\cite{itisdielectric}。
+\end{example}
+
+\begin{pitfall}[“脉冲每秒才重复几次，所以是极低频问题”]
+判断近似要看场变化\emph{最快}的部分，而不是重复频率。上升时间 $t_r$ 对应的特征角频率约为 $1/t_r$：一个每秒只重复一次的脉冲，若上升沿为几十微秒，这个角频率就达到每秒 $10^4$ 弧度的量级，远高于重复频率。$\eta$ 应当用它来估计。
+\end{pitfall}
+
+\section{电准静态：保留电荷，略去感应}\label{sec:regimes-eqs}
+
+\textbf{电准静态}（electroquasistatic, EQS）略去法拉第定律中的 $\partial_t\vb B$：
+\begin{equation}
+\nabla\times\vb E\simeq0\quad\Longrightarrow\quad \vb E=-\nabla\phi\quad\text{（在合适的区域内）}.
+\end{equation}
+电场又有了电势，但电荷守恒仍然完整保留。对安培--麦克斯韦定律取散度 \eqref{eq:continuityfromampere}，总电流无散：
+\begin{equation}
+\nabla\cdot\Bigl(\vb J_f+\frac{\partial\vb D}{\partial t}\Bigr)=0 .
+\end{equation}
+对局部线性材料、内部没有外加源的区域，代入 $\vb J_f=-\sig\nabla\phi$、$\vb D=-\eps\nabla\phi$：
+\begin{keyeq}
+\nabla\cdot\Bigl(\sig\nabla\phi+\frac{\partial}{\partial t}\bigl(\eps\nabla\phi\bigr)\Bigr)=0 .
+\label{eq:eqs_general}
+\end{keyeq}
+这条方程的意思是：传导电流与位移电流之和处处无散。它保留了电荷弛豫——第二项正是电荷积累的速率。
+
+\subsubsection{两种极限。} 若在相关导体中 $\eta_d\ll1$，并且边界上的充电效应得到了合适的处理，第二项可以略去，得到 $\nabla\cdot(\sig\nabla\phi)=0$——这就是常用的电阻性 TES 模型 \eqref{eq:tespde}。若电容效应重要，EQS 仍然可能成立：这时应当保留位移项，而不是自动改用全波模型。正弦稳态下，\eqref{eq:eqs_general} 变为 $\nabla\cdot(\boldsymbol Y\nabla\widetilde\phi)=0$ \eqref{eq:tescomplex}；在界面上连续的是法向\emph{总}电流 $\vb n\cdot(\widetilde{\vb J}+\jj\omega\widetilde{\vb D})$，而不只是传导电流（把 \eqref{eq:jnormal} 与 \eqref{eq:normalbc} 合起来即得）。
+
+\subsubsection{磁场去了哪里？} EQS 并没有说磁场为零。电流照样产生磁场，需要时可以事后由安培定律算出；略去的只是这个磁场的\emph{变化}反过来对电场的影响。所以以传导为主的 EQS 模型还要求感应反馈弱：在相关电流回路的尺度上 $\eta_m\ll1$。在以位移电流为主的区域，则要检查传播延迟，即 $\eta_w\ll1$。这些是尺度上的指引；复杂的导体、长引线、谐振和电极阻抗都可能引入额外的尺度。
+
+\section{磁准静态：保留感应，略去位移电流}\label{sec:regimes-mqs}
+
+\textbf{磁准静态}（magnetoquasistatic, MQS）略去安培定律中的位移电流：
+\begin{keyeq}
+\nabla\times\vb H\simeq\vb J_f,\qquad
+\nabla\times\vb E=-\frac{\partial\vb B}{\partial t},\qquad \nabla\cdot\vb B=0 .
+\label{eq:mqs}
+\end{keyeq}
+法拉第定律完整保留，所以感应电场、涡流都还在模型里。对第一式取散度得 $\nabla\cdot\vb J_f\simeq0$：电流平衡中不再出现电荷积累的速率。但电荷本身并没有消失——导体表面与界面上的电荷仍在产生电场，正是它们让电流不流出导体（\secref{sec:interfaces-surfacecharge}）。
+
+MQS 的成立条件不是 $\eta_m$ 小。恰恰相反，$\eta_m$ 达到 1 或更大时 MQS 照样成立，而这正是磁扩散与屏蔽变得重要的情形（\secref{sec:regimes-diffusion}）。趋肤深度很小，本身\emph{不}会使 MQS 失效。MQS 真正需要的是位移电流的反馈可以忽略：装置在电学上很小（$\eta_w\ll1$），容性耦合的反馈也可以忽略。
+
+\begin{pitfall}[“空气里 $\omega\varepsilon/\sigma$ 是无穷大，位移电流占绝对优势，所以空气区域不能用 MQS”]
+$\omega\varepsilon/\sigma$ 是比较导体中两种电流的工具，不能机械地套用到 $\sigma\simeq0$ 的空气中——即使是完全合理的低频 MQS 线圈模型，这个比值在周围空气中也是发散的。空气中没有传导电流可比，需要检查的是：位移电流与辐射会不会明显改变源和场。装置的电尺寸很小（例如 $3\,\mathrm{kHz}$、$0.20\,\mathrm m$ 尺度上 $\eta_w\approx1.26\times10^{-5}$）、容性反馈可以忽略，是 MQS 的常见条件。
+\end{pitfall}
+
+
+\section{单向耦合：MQS 中再走一步}\label{sec:regimes-oneway}
+
+对弱导电、非磁性、$\eta_m\ll1$ 的物体，还可以在 MQS 之上再做一次近似：不考虑物体内感应电流对磁场的反馈。计算分成先后两步：
+\begin{enumerate}
+\item 只由线圈电流求磁矢势 $\vb A_p$（例如用 \eqref{eq:Agreen} 的积分，它的旋度就是 Biot–Savart 定律），它与物体无关；
+\item 以 $\vb E_p=-\partial_t\vb A_p$ 驱动物体中的导电问题，$\vb E=\vb E_p-\nabla\phi$，由 $\nabla\cdot(\sig\vb E)=0$ 与边界条件求 $\phi$（\chref{ch:tms} 的 \eqref{eq:tmspde}）。
+\end{enumerate}
+这叫\textbf{单向耦合}：磁场影响导体，导体不回头影响磁场。许多 TMS 模型依赖这一额外的近似；它不是最一般的 MQS~\cite{simnibs}。
+
+注意单向耦合保留了什么：感应（$\partial_t\vb B$）保留，物体表面与界面上的电荷及其电场 $-\nabla\phi$ 也保留——没有后者，电流就会流出头皮（\chref{ch:intro} 的第 4 步）。略去的只有两样：位移电流，以及物体内感应电流自己的磁场。由\secref{sec:regimes-scales} 的估计，后者与源磁场之比约为 $\eta_m$。
+
+于是可以回答核心问题的前一半：对同一个梯度磁场，人体（$\eta_m\approx5\times10^{-4}$）可以用单向耦合，而低温容器、导电屏蔽或磁轭（铜板的 $\eta_m\approx5.5$）必须用耦合的涡流模型（\chref{ch:eddy}）。同一个仿真里两种处理可以并存。
+
+
+\section{对照：五种模型各保留了什么}\label{sec:regimes-compare}
+
+\figref{fig:regime_terms} 把五种模型放在同一张表里：每一列是 Maxwell 方程中的一条耦合，每一行是一种模型。最常被并列的是两种准静态，它们切断的是不同的反馈：
+
+\begin{compare}{电准静态与磁准静态}{电准静态 EQS}{磁准静态 MQS}
+\cmprow{略去}{法拉第定律中的 $\partial_t\vb B$}{安培定律中的 $\partial_t\vb D$}
+\cmprow{电场}{无旋：$\vb E=-\nabla\phi$}{有环流：$\vb E=-\partial_t\vb A-\nabla\phi$}
+\cmprow{电流平衡}{$\nabla\cdot(\vb J_f+\partial_t\vb D)=0$，保留电荷弛豫}{$\nabla\cdot\vb J_f=0$}
+\cmprow{主要未知量}{电标势 $\phi$}{磁矢势 $\vb A$（导体中再加 $\phi$）}
+\cmprow{需要小的数}{$\eta_m$（以及位移区的 $\eta_w$）}{$\eta_w$；$\eta_m$ 可以很大}
+\cmpsum{EQS 里电荷是主角，磁场只是旁观者；MQS 里电流与磁场是主角，电荷只负责让电流留在导体里。}
+\end{compare}
+
+\fig[.82]{regime_terms}{五种模型保留、略去了哪些耦合。四列依次是：法拉第定律中的 $\partial_t\vb B$（变化的磁场产生电场）、安培定律中的位移电流 $\partial_t\vb D$、导体中感应电流对磁场的反馈，以及电流平衡中的电荷积累率 $\partial_t\rho$。左侧小字是各自需要的条件，右侧是典型问题。所有模型都保留电荷本身及其电场。}{fig:regime_terms}
+
+从上往下读：静态没有任何时间变化，电与磁完全分开，各解各的。EQS 只切断“磁 $\to$ 电”，保留电荷的弛豫。MQS 只切断位移电流，保留感应与涡流。单向耦合在 MQS 的基础上再切断涡流反馈。全波什么都不切。
+
+另一对容易混淆的概念是单向耦合与完整的 MQS。
+
+\begin{compare}{单向耦合与耦合 MQS}{单向耦合}{耦合 MQS（涡流反馈）}
+\cmprow{磁场从哪来}{只由源电流决定，先算好}{源电流加感应电流，与导体一起求解}
+\cmprow{未知量}{导体中的电标势 $\phi$}{全空间的 $\vb A$，加导体中的 $\phi$ \eqref{eq:av_mqs}}
+\cmprow{对波形}{$\vb E$ 逐时刻正比于 $\dd I/\dd t$（\chref{ch:magnetic}）}{场有记忆：滞后于电流，随频率改变形状}
+\cmprow{需要}{$\eta_m\ll1$，非磁性}{$\eta_w\ll1$；$\eta_m$ 可大可小}
+\cmprow{典型问题}{TMS；梯度场在人体中}{屏蔽、低温容器、磁轭中的涡流}
+\cmpsum{单向耦合“先算磁场，再算电场”；耦合 MQS 必须让磁场和感应电流一起算。}
+\end{compare}
+
+\section{磁扩散与趋肤深度}\label{sec:regimes-diffusion}
+
+$\eta_m$ 不小时会发生什么？这一节推导铜板里磁场的行为，并给出\secref{sec:regimes-scales} 中 $\tau_m$ 的来历。先需要一个新的恒等式。
+
+\subsection{旋度的旋度}
+对任意光滑矢量场 $\vb F$，
+\begin{equation}
+\nabla\times(\nabla\times\vb F)=\nabla(\nabla\cdot\vb F)-\nabla^2\vb F .
+\tag{V6}\label{id:curlcurl}
+\end{equation}
+这里 $\nabla^2\vb F$ 是矢量拉普拉斯，在直角坐标中就是对每个分量分别作用标量拉普拉斯（\chref{ch:calculus}）。这个\textbf{旋度的旋度恒等式}常用于推导扩散方程与波动方程。注意它右端有一个 $\nabla(\nabla\cdot\vb F)$：只有在另有理由说明 $\nabla\cdot\vb F=0$ 时，才能把它丢掉。
+
+\begin{deeper}[逐分量验证 \eqref{id:curlcurl}]
+取 $x$ 分量：$[\nabla\times(\nabla\times\vb F)]_x=\partial_y(\partial_xF_y-\partial_yF_x)-\partial_z(\partial_zF_x-\partial_xF_z)$。加上再减去 $\partial_x^2F_x$，整理得 $\partial_x(\partial_xF_x+\partial_yF_y+\partial_zF_z)-(\partial_x^2+\partial_y^2+\partial_z^2)F_x=\partial_x(\nabla\cdot\vb F)-\nabla^2F_x$。$y$、$z$ 分量同理。
+\end{deeper}
+
+\subsection{扩散方程}
+取均匀、无外加源的导体，$\mu$、$\sigma$ 为常数标量。MQS 给出
+\begin{equation}
+\nabla\times\vb H=\sigma\vb E,\qquad \nabla\times\vb E=-\mu\frac{\partial\vb H}{\partial t}.
+\end{equation}
+对第一式取旋度，右端用第二式代入：$\nabla\times(\nabla\times\vb H)=\sigma\nabla\times\vb E=-\mu\sigma\,\partial_t\vb H$。左端用 \eqref{id:curlcurl}；由于 $\mu$ 为常数且 $\nabla\cdot\vb B=0$，有 $\nabla\cdot\vb H=0$，第一项为零。于是
+\begin{keyeq}
+\frac{\partial\vb H}{\partial t}=\frac{1}{\mu\sigma}\nabla^2\vb H .
+\label{eq:diffusion}
+\end{keyeq}
+这与热传导方程的形式完全相同，“扩散系数” $1/(\mu\sigma)$ 的单位是 $\mathrm{m^2/s}$。扩散过长度 $\ell$ 所需的时间约为 $\ell^2$ 除以扩散系数，即 $\tau_m=\mu\sigma\ell^2$。电导率和磁导率越高，磁场渗入越慢。
+
+\begin{intuition}[磁场像热一样渗进导体]
+把一块冷铁放进热水里，表面立刻变热，内部要等一会儿，而且越深越晚、越弱。磁场进入导体也是这样：表面的磁场变了，内部要经过一段时间才跟上。快速振荡的表面磁场来不及渗进去，就只能停留在表面附近的一薄层里。
+\end{intuition}
+\eqref{eq:diffusion} 的推导用到了常系数。非线性铁磁体不直接满足它，需要在工作点附近使用微分响应，或者求解完整的非线性时域问题~\cite{haus}（\chref{ch:bh}、\chref{ch:eddy}）。
+
+\subsection{半空间中的正弦扩散：趋肤深度}
+设导体占据 $x>0$，在表面 $x=0$ 处施加正弦变化的切向磁场。设
+\begin{equation*}
+H_y(x,t)=\operatorname{Re}\bigl\{H_0\,e^{-qx}\,e^{\jj\omega t}\bigr\}.
+\end{equation*}
+代入 \eqref{eq:diffusion}，$\partial_t\to\jj\omega$、$\nabla^2\to\dd^2/\dd x^2$，得 $\jj\omega=q^2/(\mu\sigma)$，即 $q^2=\jj\omega\mu\sigma$。取实部为正的根（场向导体内部衰减）：
+\begin{keyeq}
+q=\frac{1+\jj}{\delta},\qquad
+\delta=\sqrt{\frac{2}{\omega\mu\sigma}},\qquad
+\eta_m=2\Bigl(\frac{\ell}{\delta}\Bigr)^2 .
+\label{eq:skindepth}
+\end{keyeq}
+于是 $H_y=H_0\,e^{-x/\delta}\cos(\omega t-x/\delta)$（\figref{fig:diffusion}）。$\delta$ 叫\textbf{趋肤深度}：每深入一个 $\delta$，幅值降为 $e^{-1}\approx0.37$，相位滞后 1 弧度；约 $4.6\delta$ 处，幅值降到表面的 1\%。
+
+\fig{diffusion}{导电半空间中的磁扩散。左：四个时刻的 $H_y$ 剖面（颜色由深到浅），虚线为包络 $\pm e^{-x/\delta}$；图样像向内传播的波，但每走一个 $\delta$ 幅值就降为 $e^{-1}$。右：同一个解的相量 $\widetilde H_y(x)/H_0$ 在复平面上画出一条向内收缩的螺线，每深入一个 $\delta$，长度乘 $e^{-1}$，转过 $-1$ 弧度。相位的变化与幅值的衰减同样是解的一部分。}{fig:diffusion}
+
+电流也挤在这一薄层里。由 $\nabla\times\vb H=\vb J$，$J_z=\partial_xH_y$，其相量为 $-qH_0e^{-qx}$，同样按 $e^{-x/\delta}$ 衰减，表面处的幅值为 $\sqrt2H_0/\delta$。这就是\textbf{趋肤效应}：它是电流与场的扩散式重新分布，并不说明问题已经变成了远场辐射。
+\eqref{eq:skindepth} 中的最后一式把两种语言连了起来：$\eta_m\ll1$ 等价于 $\delta\gg\ell$，磁场几乎原样穿过导体；$\eta_m\gtrsim1$ 等价于 $\delta\lesssim\ell$，磁场被挡在表面一层里。
+
+\subsection{回到核心问题}
+\tabref{tab:regimes-3khz} 把\exref{ex:regimes-scales} 的两个导体放在一起。
+
+\begin{table}[htbp]\centering\small
+\caption{$f=3\,\mathrm{kHz}$、$\mu=\mu_0$ 时两个教学导体的尺度估计。这些是计算得到的量级，不是某个受试者或线圈的材料规格；位移电流能否忽略，还需要按频率选用合适的介电参数来检验。}\label{tab:regimes-3khz}
+\begin{tabularx}{\linewidth}{@{}Y l l l l@{}}
+\toprule
+教学模型 & $\ell$ & $\delta$ & $\ell/\delta$ & $\eta_m$\\\midrule
+$\sigma=0.5\,\mathrm{S/m}$ 的导体 & $0.20\,\mathrm m$ & $12.995\,\mathrm m$ & $0.0154$ & $4.74\times10^{-4}$\\
+铜，$\sigma=5.8\times10^7\,\mathrm{S/m}$ & $2\,\mathrm{mm}$ & $1.207\,\mathrm{mm}$ & $1.66$ & $5.50$\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+第一种导体的趋肤深度约 $13\,\mathrm m$，远大于它的尺寸，磁场几乎原样穿过；在这个尺度上忽略体内感应电流的磁场是有依据的。铜板的趋肤深度只有约 $1.2\,\mathrm{mm}$，比板还薄，磁场与电流都会在板内明显地重新分布。于是同一个 MRI 梯度场，可以对人体采用单向耦合，同时对低温容器、导电屏蔽或磁轭采用耦合的涡流模型（\figref{fig:skin_depth}）。
+
+\fig{skin_depth}{两种非磁性导体的尺度估计。左：趋肤深度随频率的变化（实线），虚线是各自的尺寸 $\ell$；圆点为 $3\,\mathrm{kHz}$ 的值。实线与虚线的相对位置决定磁场能否穿过。右：$\eta_m=2(\ell/\delta)^2$ 与 1 的比较。把常数电导率外推到高频只是为了展示尺度，并不说明整个装置在那些频率下仍然准静态。}{fig:skin_depth}
+
+\begin{pitfall}[“铜的趋肤深度比板还薄，说明已经不是准静态了，得用全波求解器”]
+趋肤效应是 MQS 内部的扩散现象，由 \eqref{eq:mqs} 完整描述。决定要不要全波的是 $\eta_w$：$3\,\mathrm{kHz}$ 下 $2\,\mathrm{mm}$ 尺度上 $\eta_w$ 只有约 $10^{-7}$。$\delta$ 小，说明需要\emph{耦合}的 MQS，而不是全波。
+\end{pitfall}
+
+\section{波动方程从哪里来}\label{sec:regimes-wave}
+
+核心问题的后一半：什么时候必须保留全部耦合？在均匀、无源、各向同性的介质中，正弦稳态的两条旋度方程为
+\begin{equation}
+\nabla\times\widetilde{\vb E}=-\jj\omega\mu\widetilde{\vb H},
+\qquad
+\nabla\times\widetilde{\vb H}=(\sigma+\jj\omega\varepsilon)\widetilde{\vb E}.
+\end{equation}
+对第一式取旋度，代入第二式：$\nabla\times(\nabla\times\widetilde{\vb E})=-\jj\omega\mu(\sigma+\jj\omega\varepsilon)\widetilde{\vb E}$。对第二式取散度，系数为常数，得 $\nabla\cdot\widetilde{\vb E}=0$，所以由 \eqref{id:curlcurl}，左端就是 $-\nabla^2\widetilde{\vb E}$。于是
+\begin{keyeq}
+\nabla^2\widetilde{\vb E}+k^2\widetilde{\vb E}=0,
+\qquad
+k^2=\omega^2\mu\varepsilon-\jj\omega\mu\sigma .
+\label{eq:wave}
+\end{keyeq}
+$k^2$ 的两项各有来历：$\omega^2\mu\varepsilon$ 来自位移电流，$-\jj\omega\mu\sigma$ 来自传导电流。略去前者（MQS），方程就变成相量形式的扩散方程 $\nabla^2\widetilde{\vb E}=\jj\omega\mu\sigma\widetilde{\vb E}$——上一节的磁扩散只是 \eqref{eq:wave} 的一个极限。
+
+采用向外传播的空间约定 $e^{-\jj kr}$，把波数写成 $k=\beta-\jj\alpha$，衰减系数 $\alpha\ge0$，相位系数 $\beta\ge0$。两个极限：
+\begin{itemize}
+\item \emph{无损介质}（$\sigma=0$）：$k=\omega\sqrt{\mu\varepsilon}$，波长 $\lambda=2\pi/k$。场在空间中周期性地重复，振幅不衰减。这里的 $\lambda$ 是波长，与\secref{sec:magnetic-linkage} 的磁链 $\lambda$ 只是同一个字母。
+\item \emph{良导体}（$\eta_d\ll1$）：$k\simeq(1-\jj)/\delta$。$e^{-\jj kx}=e^{-x/\delta}e^{-\jj x/\delta}$，与\secref{sec:regimes-diffusion} 的半空间解完全一致（$q=\jj k$）。
+\end{itemize}
+
+由此得到一个重要的区分。在电介质中，$|k|\ell$ 小表示在物体尺度上波的变化小。在导体中，$k$ 还包含扩散：铜板在 $3\,\mathrm{kHz}$ 下 $|k|\ell\approx\sqrt{\eta_m}$ 已经大于 1，MQS 却完全适用。如果把 $|k|\ell\ll1$ 当作所有 MQS 模型的普遍前提，就会错误地排除有效的趋肤效应模型。定义一种近似的，是它略去的物理耦合，而不是某个形式上的波数条件。趋肤深度与波长也都不是物体固有的“解剖长度”，它们的意义取决于介质和所保留的方程。
+
+\begin{compare}{趋肤深度与波长}{趋肤深度 $\delta$}{波长 $\lambda$}
+\cmprow{来自 $k^2$ 的哪一项}{传导项 $-\jj\omega\mu\sigma$}{位移项 $\omega^2\mu\varepsilon$}
+\cmprow{描述的过程}{扩散：一边衰减，一边相位滞后}{传播：振幅不变，相位周期性重复}
+\cmprow{公式}{$\sqrt{2/(\omega\mu\sigma)}$}{$2\pi/(\omega\sqrt{\mu\varepsilon})$}
+\cmprow{随频率}{$\propto f^{-1/2}$}{$\propto f^{-1}$}
+\cmprow{能量}{在导体中变成热}{被波带走（无损时）}
+\cmprow{在哪种模型里}{MQS（含涡流）}{全波}
+\cmpsum{$\delta$ 量的是“渗进去多深”，$\lambda$ 量的是“一个周期传多远”；$\delta$ 小并不意味着需要全波。}
+\end{compare}
+
+\section{对照：低频、近场与准静态}\label{sec:regimes-labels}
+
+“低频”“近场”“准静态”经常被当作同义词使用。它们其实描述三件不同的事。
+
+\subsection{近场与远场是空间上的范围}
+在无损环境中，一个电尺寸很小的局域源，其多极场包含形如
+\begin{equation}
+\frac{1}{r^3},\qquad \frac{k}{r^2},\qquad \frac{k^2}{r}
+\label{eq:nearfar}
+\end{equation}
+的距离项，系数依赖于源和方向。磁偶极子的 $E$ 与 $H$ 中，这些幂次并不以相同的系数出现，电近场与磁近场的主导尺度也不同。$kr\ll1$ 时，反应性项与感应项占主导；$kr\gg1$ 且避开方向图的零点时，辐射的 $1/r$ 项占主导。两者之间是逐渐过渡的，没有一条突变的物理边界~\cite{haus}。
+
+\fig{near_far}{近场与远场。左：无损小源展开中三种距离幂次的归一化包络，在 $kr=1$ 处相交；背景颜色由蓝到黄表示从反应性近场到辐射区的逐渐过渡。这些曲线说明不同的项为什么随距离交替主导，它们不是完整的偶极场解，也不是普遍的近场边界。右：$128\,\mathrm{MHz}$ 时的波长与教学长度 $\ell=0.20\,\mathrm m$ 的比较；$\varepsilon_r=80$ 是演示用的比较介质，不是指定的组织参数。}{fig:near_far}
+
+远区的平面波中，$E$ 与 $H$ 由波阻抗联系；反应性近场中，二者的比值不固定为自由空间的值。源的大小也有关系：大口径源的远场判据还包含量级为“口径尺寸的平方除以波长”的距离，不只是 $r\gg\lambda/(2\pi)$。
+
+\begin{example}{128 MHz 的射频线圈}\label{ex:regimes-rf}
+MRI 射频线圈可以离人体只有几厘米，却仍需要全波求解。以 $128\,\mathrm{MHz}$ 为例：自由空间波长是多少？在一个假设 $\varepsilon_r=80$、$\mu_r=1$ 的无损比较介质中呢？与教学长度 $\ell=0.20\,\mathrm m$ 相比如何？
+\solution
+自由空间 $\lambda_0=c/f\approx2.34\,\mathrm m$，$k_0\ell=2\pi\ell/\lambda_0\approx0.54$——在 $0.20\,\mathrm m$ 上相位已经变化半弧度以上，谈不上“$\ll1$”。比较介质中 $\lambda=\lambda_0/\sqrt{80}\approx0.262\,\mathrm m$，$k\ell\approx4.8$：物体内部的相位变化好几弧度，场的形状由波决定。作为对照，$3\,\mathrm{kHz}$ 的自由空间波长约 $100\,\mathrm{km}$，两个频率相差四万多倍。$\varepsilon_r=80$ 是演示用的假设，不是组织参数；电导率、空间变化的介电常数、负载、调谐电容和屏蔽几何都会进一步改变实际的场（\chref{ch:rf}）。
+\end{example}
+
+这个例子说明：线圈“靠得很近”只说明观察点在近场范围内，并不说明可以略去位移电流。要不要全波，看的是 $\eta_w$——物体尺度上的波效应——而不是离源有多远。
+
+\begin{table}[htbp]\centering\small
+\caption{三个不能混为一谈的标签。}\label{tab:regimes-labels}
+\begin{tabularx}{\linewidth}{@{}l Y Y Y@{}}
+\toprule
+标签 & 描述什么 & 相对于什么 & 不能推出什么\\\midrule
+低频 & 驱动变化的快慢 & 物理时间尺度：$\tau_q$、$\tau_m$、$\tau_{em}$ & 不能推出 $\eta_m$ 小：铜在 $3\,\mathrm{kHz}$ 下 $\eta_m=5.5$\\
+近场 & 观察点与源的空间关系 & 波长 $\lambda/(2\pi)$ 与源的尺寸 & 不能推出准静态：$128\,\mathrm{MHz}$ 的射频线圈旁仍需全波\\
+准静态 & 略去了哪一条 Maxwell 耦合 & 具体的反馈：位移电流、感应、涡流反馈 & 不能推出场不随时间变化，也不能推出趋肤效应可以忽略\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\tabref{tab:regimes-labels} 可以浓缩为一句话：“低频”说的是时间，“近场”说的是空间，“准静态”说的是方程；任何一个标签本身都不能保证另外两个成立。
+
+本章反复用到了 $\vb E=-\partial_t\vb A-\nabla\phi$：EQS 只剩 $-\nabla\phi$，单向耦合先求 $\vb A_p$ 再求 $\phi$，耦合 MQS 同时求两者。可是同一个电场可以写成许多组不同的 $(\vb A,\phi)$。这些不同的写法是什么关系？哪些量可以拿来比较，哪些不行？这是下一章的问题。
+
+\begin{takeaways}
+\begin{itemize}
+\item 准静态不等于静态：场可以振荡、扩散、产生强烈的感应，只是略去了 Maxwell 方程中的某一条反馈。EQS 略去 $\partial_t\vb B$，MQS 略去 $\partial_t\vb D$，单向耦合再略去感应电流对磁场的反馈。
+\item 峰值相量 $\vb E(t)=\operatorname{Re}\{\widetilde{\vb E}e^{\jj\omega t}\}$ 把 $\partial_t$ 变成 $\jj\omega$；多个源的场先作复数相加再求功率。复导纳率 $Y=\sigma+\jj\omega\varepsilon$；同一份介电损耗不能计算两次。
+\item 三把尺子：$\eta_w=\omega\ell\sqrt{\mu\varepsilon}$（波的延迟）、$\eta_d=\omega\varepsilon/\sigma$（位移与传导之比）、$\eta_m=\omega\mu\sigma\ell^2$（感应电流的磁场与源磁场之比的量级），$\eta_w^2=\eta_d\eta_m$。$\ell$ 要按所估计的反馈来选；时间尺度看最快的上升沿。
+\item 均匀导体中的磁场满足扩散方程 $\partial_t\vb H=\nabla^2\vb H/(\mu\sigma)$；趋肤深度 $\delta=\sqrt{2/(\omega\mu\sigma)}$，$\eta_m=2(\ell/\delta)^2$。$3\,\mathrm{kHz}$ 下 $0.5\,\mathrm{S/m}$、$0.20\,\mathrm m$ 的导体 $\delta\approx13\,\mathrm m$，可用单向耦合；$2\,\mathrm{mm}$ 铜板 $\delta\approx1.2\,\mathrm{mm}$，必须用耦合的涡流模型。
+\item 波动方程 $\nabla^2\widetilde{\vb E}+k^2\widetilde{\vb E}=0$，$k^2=\omega^2\mu\varepsilon-\jj\omega\mu\sigma$，扩散是它的良导体极限。趋肤深度小不意味着需要全波；需要全波的是 $\eta_w$ 不小的问题，例如 $128\,\mathrm{MHz}$ 的射频场。
+\item “低频”说时间，“近场”说空间，“准静态”说方程，三者互不蕴含。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 一个 TMS 刺激器每秒发出一个脉冲。有人据此按 $1\,\mathrm{Hz}$ 判断近似。错在哪里？
+\item 把\exref{ex:regimes-scales} 中的铜板换成 $0.2\,\mathrm{mm}$ 厚，其余不变，$\eta_m$ 变为多少？感应电流的磁场大约是源磁场的多大比例？
+\item 频率从 $3\,\mathrm{kHz}$ 提高到 $30\,\mathrm{kHz}$，$\sigma=0.5\,\mathrm{S/m}$、$\ell=0.20\,\mathrm m$ 的导体的 $\delta$ 与 $\eta_m$ 各变为多少？单向耦合还适用吗？
+\item \exref{ex:regimes-phasorsum} 中若两个通道相差 $60^\circ$，周期平均损耗密度是多少？
+\item MQS 中 $\nabla\cdot\vb J_f=0$。这是否意味着导体里没有电荷，也没有电荷产生的电场？
+\item 同事说：“$3\,\mathrm{kHz}$ 下铜的趋肤深度只有 $1.2\,\mathrm{mm}$，比屏蔽板还薄，所以必须用全波求解器。”你怎样回答？
+\item 一个 $128\,\mathrm{MHz}$ 的射频线圈离观察点 $5\,\mathrm{cm}$。按自由空间波长算，$kr$ 是多少？这个点在“近场”吗？这能说明可以用准静态模型吗？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item 近似由场变化最快的部分决定。脉冲的上升沿远比 $1\,\mathrm s$ 短，应当用 $\omega\sim1/t_r$ 估计 $\eta$，而不是用重复频率。
+\item $\eta_m\propto\ell^2$，缩小为原来的 $1/100$：$\eta_m\approx0.055$。按\secref{sec:regimes-scales} 的量级估计，感应电流的磁场约为源磁场的百分之几；能否忽略取决于所需的精度，不能不加检查就用单向耦合。
+\item $\delta\propto f^{-1/2}$：$\delta\approx12.995/\sqrt{10}\,\mathrm m\approx4.1\,\mathrm m$；$\eta_m\propto f$：约 $4.7\times10^{-3}$。仍远小于 1，忽略体内感应电流的磁场仍然有依据（位移电流需另按介电参数检查）。
+\item $|1+e^{\jj\pi/3}|^2=2+2\cos60^\circ=3$，$\overline p=\tfrac12\times0.5\times100^2\times3=7500\,\mathrm{W/m^3}$，比各自发热之和 $5000\,\mathrm{W/m^3}$ 大。
+\item 不是。$\nabla\cdot\vb J_f=0$ 只说明电荷积累的\emph{速率}不进入电流平衡。导体表面与界面上仍有电荷，它们的电场 $-\nabla\phi$ 让电流不流出导体；单向耦合的 TMS 模型正是靠它得到次级电场。
+\item 趋肤效应是 MQS 中的磁扩散，由 \eqref{eq:mqs} 完整描述。要不要全波由 $\eta_w$ 决定，$3\,\mathrm{kHz}$ 下 $2\,\mathrm{mm}$ 尺度上 $\eta_w\sim10^{-7}$。$\delta<\ell$ 说明需要\emph{耦合的} MQS（涡流反馈），而不是全波。
+\item $kr=2\pi\times0.05/2.34\approx0.13<1$，按自由空间算在反应性近场范围内。但这不能说明可以略去位移电流：即使按自由空间算，$0.20\,\mathrm m$ 尺度上 $k_0\ell\approx0.54$ 也不是 $\ll1$；组织的介电常数大于真空，体内波长更短（\exref{ex:regimes-rf}）。仍需全波模型。
+\end{answers}

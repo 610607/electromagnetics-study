@@ -1,0 +1,249 @@
+\chapter{场的几何：梯度、散度与旋度}\label{ch:calculus}
+
+\begin{chapterguide}
+\guidequestion{一张矢量场图里，“源头”与“漩涡”分别在哪里？怎样用数学语言把它们准确地说出来？}
+\begin{guidegoals}
+\item 从等高线图读出梯度的方向与大小，并用梯度定理把路径积分化为两端的差；
+\item 由“小盒子的净流出”推导散度，由“小回路的环流”推导旋度，进而理解散度定理与 Stokes 定理；
+\item 对给定的场计算散度与旋度，区分有源、有旋、两者皆无的场，并解释为什么局部方程还需要边界信息；
+\item 用两个恒为零的组合说明电标势与磁矢势为什么存在；
+\item 用乘积法则说明随位置变化的材料系数为什么不能移到微分号外面。
+\end{guidegoals}
+\guideprereq{多元微积分（偏导数、曲线积分与曲面积分）；\chref{ch:intro}（四条 Maxwell 方程的文字读法）。}
+\end{chapterguide}
+
+\chref{ch:intro} 用两个词读出了 Maxwell 方程：散度说明通量从哪里来，旋度说明环流由什么驱动。可是面对一张矢量场图，凭眼睛能分辨出哪里有“源头”、哪里有“漩涡”吗？像喷泉一样向外散开的箭头显然有源，像旋涡一样打转的箭头显然有旋。但有些场的箭头一边汇聚、一边散开，有些场的场线是笔直的，有些是一圈圈的圆——它们有源吗？有旋吗？\secref{sec:calc-compare} 会看到，眼睛在这里常常出错。
+
+本章把“源头”和“漩涡”变成可以计算的运算。思路始终只有一个：在一点附近放一个很小的“探针”——一段小位移、一个小盒子、一个小回路——看场在探针上做了什么，再让探针缩小到一点。三种探针分别给出梯度、散度和旋度。
+
+\section{梯度：等高线与“下坡”}\label{sec:calc-grad}
+
+先看标量场。把 $\phi(x,y)$ 想象成地形的高度，画出等高线，就得到一张地形图（\figref{fig:gradient_contours}a）。站在某一点向某个方向迈出一小步 $\dd\vb r=(\dd x,\dd y,\dd z)$，高度的变化是
+\begin{equation}
+\dd\phi=\frac{\partial\phi}{\partial x}\dd x+\frac{\partial\phi}{\partial y}\dd y+\frac{\partial\phi}{\partial z}\dd z
+=\nabla\phi\cdot\dd\vb r,
+\qquad
+\nabla\phi=\bigl(\partial_x\phi,\;\partial_y\phi,\;\partial_z\phi\bigr).
+\label{eq:calc-dphi}
+\end{equation}
+矢量 $\nabla\phi$ 叫作 $\phi$ 的\textbf{梯度}。把点积写成 $\dd\phi=\abs{\nabla\phi}\abs{\dd\vb r}\cos\theta$（\figref{fig:gradient_contours}b），立刻读出梯度的两个几何性质：
+\begin{itemize}
+\item 沿等高线走，高度不变，$\dd\phi=0$，所以 $\cos\theta=0$：\emph{梯度垂直于等高线}（三维中垂直于等值面）。
+\item 当 $\theta=0$ 时 $\dd\phi$ 最大：\emph{梯度指向上坡最陡的方向}，它的大小就是这个方向上每单位长度升高多少。反过来，$-\nabla\phi$ 指向下坡最陡的方向。
+\end{itemize}
+单位也随之确定：若 $\phi$ 以伏特计，$\nabla\phi$ 就以 V/m 计。\chref{ch:electric} 会看到，静电场正是电势的“下坡”：$\vb E=-\nabla\phi$。
+
+\fig{gradient_contours}{(a) 一个无量纲的教学“地形” $\phi(x,y)$：紫色为等高线，黑色箭头只表示 $\nabla\phi$ 的方向。箭头处处垂直于等高线并指向上坡，在山顶与谷底附近汇聚或散开。从 $a$ 到 $b$ 的两条路径（实线、虚线）上数值积分 $\int\nabla\phi\cdot\dd\boldsymbol\ell$，结果相同，都等于 $\phi(b)-\phi(a)$。(b) 放大到一点附近，等高线近似为平行直线，$\dd\phi=\nabla\phi\cdot\dd\vb r$。}{fig:gradient_contours}
+
+沿一条从 $a$ 到 $b$ 的路径把这些小步的高度变化加起来，得到\textbf{梯度定理}：
+\begin{keyeq}
+\phi(b)-\phi(a)=\int_a^b\nabla\phi\cdot\dd\boldsymbol\ell .
+\label{eq:gradthm}
+\end{keyeq}
+这只是“总升高等于每一步升高之和”。它有一个重要推论：积分结果只取决于起点和终点，与路径无关。\figref{fig:gradient_contours}a 中，实线径直穿过山坡，虚线绕上山顶再下来，积分结果完全相同。如果路径闭合（$b=a$），则
+\begin{equation}
+\oint\nabla\phi\cdot\dd\boldsymbol\ell=0 .
+\label{eq:calc-gradloop}
+\end{equation}
+绕一圈回到原地，高度不会变。反过来说：\emph{一个矢量场如果沿某个闭合回路的积分不为零，它就不可能处处是某个标量的梯度}。\chref{ch:magnetic} 中的感应电场正是这样的场。
+
+\section{散度：小盒子的净流出}\label{sec:calc-div}
+
+矢量场 $\vb F$ 穿过一块曲面 $S$ 的\textbf{通量}是 $\int_S\vb F\cdot\vb n\dS$，$\vb n$ 是选定的单位法向。如果 $\vb F$ 是水流的速度，通量就是每秒穿过这张“网”的水的体积。对于闭合曲面，约定 $\vb n$ 指向外，通量就是\emph{净流出}：流出为正，流入为负。
+
+\fig{div_curl_3d}{两种“探针”。左：放在发散场中的小立方体，穿过各面向外的通量之和为正，说明盒内有源，$\nabla\cdot\vb F>0$。右：放在旋转场中的小方形回路，沿回路的环流为正；按右手规则，环流的方向与法向 $\vb n$ 对应，说明 $(\nabla\times\vb F)\cdot\vb n>0$。}{fig:div_curl_3d}
+
+现在在点 $(x,y,z)$ 处放一个边长为 $\Delta x,\Delta y,\Delta z$ 的小盒子（\figref{fig:div_curl_3d} 左）。先看垂直于 $x$ 轴的两个面：右面流出 $F_x(x+\Delta x,y,z)\,\Delta y\Delta z$，左面流入 $F_x(x,y,z)\,\Delta y\Delta z$，二者之差约为
+\begin{equation*}
+\bigl[F_x(x+\Delta x,y,z)-F_x(x,y,z)\bigr]\Delta y\Delta z\approx\frac{\partial F_x}{\partial x}\,\Delta x\Delta y\Delta z .
+\end{equation*}
+另外两对面同理。三对面加起来，盒子的净流出约为 $(\partial_xF_x+\partial_yF_y+\partial_zF_z)\Delta V$。把它除以体积，再让盒子缩到一点，就得到\textbf{散度}：
+\begin{equation}
+\nabla\cdot\vb F=\lim_{\Delta V\to0}\frac{1}{\Delta V}\oint_{\partial(\Delta V)}\vb F\cdot\vb n\dS
+=\partial_xF_x+\partial_yF_y+\partial_zF_z .
+\label{eq:calc-divdef}
+\end{equation}
+散度是“单位体积的净流出”，一个标量。散度为正的地方像泉眼，为负的地方像漏斗，为零的地方进多少就出多少。
+
+把一个有限的体积 $V$ 切成许多小盒子，再把所有小盒子的净流出加起来。两个相邻盒子共用的那个面上，一个盒子的流出恰好是另一个盒子的流入，二者相互抵消；剩下的只有最外层的表面。于是得到\textbf{散度定理}：
+\begin{equation}
+\int_V\nabla\cdot\vb F\dV=\oint_{\partial V}\vb F\cdot\vb n\dS.
+\tag{V1}\label{id:div}
+\end{equation}
+左边把体内各处的“源”加起来，右边是从边界净流出的总量，$\vb n$ 指向体积外部。它把局部的守恒方程（某处的散度等于什么）转换成边界上的通量平衡（流出多少等于里面有多少源）。
+
+\begin{example}[unbreakable]{用两种办法算同一个通量}\label{ex:calc-cylinder}
+$\vb F=(x,y,0)$。取一个以 $z$ 轴为轴、半径为 $R$、高为 $h$ 的圆柱。分别直接计算穿出圆柱表面的通量，以及用散度定理计算。
+\solution
+直接计算：在侧面上 $\vb F$ 沿径向向外，大小等于到轴的距离 $R$，而 $\vb n$ 也沿径向向外，所以 $\vb F\cdot\vb n=R$；侧面积 $2\pi Rh$，通量为 $2\pi R^2h$。上下底面上 $\vb F$ 没有 $z$ 分量，通量为零。用散度定理：$\nabla\cdot\vb F=1+1+0=2$ 处处相同，乘以体积 $\pi R^2h$，同样得到 $2\pi R^2h$。两种算法一致：散度就是“源的密度”，这个场里每单位体积都有强度为 2 的源。
+\end{example}
+
+在 Maxwell 方程中，$\nabla\cdot\vb D=\rho_f$ 说电荷就是电位移通量的源的密度；$\nabla\cdot\vb B=0$ 则说磁场在任何地方都没有这样的源。
+
+\section{旋度：小回路的环流}\label{sec:calc-curl}
+
+沿一条有方向的闭合曲线 $C$ 积分 $\oint_C\vb F\cdot\dd\boldsymbol\ell$，得到 $\vb F$ 沿 $C$ 的\textbf{环流}。直观的图像是在流体中放一个很小的叶轮：如果叶轮转起来，说明这里有局部的环流。
+
+在 $xy$ 平面内，以 $(x,y)$ 为角点放一个边长为 $\Delta x,\Delta y$ 的小矩形，从 $+z$ 方向看逆时针绕行（\figref{fig:div_curl_3d} 右）。四条边的贡献分别是：下边 $F_x(x,y)\Delta x$，右边 $F_y(x+\Delta x,y)\Delta y$，上边 $-F_x(x,y+\Delta y)\Delta x$，左边 $-F_y(x,y)\Delta y$。把左右两边、上下两边配对相加：
+\begin{equation*}
+\oint\vb F\cdot\dd\boldsymbol\ell\approx\Bigl(\frac{\partial F_y}{\partial x}-\frac{\partial F_x}{\partial y}\Bigr)\Delta x\Delta y .
+\end{equation*}
+括号里的量是“单位面积的环流”，它就是\textbf{旋度}的 $z$ 分量。把小回路分别放在 $yz$、$zx$ 平面内，得到另外两个分量：
+\begin{equation}
+\nabla\times\vb F=\bigl(\partial_yF_z-\partial_zF_y,\;\;\partial_zF_x-\partial_xF_z,\;\;\partial_xF_y-\partial_yF_x\bigr).
+\label{eq:calc-curldef}
+\end{equation}
+旋度是一个矢量：它在某个方向 $\vb n$ 上的分量，等于以 $\vb n$ 为法向的小回路上单位面积的环流，回路的绕行方向与 $\vb n$ 满足右手规则（右手四指沿绕行方向，拇指指向 $\vb n$）。
+
+与散度定理的推导完全平行：把一块曲面 $S$ 铺满小回路，相邻小回路的公共边被走了两次、方向相反，相互抵消，只剩下曲面的边界。于是得到 \textbf{Stokes 定理}：
+\begin{equation}
+\int_S(\nabla\times\vb F)\cdot\vb n\dS=\oint_{\partial S}\vb F\cdot\dd\boldsymbol\ell.
+\tag{V2}\label{id:stokes}
+\end{equation}
+左边是旋度穿过曲面的通量，右边是沿边界曲线的环量；边界的绕行方向与 $\vb n$ 满足右手规则。只要边界相同，换一张曲面，左边的结果不变。
+
+\begin{example}[unbreakable]{用两种办法算同一个环流}\label{ex:calc-circle}
+$\vb F=(-y,x,0)$。在 $xy$ 平面内取以原点为圆心、半径为 $R$ 的圆，逆时针绕行。分别直接计算环流，以及用 Stokes 定理计算。
+\solution
+直接计算：圆周上 $\vb F$ 沿切向、大小为 $R$，与绕行方向一致，所以环流为 $R\cdot2\pi R=2\pi R^2$。用 Stokes 定理：$\nabla\times\vb F=(0,0,1-(-1))=(0,0,2)$，穿过圆盘（$\vb n=\vb e_z$）的通量为 $2\cdot\pi R^2$。两者一致。
+\end{example}
+
+\begin{pitfall}[“场线弯曲就有旋度，场线笔直就没有旋度”]
+旋度描述的是局部的环流，不是场线的形状。剪切场 $\vb F=(y,0,0)$ 的场线全是水平直线，旋度的 $z$ 分量却是 $-1$：放在其中的小叶轮，上方被推得比下方快，会转起来。反过来，$\vb F=(-y,x,0)/(x^2+y^2)$ 的场线是一圈圈同心圆，但除了 $z$ 轴本身，各处旋度都为零；然而绕 $z$ 轴一圈的环流恒为 $2\pi$，与圆的大小无关——环流全部“集中”在轴上。\chref{ch:magnetic} 中长直导线周围的磁场就是这个形状，轴上正是电流所在的地方；这类“处处无旋却有环流”的区域留到\chref{ch:potentials} 讨论。
+\end{pitfall}
+
+\section{对照：散度与旋度}\label{sec:calc-compare}
+
+现在用公式检验四个典型的场（\figref{fig:div_curl_four}）：
+\begin{itemize}
+\item 源 $\vb F=(x,y,0)$：$\nabla\cdot\vb F=2$，$\nabla\times\vb F=\vb 0$。只有源，没有旋。
+\item 涡旋 $\vb F=(-y,x,0)$：$\nabla\cdot\vb F=0$，$\nabla\times\vb F=(0,0,2)$。只有旋，没有源。
+\item 均匀 $\vb F=(1,0,0)$：散度与旋度都为零。
+\item 鞍点 $\vb F=(x,-y,0)$：$\nabla\cdot\vb F=1-1=0$，$\nabla\times\vb F=\vb 0$。散度与旋度也都为零，但它显然不是均匀场。
+\end{itemize}
+
+\fig{div_curl_four}{四种二维场与两种探针。琥珀色方框是散度探针：箭头表示穿过各面中点的法向分量（向外为流出）；深蓝色圆环是旋度探针：圆环外侧的短箭头表示沿圆环的切向分量。源只有净流出，涡旋只有环流；均匀场与鞍点的流入流出、正负环流都恰好抵消。下方数值由场的表达式计算。}{fig:div_curl_four}
+
+\figref{fig:div_curl_four} 把探针画在了场里。源的方框四面都向外流出，圆环上没有切向分量；涡旋恰好相反。均匀场与鞍点的方框都是有进有出、正好抵消，圆环上的切向分量也正负抵消。
+
+最后两个例子传达了一个重要信息：\emph{散度和旋度都为零的场并不唯一}。均匀场、鞍点场，以及它们的任意组合，都满足同样的局部方程。例如在没有电荷的区域里，静电场满足 $\nabla\cdot\vb E=0$ 与 $\nabla\times\vb E=\vb 0$，满足这两个方程的场有无穷多个；从中选出实际的那一个，要靠边界上的信息——电极的形状与电位、导体表面的条件等。所以，边界条件不是数值计算附加的技术细节，而是物理问题的一部分（\chref{ch:interfaces}）。
+
+\begin{compare}{散度与旋度}{散度 $\nabla\cdot\vb F$}{旋度 $\nabla\times\vb F$}
+\cmprow{探针}{一个小闭合曲面（小盒子）}{一个小闭合回路}
+\cmprow{测量什么}{单位体积的净流出}{单位面积的环流（按右手规则定向）}
+\cmprow{结果类型}{标量}{矢量}
+\cmprow{积分定理}{散度定理 \eqref{id:div}：体内的源 $=$ 边界净流出}{Stokes 定理 \eqref{id:stokes}：曲面上的旋度通量 $=$ 边界环量}
+\cmprow{Maxwell 方程}{$\nabla\cdot\vb D=\rho_f$，$\nabla\cdot\vb B=0$}{$\nabla\times\vb E=-\partial_t\vb B$，$\nabla\times\vb H=\vb J_f+\partial_t\vb D$}
+\cmprow{为零意味着}{没有源，进出相等}{没有局部环流（但未必没有绕“洞”的环流）}
+\cmpsum{一个场可以只有源、只有旋、两者都有或两者都没有；散度与旋度都知道了，还要边界信息，场才唯一确定。}
+\end{compare}
+
+\begin{pitfall}[“$\nabla\cdot\vb B=0$，所以 $\vb B$ 是均匀的”]
+无散只说明没有源，不说明场均匀，更不说明各分量为零：涡旋场、鞍点场都无散，却随位置变化。同样，无散也不保证处处可以用标势表示——那需要无旋，以及合适的区域形状（\chref{ch:potentials}）。
+\end{pitfall}
+
+\section{两个恒为零的组合}\label{sec:calc-zeros}
+
+三个运算可以组合。其中两种组合对任何光滑的场都恒等于零：
+\begin{equation}
+\nabla\times\nabla\phi=0,
+\qquad \nabla\cdot(\nabla\times\vb F)=0.
+\tag{V3}\label{id:zeros}
+\end{equation}
+直接验证只需一行。以 $\nabla\times\nabla\phi$ 的 $z$ 分量为例，它等于 $\partial_x\partial_y\phi-\partial_y\partial_x\phi$；混合偏导数可以交换次序，所以为零。$\nabla\cdot(\nabla\times\vb F)$ 展开后的六项也两两相消。
+
+更值得记住的是几何上的理由：
+\begin{itemize}
+\item \textbf{梯度没有环流。}由 \eqref{eq:calc-gradloop}，梯度场沿任何闭合回路的积分为零；单位面积的环流当然也为零。
+\item \textbf{旋度没有源。}对一个闭合曲面使用 Stokes 定理：闭合曲面没有边界，所以旋度穿过它的总通量为零。再由散度定理，旋度的散度在任何体积内的积分都为零，只能处处为零。
+\end{itemize}
+
+这两个恒等式反过来读，就是势函数存在的理由：
+\begin{itemize}
+\item 若一个场无旋，$\nabla\times\vb E=\vb 0$（例如静电场），就可以把它写成某个标量的梯度，$\vb E=-\nabla\phi$。这个 $\phi$ 就是电势（\chref{ch:electric}）。
+\item 若一个场无散，$\nabla\cdot\vb B=0$（磁场永远如此），就可以把它写成某个矢量的旋度，$\vb B=\nabla\times\vb A$。这个 $\vb A$ 就是磁矢势（\chref{ch:magnetic}）。
+\end{itemize}
+严格地说，这两条推论在局部总成立；要在整个区域上得到单值的势，区域的形状还要满足一定条件。例如区域里有“洞”时，无旋场未必是某个单值标势的梯度——\secref{sec:calc-curl} 误区中那个绕轴的场就是反例（\chref{ch:potentials}）。
+
+\begin{compare}{无旋场与无散场}{无旋场 $\nabla\times\vb F=\vb 0$}{无散场 $\nabla\cdot\vb F=0$}
+\cmprow{可写成}{标量的梯度 $\vb F=-\nabla\phi$}{矢量的旋度 $\vb F=\nabla\times\vb A$}
+\cmprow{积分性质}{线积分与路径无关；闭合回路上为零}{穿过闭合曲面的通量为零；穿过曲面的通量只取决于边界曲线}
+\cmprow{场线}{不会自成闭合回路（单连通区域内）：起止于源、汇或区域边界}{区域内部没有起点终点：闭合，或穿出区域边界、伸向无穷远}
+\cmprow{电磁学中的例子}{静电场 $\vb E$}{磁通密度 $\vb B$}
+\cmprow{对应的势}{电标势 $\phi$（\chref{ch:electric}）}{磁矢势 $\vb A$（\chref{ch:magnetic}）}
+\cmpsum{梯度没有旋，旋度没有源：把场写成梯度，就自动满足无旋；写成旋度，就自动满足无散。}
+\end{compare}
+
+梯度的散度也很常用，它叫作\textbf{拉普拉斯算子}：$\nabla^2\phi=\nabla\cdot\nabla\phi=\partial_x^2\phi+\partial_y^2\phi+\partial_z^2\phi$。在直角坐标中，矢量的拉普拉斯 $\nabla^2\vb F$ 就是对每个分量分别作用这个标量算子。
+
+\begin{deeper}[Helmholtz 分解的思想]
+在适当的条件下，一个场可以分成三部分：一个梯度部分（承担全部散度，即“源”），一个旋度部分（承担全部旋度，即“涡”），以及区域形状和边界所要求的“调和”部分（散度、旋度都为零，例如\secref{sec:calc-compare} 的均匀场与鞍点场）。这就是 Helmholtz 类分解背后的几何思想。精确的分解方式取决于区域、边界条件、场的光滑程度以及规范的选取；它也不意味着只凭一个采样分量就能重建任意场。有限元方法里也能看到同样的区分：电导问题用标势的梯度表示电场，自动保证电场无旋；磁场问题用矢势的旋度表示 $\vb B$，自动保证磁通守恒（\chref{ch:femscalar}、\chref{ch:femvector}）。
+\end{deeper}
+
+\section{乘积法则：材料系数不能随便提出来}\label{sec:calc-product}
+
+真实物体的电导率、介电常数、磁导率随位置变化，方程里于是出现 $\nabla\cdot(\sigma\vb E)$、$\nabla\times(\vb B/\mu)$ 这样的组合。它们服从\textbf{乘积法则}：
+\begin{equation}
+\nabla\cdot(a\vb F)=\nabla a\cdot\vb F+a\nabla\cdot\vb F,
+\qquad
+\nabla\times(a\vb F)=\nabla a\times\vb F+a\nabla\times\vb F.
+\tag{V4}\label{id:product}
+\end{equation}
+它与一元函数的 $(uv)'=u'v+uv'$ 是同一回事，逐个分量求导即可验证。要点在于第一项：只要系数 $a$ 随位置变化，就不能把它从微分号里提出来。
+
+\begin{example}{电导率渐变的导体板}\label{ex:calc-varsigma}
+一块导体板占据 $0\le x\le L$，电导率 $\sigma(x)=\sigma_0(1+x/L)$ 从左到右增大一倍。稳恒电流密度沿 $x$ 方向、处处相同：$\vb J=J_0\vb e_x$，因此 $\nabla\cdot\vb J=0$。板内电场的散度为零吗？
+\solution
+由 $\vb J=\sigma\vb E$ 得 $E_x=J_0/\sigma(x)$：电导率增大一倍，电场减半。于是
+\begin{equation*}
+\nabla\cdot\vb E=\frac{\dd E_x}{\dd x}=-\frac{J_0\,\sigma'(x)}{\sigma(x)^2}=-\frac{\nabla\sigma\cdot\vb E}{\sigma}\neq0 .
+\end{equation*}
+用乘积法则 \eqref{id:product} 得到同样的结果：$0=\nabla\cdot(\sigma\vb E)=\nabla\sigma\cdot\vb E+\sigma\nabla\cdot\vb E$。电流无散，电场却有散度。\chref{ch:electric} 会看到，电场的散度对应电荷——所以电导率沿电流方向变化的地方必然存在电荷。若电导率不是渐变而是突变，这些电荷就集中在界面上，成为\chref{ch:intro} 中改写电场的界面电荷（\chref{ch:interfaces}）。
+\end{example}
+
+最后说明这些恒等式的适用条件。它们对足够光滑的场在经典意义下成立。在材料参数发生跃变的地方，可以在每个区域内分别使用，再用界面条件把各区域连接起来（\chref{ch:interfaces}）；也可以按弱形式或分布的意义来理解（\chref{ch:femscalar}）。后面的推导还会用到五个恒等式，编号为 V5 到 V9，它们在第一次用到的章节里引入，全部汇总在\appref{app:identities}。
+
+\begin{table}[htbp]\centering\small
+\caption{三种运算一览：同一个“小探针”思想的三种用法。}\label{tab:calc-operators}
+\begin{tabularx}{\linewidth}{@{}l l l Y Y@{}}
+\toprule
+运算 & 作用于 & 结果 & 探针与含义 & 积分定理\\\midrule
+梯度 $\nabla\phi$ & 标量 & 矢量 & 小位移：$\dd\phi=\nabla\phi\cdot\dd\vb r$，指向上坡最陡 & 梯度定理 \eqref{eq:gradthm}\\
+散度 $\nabla\cdot\vb F$ & 矢量 & 标量 & 小盒子：单位体积的净流出 & 散度定理 \eqref{id:div}\\
+旋度 $\nabla\times\vb F$ & 矢量 & 矢量 & 小回路：单位面积的环流 & Stokes 定理 \eqref{id:stokes}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+有了这套语言，就可以回答本章的核心问题：“源头”是散度不为零的地方，“漩涡”是旋度不为零的地方；二者都要用小探针来判断，而不是凭场线的样子。下一章从最简单的源——电荷——出发，看电场怎样由它产生，以及电势这个“地形”怎样描述电场。
+
+\begin{takeaways}
+\begin{itemize}
+\item 梯度垂直于等值面、指向上坡最陡的方向；梯度定理 $\phi(b)-\phi(a)=\int_a^b\nabla\phi\cdot\dd\boldsymbol\ell$ 说明梯度场的线积分与路径无关，闭合回路上为零。
+\item 散度是小盒子单位体积的净流出，旋度是小回路单位面积的环流。相邻探针共用的面、边相互抵消，就得到散度定理 (V1) 与 Stokes 定理 (V2)。
+\item 场可以只有源、只有旋、两者都有或都没有；散度与旋度都为零的场仍有无穷多个，边界信息才能选出实际的场。
+\item 旋度描述局部环流，与场线是否弯曲无关；剪切场有旋，导线外的圆周场无旋却有绕轴的环流。
+\item 梯度的旋度、旋度的散度恒为零 (V3)：无旋场可写成 $-\nabla\phi$，无散场可写成 $\nabla\times\vb A$。
+\item 乘积法则 (V4)：随位置变化的材料系数不能提出微分号；$\nabla\cdot(\sigma\vb E)=0$ 不等于 $\nabla\cdot\vb E=0$。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item $\phi=x^2+y^2$。求 $\nabla\phi$，说出等高线的形状以及梯度与等高线的关系。
+\item 计算 $\vb F=(x,0,0)$ 的散度与旋度，并画出草图。
+\item 计算 $\vb F=(0,x,0)$ 的散度与旋度。它的场线是什么形状？这和你的直觉一致吗？
+\item 为什么 $\vb F=(-y,x,0)$ 不可能是任何标量函数的梯度？给出两种理由。
+\item 一个场在某区域内处处满足 $\nabla\cdot\vb F=0$ 与 $\nabla\times\vb F=\vb 0$。它一定是零或均匀场吗？
+\item 稳恒导电问题中电导率沿 $x$ 方向变化，有人把 $\nabla\cdot(\sigma\nabla\phi)=0$ 写成 $\sigma\nabla^2\phi=0$。漏掉了什么？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item $\nabla\phi=(2x,2y,0)$。等高线是以原点为圆心的圆；梯度沿径向向外，垂直于等高线，离原点越远越“陡”。
+\item $\nabla\cdot\vb F=1$，$\nabla\times\vb F=\vb 0$。场线是水平直线：右半平面指向右、左半平面指向左，离 $y$ 轴越远越强。有源而无旋。
+\item $\nabla\cdot\vb F=0$，$(\nabla\times\vb F)_z=\partial_xF_y-\partial_yF_x=1$。场线是竖直直线（右侧向上、左侧向下，离 $y$ 轴越远越强），却有旋度：小叶轮两侧受力不等，会转起来。
+\item 其一，它的旋度为 $(0,0,2)\neq\vb 0$，而梯度的旋度恒为零 \eqref{id:zeros}。其二，它沿圆的环流为 $2\pi R^2\neq0$（\exref{ex:calc-circle}），而梯度沿闭合回路的积分为零 \eqref{eq:calc-gradloop}。
+\item 不一定。鞍点场 $(x,-y,0)$ 就满足这两个条件却不均匀；要确定场，还需要边界条件。
+\item 漏掉了 $\nabla\sigma\cdot\nabla\phi$ 一项：由 \eqref{id:product}，$\nabla\cdot(\sigma\nabla\phi)=\nabla\sigma\cdot\nabla\phi+\sigma\nabla^2\phi$。只有 $\sigma$ 处处相同时，二者才等价。
+\end{answers}

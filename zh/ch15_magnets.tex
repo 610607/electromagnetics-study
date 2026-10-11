@@ -1,0 +1,331 @@
+\chapter{永磁体、磁轭与 MRI 磁体：走出集总模型}\label{ch:magnets}
+
+\begin{chapterguide}
+\guidequestion{磁路已经给出了气隙磁场的估计。为什么真正的 MRI 磁体仍要做二维、三维的场计算？场计算还必须算出哪些磁路给不出的东西？}
+\begin{guidegoals}
+\item 写出永磁体的张量本构关系，在剩磁、磁化与矫顽场几种输入约定之间换算，并让磁化方向随磁体的材料坐标系一起旋转；
+\item 区分软磁材料与永磁材料在模型中的角色，不再把永磁体当作“高磁导率区域”；
+\item 用退磁因子解释为什么形状会限制材料的响应，计算椭球的退磁因子、有效磁化率与孤立磁体的工作点；
+\item 列出磁体--磁轭场模型必须解析和报告的量，检查外边界、网格与对称面上的边界条件；
+\item 用 Maxwell 应力张量计算力与力矩、估计磁压力，说清积分面该放在哪里；判断设计流程中何时用磁路、何时用场模型。
+\end{guidegoals}
+\guideprereq{\secref{sec:bh-hysteresis}（回复线与拐点）；\secref{sec:lumped-pm}、\secref{sec:lumped-validity}（永磁磁路及其验证）；\eqref{eq:atlassphere}（均匀磁化球）；\secref{sec:potentials-2d}（$A_z$ 等值线就是磁力线）。}
+\end{chapterguide}
+
+\section{磁路之后还缺什么}\label{sec:magnets-question}
+
+\chref{ch:lumped} 用一张网络估算了多柱磁轭永磁体的气隙磁场（\exref{ex:lumped-pillars}，\figref{fig:multipillar_3d}），并在末尾列出了网络看不到的东西：漏磁、极面边缘的边缘效应、气隙磁场的不均匀，以及磁轭与磁体中的各种局部效应。那一章也说明了，网络的修正系数只能靠场解来标定。
+
+这一章换一个角度：直接看一个磁体--磁轭结构的场解，问它比网络多告诉了我们什么。贯穿全章的算例是一个二维教学截面（\figref{fig:magnet_assembly}）：上下两块轭板由两根回磁柱相连，每块轭板内侧贴一块永磁体和一块极靴，两极靴之间是 $0.40\,\mathrm m$ 的气隙。材料与\chref{ch:lumped} 相同：磁体 $B_r=1.2\,\mathrm T$、$\mu_{\rm rec}=1.05$、厚 $40\,\mathrm{mm}$，铁用合成曲线 \eqref{eq:syntheticbh}。按\chref{ch:lumped} 的方法把它压缩成网络（极靴和轭板按理想铁，柱子非线性），得到气隙磁场 $0.191\,\mathrm T$；场解给出的气隙中心磁场却只有 $0.152\,\mathrm T$，低了 20\%。差额去了哪里，网络本身无从回答。
+
+\begin{intuition}
+磁路给出的是几个数：平均气隙磁场、各支路的平均磁通。场模型给出的是一张图。磁体设计的约束几乎都在图里：磁通从哪里漏走，铁在哪里饱和，磁体哪里有退磁危险，成像区多均匀，零件受多大的力。
+\end{intuition}
+
+要读懂这张图，先要把两种材料放对位置：永磁体在模型中是什么（\secref{sec:magnets-pm}），形状怎样改变材料的响应（\secref{sec:magnets-demag}）；然后看场模型要解析什么、报告什么（\secref{sec:magnets-fem}），力怎样计算（\secref{sec:magnets-force}）；最后把磁路和场模型放在一起比较（\secref{sec:magnets-compare}）。
+
+\section{永磁体不是高磁导率区域}\label{sec:magnets-pm}
+
+\subsection{张量形式的本构关系}
+\secref{sec:bh-hysteresis} 用一条直线 \eqref{eq:recoil} 描述了永磁体沿磁化方向的退磁曲线。三维模型需要它的矢量形式：
+\begin{keyeq}
+\vb B=\mu_0\,\boldsymbol\mu_{\rm rec}\,\vb H+\vb B_r ,
+\label{eq:pmconstitutive}
+\end{keyeq}
+$\boldsymbol\mu_{\rm rec}$ 是无量纲的相对回复磁导率张量，$\vb B_r$ 是剩磁矢量，指向磁化方向。各向同性近似中 $\boldsymbol\mu_{\rm rec}=\mu_{\rm rec}\mathbf I$。和软铁相比，这个式子多了一个与场无关的项 $\vb B_r$：即使 $\vb H=0$、没有任何线圈电流，磁体中也有磁通密度。它是材料自带的\emph{源}。
+
+\subsection{材料坐标系}
+$\vb B_r$ 的方向属于磁体本身。在磁体自己的坐标系（材料坐标系）里，磁化方向通常取为一个坐标轴，回复磁导率张量是对角的，沿磁化方向与垂直方向的值可以不同。磁体在装配中被旋转到位置后，两个量都要跟着转到仿真的全局坐标系：
+\begin{equation}
+\vb B_r=\mathbf R\,\vb B_r^{\rm loc},\qquad \boldsymbol\mu_{\rm rec}=\mathbf R\,\boldsymbol\mu_{\rm rec}^{\rm loc}\,\mathbf R^{\mathsf T},
+\label{eq:magnets-rotate}
+\end{equation}
+$\mathbf R$ 是从材料坐标系到全局坐标系的旋转矩阵。矢量只转一次，张量要两边各乘一次——这与\eqref{eq:sigmatensor} 中各向异性电导率的处理相同。由许多块不同取向的磁体拼成的阵列，每一块都有自己的 $\mathbf R$。
+
+\subsection{同一块磁体，几种输入方式}
+不同的软件和数据手册用不同的量描述同一块线性永磁体：有的输入剩磁 $B_r$，有的输入矫顽场 $H_c$（例如 FEMM 用矫顽场和相对磁导率描述线性永磁体，并给每个区域指定磁化方向~\cite{femm}），有的输入磁化强度，或者等效面电流。它们都是 \eqref{eq:pmconstitutive} 的改写（\tabref{tab:magnets-conventions}）。
+
+\begin{table}[htbp]\centering\small
+\caption{同一块线性永磁体的几种写法（$\vb e$ 为磁化方向，各向同性 $\mu_{\rm rec}$；本例 $B_r=1.2\,\mathrm T$、$\mu_{\rm rec}=1.05$）。}\label{tab:magnets-conventions}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{.16\linewidth} >{\raggedright\arraybackslash}p{.33\linewidth} Y >{\raggedright\arraybackslash}p{.15\linewidth}@{}}
+\toprule
+写法 & 本构关系 & 需要的输入 & 本例数值\\\midrule
+剩磁形式 & $\vb B=\mu_0\mu_{\rm rec}\vb H+B_r\vb e$ & $B_r$、$\mu_{\rm rec}$、方向 & $1.2\,\mathrm T$\\
+磁化形式 & $\vb B=\mu_0(\vb H+\vb M)$，$\vb M=M_r\vb e+\chi_{\rm rec}\vb H$ & $M_r=B_r/\mu_0$，$\chi_{\rm rec}=\mu_{\rm rec}-1$ & $9.55\times10^5\,\mathrm{A/m}$\\
+矫顽场形式 & $\vb B=\mu_0\mu_{\rm rec}(\vb H+H_c\vb e)$ & $H_c=B_r/(\mu_0\mu_{\rm rec})$，$\mu_{\rm rec}$ & $9.09\times10^5\,\mathrm{A/m}$\\
+等效面电流 & 磁导率 $\mu_0\mu_{\rm rec}$ 的区域，表面有 $\vb K=H_c\vb e\times\vb n$ & $H_c$、区域边界 & $9.09\times10^5\,\mathrm{A/m}$\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+最后一行来自\secref{sec:matter-M} 的论证：把矫顽场形式写成 $\vb B/(\mu_0\mu_{\rm rec})=\vb H+H_c\vb e$，取旋度，均匀的 $H_c\vb e$ 在体内没有旋度，只在表面留下一层面电流 $H_c\vb e\times\vb n$ \eqref{eq:boundcurrent}。$\mu_{\rm rec}=1$ 时它就是 $\vb M\times\vb n$，也就是\chref{ch:lumped} 中“永磁体是一层看不见的线圈”的说法。
+
+表中 $M_r$ 与 $H_c$ 只差一个因子 $\mu_{\rm rec}$。把 $B_r/\mu_0$ 填进要求矫顽场的那一栏，源就强了 $5.0\%$；反过来则弱了同样多。这种错误不会让计算报错，只会让所有结果整体偏移——这正是它危险的地方。
+
+\begin{pitfall}[“给磁体赋一个很大的 $\mu_r$ 就行了”]
+没有 $\vb B_r$ 的高磁导率区域是一块软铁，它自己不产生任何磁场。永磁体至少需要三样东西：剩磁（或等价的矫顽场、磁化强度）、回复磁导率、以及在材料坐标系中定义并正确旋转的磁化方向。反过来，永磁体的 $\mu_{\rm rec}\approx1.05$ 并不大：对其他磁体或线圈产生的磁通，它几乎和空气一样“透明”，在磁路里表现为很大的内部磁阻（\secref{sec:lumped-pm}）。
+\end{pitfall}
+
+\begin{compare}{软磁材料与永磁材料}{软磁材料（磁轭、极靴）}{永磁材料（磁体）}
+\cmprow{回线}{很窄，矫顽力小}{很宽，矫顽力大}
+\cmprow{在模型中的角色}{引导磁通，本身不是源}{提供磁通的源}
+\cmprow{本构模型}{单值 B--H 曲线（\eqref{eq:syntheticbh}、\eqref{eq:HofB}）}{回复线 \eqref{eq:pmconstitutive}，加上拐点数据}
+\cmprow{微分磁导率}{未饱和时远大于 $\mu_0$（合成曲线在原点为 $1593\,\mu_0$），饱和后趋于 $\mu_0$}{约 $1.05\,\mu_0$：对外来磁通几乎透明}
+\cmprow{正常工作区}{第一象限，沿初始曲线}{第二象限，沿退磁曲线}
+\cmprow{失效方式}{饱和：多加的磁动势几乎全耗在这里}{越过拐点：不可逆退磁}
+\cmprow{关键输入}{B--H 曲线、温度、轧制方向}{$B_r$、$\mu_{\rm rec}$、方向、随温度变化的拐点}
+\cmpsum{软铁是磁通的“导线”，永磁体是磁通的“电池”——一块内阻很大、对别人的磁通几乎透明的电池。}
+\end{compare}
+
+\section{退磁场：几何进入材料响应}\label{sec:magnets-demag}
+
+\subsection{椭球的均匀内场}
+\eqref{eq:atlassphere} 已经给出一个例子：均匀磁化的球内，$\vb H=-\vb M/3$。磁化在表面终止，留下的束缚源在体内产生与 $\vb M$ 反向的\textbf{退磁场}。对一般形状，退磁场既不均匀也没有简单公式；但对\emph{椭球}有一个特殊而重要的结果：放在均匀外场中的均匀磁化椭球，内部场也是均匀的，
+\begin{keyeq}
+\vb H_{\rm int}=\vb H_{\rm applied}-\mathbf N_d\,\vb M ,
+\label{eq:demag}
+\end{keyeq}
+$\mathbf N_d$ 是无量纲的\textbf{退磁张量}，只取决于形状。在椭球的主轴坐标系中它是对角的，三个对角元（\textbf{退磁因子}）之和为 1（国际单位制）~\cite{osborn}。球的三个因子都是 $1/3$，这正是\eqref{eq:atlassphere} 中的 $1/3$。
+
+\subsection{形状限制了响应}
+沿一个主轴写 \eqref{eq:demag}，退磁因子为 $N_d$。若材料线性，$M=\chi_mH_{\rm int}$，消去 $H_{\rm int}$ 得
+\begin{equation}
+M=\frac{\chi_m}{1+N_d\chi_m}\,H_{\rm applied}\ \le\ \frac{H_{\rm applied}}{N_d}.
+\label{eq:magnets-chieff}
+\end{equation}
+材料的磁化率再大，磁化强度也不会超过 $H_{\rm applied}/N_d$：磁化越强，它自己产生的退磁场越强，把内部场压了下去。只要 $N_d\chi_m\gg1$，响应就几乎只由形状决定，与材料无关（\figref{fig:demag_factor}b）。
+
+\fig{demag_factor}{旋转椭球的退磁因子与有效磁化率（Osborn 的闭式解~\cite{osborn}，已用定义积分的数值求积核对）。(a) 沿对称轴的 $N_c$ 与垂直于轴的 $N_a$ 随长径比 $c/a$ 的变化，上方是对应的形状，磁化沿竖直的对称轴。(b) 沿对称轴的有效磁化率 $M/H_{\rm applied}=\chi/(1+N_c\chi)$：$\chi$ 很大时各曲线都贴到上限 $1/N_c$ 上。圆点是 $\mu_r=1000$ 的铁球。}{fig:demag_factor}
+
+\begin{example}[label=ex:magnets-ironsphere]{一个铁球能把磁场放大多少倍}
+把 $\mu_r=1000$（$\chi_m=999$）的线性铁球放进均匀磁场 $\vb B_0=\mu_0\vb H_{\rm applied}$ 中。球内的 $B$ 是 $B_0$ 的多少倍？换成沿场方向放置、长径比 $c/a=10$ 和 $100$ 的细长旋转椭球呢？
+\solution
+球：$N_d=1/3$，由 \eqref{eq:magnets-chieff}，$M/H_{\rm applied}=999/(1+333)=2.99$。球内 $B=\mu_0\mu_rH_{\rm int}=\mu_0\mu_rH_{\rm applied}/(1+N_d\chi_m)$，即 $B/B_0=1000/334=2.99$。材料的相对磁导率是 1000，球内的磁场却只放大了约 3 倍；把 $\mu_r$ 换成 $10^4$，结果几乎不变（上限是 $1/N_d=3$）。
+
+细长椭球：$c/a=10$ 时 $N_d=0.0203$，有效磁化率 $47.0$（上限 $49.3$）；$c/a=100$ 时 $N_d=4.3\times10^{-4}$，有效磁化率 $699$，才接近材料本身的 999。只有又细又长、沿场方向放置的样品，材料的磁导率才能充分表现出来。
+\end{example}
+
+这个例子回答了\secref{sec:matter-puzzle-solved} 留下的一个疑问：长螺线管里的铁芯把磁场放大了一千倍，是因为细长铁芯的 $N_d\to0$；一个短而粗的铁块远做不到。它也说明了为什么用开口的短样品测得的“磁导率”主要反映样品的形状——闭合的环形样品没有端面，$N_d=0$，测到的才是材料。
+
+\begin{deeper}[Osborn 的旋转椭球公式]
+设旋转椭球沿对称轴的半轴为 $c$，赤道半轴 $a=b$，长径比 $m=c/a$。沿对称轴的退磁因子为~\cite{osborn}
+\begin{equation*}
+N_c=\begin{cases}
+\dfrac{1}{m^2-1}\left[\dfrac{m}{\sqrt{m^2-1}}\ln\!\bigl(m+\sqrt{m^2-1}\bigr)-1\right], & m>1\ \text{（长椭球）},\\[3mm]
+\dfrac{1}{1-m^2}\left[1-\dfrac{m}{\sqrt{1-m^2}}\arccos m\right], & m<1\ \text{（扁椭球）},
+\end{cases}
+\end{equation*}
+垂直于轴的两个因子相等，$N_a=(1-N_c)/2$。Osborn 原文用高斯单位制，三者之和为 $4\pi$；这里已换成国际单位制。一般椭球的因子由椭圆积分 $N_i=\tfrac{abc}{2}\int_0^\infty\dd s\,/\bigl[(s+a_i^2)\sqrt{(s+a^2)(s+b^2)(s+c^2)}\bigr]$ 给出，检查脚本用数值求积对上面两式做了核对。
+\end{deeper}
+
+\subsection{孤立磁体的“负载线”来自形状}
+把同样的推理用在一块孤立的永磁体上。没有外场时 $\vb H_{\rm int}=-N_d\vb M$，再代入 $B=\mu_0(H+M)$，消去 $M$：
+\begin{equation}
+B_m=-\mu_0\,\frac{1-N_d}{N_d}\,H_m\equiv-\mu_0PH_m,\qquad P=\frac{1-N_d}{N_d}.
+\label{eq:magnets-shapeload}
+\end{equation}
+这正是\secref{sec:bh-hysteresis} 的负载线，只是磁导系数 $P$ 现在由形状决定。它与回复线 \eqref{eq:recoil} 的交点就是孤立磁体的工作点：$B_m=B_r/(1+\mu_{\rm rec}/P)$。
+\begin{itemize}
+\item 球形磁体：$P=2.00$，$B_m=0.787\,\mathrm T$，$H_m=-313\,\mathrm{kA/m}$。取 $\mu_{\rm rec}=1$ 时 $B_m=\tfrac23B_r$，与\eqref{eq:atlassphere} 一致。
+\item 沿短轴磁化的扁椭球（$c/a=0.1$）：$N_d=0.861$，$P=0.162$，$B_m$ 只有 $0.160\,\mathrm T$，而 $H_m=-788\,\mathrm{kA/m}$，已接近直线回复线的截距 $909\,\mathrm{kA/m}$，越过了\secref{sec:bh-hysteresis} 中低矫顽力教学材料的拐点。
+\end{itemize}
+沿厚度方向磁化的薄磁体，自身的退磁场很强。\exref{ex:lumped-pillars} 中的磁体就是这样的扁块；把它装进磁轭，就是用外部磁路改变它的负载线 \eqref{eq:loadline}。
+
+\begin{compare}{形状给出的负载线与磁路给出的负载线}{孤立磁体：形状}{磁路中的磁体：外部磁阻}
+\cmprow{来源}{磁体自身表面束缚源产生的退磁场}{外部磁路（气隙、磁轭）对磁通的“阻力”}
+\cmprow{磁导系数}{$P=(1-N_d)/N_d$}{理想磁轭、等截面时 $P=\ell_m/g$ \eqref{eq:loadline}}
+\cmprow{何时精确}{均匀磁化的椭球}{无漏磁、截面上均匀的理想磁路}
+\cmprow{共同点}{与回复线的交点就是工作点}{同左}
+\cmprow{真实磁体}{两者同时存在，且磁体内的 $H$ 并不均匀}{同左：需要场模型}
+\cmpsum{负载线说的都是“磁体以外的世界让磁体内部的 $H$ 有多负”；形状和磁路只是这个“外部世界”的两种来源。}
+\end{compare}
+
+椭球公式只适用于椭球。圆柱、方块等实际形状在均匀外场中的磁化并不均匀，内部退磁场在棱边和尖角附近最强。把椭球的 $N_d$ 当作任意形状、任意磁轭的逐点修正，是没有依据的；真实装配中的退磁场要由场计算给出。
+
+\section{磁体--磁轭场模型要解析什么}\label{sec:magnets-fem}
+
+\subsection{模型里要有什么}
+一个可用的静磁模型至少要区分以下区域：
+\begin{itemize}
+\item \textbf{永磁体}：\eqref{eq:pmconstitutive}，带材料坐标系；为检查退磁风险，还要有工作温度下的退磁曲线（拐点）。
+\item \textbf{软磁区域}（轭板、柱、极靴、匀场铁片）：可信的 B--H 曲线，按 \eqref{eq:HofB} 作用于 $|\vb B|$；必要时考虑轧制方向。
+\item \textbf{线圈}：匀场线圈、梯度线圈，以及其他磁性材料。
+\item \textbf{空气与外边界}：漏磁场和退磁场都延伸到实体之外，周围的空气以及外边界的位置和条件都是解的一部分，必须检查。
+\end{itemize}
+
+\subsection{一个二维算例}
+\figref{fig:magnet_assembly} 是本章开头那个截面的场解。几何（教学输入）：极面间隙 $0.40\,\mathrm m$，极靴厚 $30\,\mathrm{mm}$，磁体厚 $40\,\mathrm{mm}$，二者宽 $0.60\,\mathrm m$；轭板厚 $50\,\mathrm{mm}$；两根柱宽 $50\,\mathrm{mm}$，内侧距中心 $0.50\,\mathrm m$。这是平面二维模型，沿深度方向无限长，所有磁通都按单位深度计；它展示的是现象和量级，不代表某个三维磁体的数值。
+
+计算采用 $A_z$ 形式（\secref{sec:potentials-2d}）与线性三角形单元（\chref{ch:femscalar}），磁体按 \eqref{eq:pmconstitutive} 进入右端项，铁的非线性用牛顿法求解，切线就是增量磁阻率张量 \eqref{eq:bh-inc}，12 次迭代收敛到相对残差 $10^{-11}$ 以下（\chref{ch:femvector}）。利用对称性只算四分之一（边界条件见下文），并做了三项检查：与整个截面的计算相比，气隙中心磁场相差不到 $0.01\%$；网格加密一倍，变化不到 $0.1\%$；外边界到中心的距离从 $1.5\,\mathrm m$ 扩大到 $6\,\mathrm m$，变化也不到 $0.1\%$。
+
+\fig{magnet_assembly}{一个二维磁体--磁轭截面的场解（教学几何，单位深度；材料同\chref{ch:lumped}：$B_r=1.2\,\mathrm T$，$\mu_{\rm rec}=1.05$，铁为合成曲线）。(a) $|\vb B|$ 的浅色底图与磁力线（$A_z$ 等值线，相邻两线间磁通相等），深色是磁通密度超过 $1.5\,\mathrm T$ 的铁，蓝色圆是半径 $0.1\,\mathrm m$ 的“成像区”；编号对应右侧五个只有场解才能回答的问题。(b) 中平面上的 $B_y$：场解是一条曲线，网络只给出一个平均值。(c) 磁体内的 $H_y$：中间高度处近似均匀，紧靠极靴一层在尖角附近急剧变负（尖角处的数值随网格加密而增大）。}{fig:magnet_assembly}
+
+图中五个编号逐一对应网络回答不了的问题：
+\begin{enumerate}
+\item \textbf{漏磁。}磁体发出的磁通只有 $46\%$ 从两极面之间穿过中平面。大量磁通从轭板下表面出来，绕过磁体边缘，从侧面回到极靴，再穿过磁体——构成一个根本不经过气隙的小环路。这些额外的通路与气隙并联，反而让磁体工作在更高的磁通密度上：磁体内平均 $B=0.305\,\mathrm T$，而网络给出 $0.191\,\mathrm T$。
+\item \textbf{边缘效应。}极面边缘附近磁力线向外鼓出，中平面上的 $B_y$ 从中心的 $0.152\,\mathrm T$ 平滑地降下去，在极面边缘只剩约三分之二（\figref{fig:magnet_assembly}b）。
+\item \textbf{局部饱和。}轭板的最大负担不在柱子，而在磁体边缘的正上方：磁体全部磁通在这里横向流过轭板，截面平均达到 $1.73\,\mathrm T$；到了与柱子相接处，一部分磁通已经漏回下方，只剩 $1.15\,\mathrm T$。全部铁中约 $8\%$ 的面积超过 $1.5\,\mathrm T$。网络把轭板当作理想铁，对此一无所知。
+\item \textbf{均匀度。}半径 $0.1\,\mathrm m$ 的圆内，$|\vb B|$ 的最大相对变化为 $2.5\%$，沿中平面 $|x|\le0.1\,\mathrm m$ 为 $1.5\%$。成像所要求的均匀度要高得多，要靠极面形状设计与匀场来达到（\chref{ch:mri}）——这些都只能在场模型里做。
+\item \textbf{磁体内部的反向场。}磁体中心 $H_y=-684\,\mathrm{kA/m}$，比网络给出的均匀值 $-765\,\mathrm{kA/m}$ 温和；但紧靠极靴边缘的尖角处反向场急剧增强，而且网格越密数值越大（从 $-1.36$ 变到 $-1.57\,\mathrm{MA/m}$）。这是尖角处线性模型的奇异性，说明那里的回复线模型已经不再成立。磁体截面中约 $2\%$ 的面积 $H_y<-700\,\mathrm{kA/m}$：若用\secref{sec:bh-hysteresis} 中拐点约在这一位置的低矫顽力材料，这些区域——甚至整块磁体——都会部分退磁；要判断真实风险，必须用实际的退磁曲线做非线性计算。
+\end{enumerate}
+
+外边界还有一个容易忽略的作用。在本例中，外边界到中心的距离从 $1.5\,\mathrm m$ 扩大到 $3\,\mathrm m$ 和 $6\,\mathrm m$，中心磁场几乎不变，离中心 $1\,\mathrm m$ 处的杂散场却从 $0.97\,\mathrm{mT}$ 变为 $0.74$、$0.68\,\mathrm{mT}$。要的量不同，所需的空气区域也不同：磁体附近的量对外边界不敏感，杂散场则需要大得多的计算区域，或专门处理开放边界的方法。
+
+\tabref{tab:magnets-outputs} 把一个磁体--磁轭模型应当报告的量整理在一起。
+
+\begin{table}[htbp]\centering\small
+\caption{磁体--磁轭场模型应当报告的量（“本例”取自\figref{fig:magnet_assembly} 的二维截面）。}\label{tab:magnets-outputs}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{.2\linewidth} Y >{\raggedright\arraybackslash}p{.17\linewidth} >{\raggedright\arraybackslash}p{.24\linewidth}@{}}
+\toprule
+输出量 & 为什么需要 & 网络能否给出 & 本例\\\midrule
+成像区的场分布与均匀度 & 成像要求，匀场的起点（\chref{ch:mri}） & 只有平均值 & $\Delta B/B=2.5\%$（$r=0.1\,\mathrm m$）\\
+漏磁与杂散场 & 磁体效率、周围安全区与外部物体 & 需用场解标定 & 只有 46\% 穿过极面之间\\
+磁轭的局部工作点 & 局部饱和、用铁量 & 只有各段平均 & 轭板局部 $1.73\,\mathrm T$\\
+磁体内部的反向场 & 不可逆退磁风险（拐点、温度） & 一个均匀值 & 中心 $-684\,\mathrm{kA/m}$，尖角更负\\
+力与力矩 & 结构、装配、连接件 & 虚功估算 & \secref{sec:magnets-force}\\
+增量响应与涡流 & 梯度切换、动态匀场（\chref{ch:eddy}、\eqref{eq:biaslinearization}） & 不能 & 需要电导率与偏置工作点\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{pitfall}[“成像区平均 $B$ 对了，磁体就对了”]
+平均气隙磁场与设计值吻合，只说明一个数对了。同一个模型里，轭板可能已经局部饱和，磁体尖角可能已越过拐点，漏磁可能占了一半——这些都不会反映在平均 $B$ 上。报告磁体模型时，\tabref{tab:magnets-outputs} 中的每一项都要有结果，并说明网格和外边界的收敛情况。
+\end{pitfall}
+
+\subsection{对称性：可以只算一部分，但边界条件取决于源}
+严格旋转对称的磁体与激励可以用轴对称模型，计算量大大降低。离散磁体块、多柱磁轭、横向梯度线圈或局部匀场都破坏旋转对称，一般需要三维模型。即使没有旋转对称，镜像对称面仍可以把计算区域减半或减到四分之一——但对称面上的边界条件不是由外形决定的，而是由\emph{源}在镜像下的奇偶性决定的。
+
+\fig{symmetry_bc}{同一个四分之一区域，两种源，两种边界条件（截面内 $x$ 水平，$y$ 沿主磁场方向）。(a) 主磁场：磁化平行于 $x=0$ 面，磁力线沿该面走，$\mathbf n\cdot\vb B=0$，在 $A_z$ 形式中是 $A_z=0$；在垂直于磁化的中平面 $y=0$ 上，磁力线垂直穿过，$\mathbf n\times\vb H=0$，是自然边界条件。磁力线取自\figref{fig:magnet_assembly} 的场解。(b) 横向梯度场 $\vb b=G(y,x)$（即 $A_z=G(y^2-x^2)/2$）：在 $x=0$ 与 $y=0$ 两个面上磁力线都垂直穿过，都是 $\mathbf n\times\vb H=0$。}{fig:symmetry_bc}
+
+若几何与材料关于某个平面镜像对称，而源在镜像下也对称（或反对称），对称面上的场只能是下面两种之一（\figref{fig:symmetry_bc}）：
+\begin{itemize}
+\item 磁力线沿面走，$\mathbf n\cdot\vb B=0$。在 $A_z$ 形式中，这意味着 $A_z$ 沿该面为常数，是本质边界条件。当磁化方向（或电流回路的轴）\emph{平行于}对称面时出现。
+\item 磁力线垂直穿过，$\mathbf n\times\vb H=0$。在 $A_z$ 形式中是 $\partial A_z/\partial n=0$，是自然边界条件，什么都不用加。当磁化方向\emph{垂直于}对称面时出现。
+\end{itemize}
+主磁场与横向梯度场在 $x=0$ 面上恰好属于不同的两类。于是，为磁体建立的四分之一模型不能原封不动地拿来算梯度线圈的场，或梯度切换在轭板中引起的涡流；$x=0$ 面上的边界条件必须改。只检查外形是否对称而不检查源的奇偶性，是对称化简中最常见的错误。
+
+\begin{deeper}[偏置之上的小信号问题仍可利用对称]
+磁轭被主磁场偏置后，梯度或匀场的小信号响应由增量磁阻率张量 \eqref{eq:bh-inc} 决定。它取决于 $\hat{\vb b}\hat{\vb b}^{\mathsf T}$，与 $\vb B$ 的符号无关，因而在镜像下是对称的张量场。所以线性化后的小信号问题仍可以用对称面化简，只是边界条件要按小信号源（例如梯度场）的奇偶性来取，而不是按偏置场的。非线性的总场问题（偏置加上一个不对称的大扰动）则不能这样拆分。
+\end{deeper}
+
+\section{受力：在应力定律明确的区域积分}\label{sec:magnets-force}
+
+即使研究目标只是 $\vb B$ 的微小空间变化，永磁装配的机械载荷也可能很大：极面之间的吸力、装配时磁体块受的力与力矩、匀场铁片受的力。对自由电流，力密度是熟悉的 $\vb J\times\vb B$。对磁化的材料，力在材料\emph{内部}怎样分布取决于更细的材料受力模型，不能想当然地写出；但作用在整个物体上的\emph{总}力有一个可靠的算法：在包围物体、完全位于空气中的闭合曲面 $S$ 上积分真空中的 \textbf{Maxwell 应力张量}~\cite{haus}，
+\begin{keyeq}
+\mathbf T_m=\frac{1}{\mu_0}\Bigl(\vb B\otimes\vb B-\tfrac12B^2\,\mathbf I\Bigr),\qquad
+\vb F=\oint_S\mathbf T_m\,\vb n\dS,\qquad
+\boldsymbol\tau=\oint_S(\vb r-\vb r_0)\times(\mathbf T_m\vb n)\dS ,
+\label{eq:maxwellstress}
+\end{keyeq}
+$\vb n$ 为指向物体外的法向，$\vb r_0$ 为力矩的参考点。张量的单位是帕斯卡。这是静磁形式，忽略了电场的应力与场的动量；把这个真空公式穿过铁磁材料内部去积分，一般是不合适的。
+
+\begin{deeper}[应力张量从哪里来]
+在真空中 $\nabla\times\vb B=\mu_0\vb J$，$\nabla\cdot\vb B=0$。由乘积法则 \eqref{id:product} 可得
+\begin{equation*}
+\vb J\times\vb B=\frac{1}{\mu_0}(\nabla\times\vb B)\times\vb B=\frac{1}{\mu_0}\Bigl[(\vb B\cdot\nabla)\vb B-\nabla\tfrac{B^2}{2}\Bigr]=\nabla\cdot\mathbf T_m ,
+\end{equation*}
+最后一步用了 $\nabla\cdot(\vb B\otimes\vb B)=(\vb B\cdot\nabla)\vb B+\vb B(\nabla\cdot\vb B)$。把物体（连同它的全部自由电流与磁化电流）包在 $S$ 内，对体积积分并用散度定理 \eqref{id:div}，体积分化成 $S$ 上的面积分。推导只要求 $S$ 本身位于真空方程成立的地方，因此积分面必须放在空气里，物体内部的情况由面上的场“代为汇报”。
+\end{deeper}
+
+\subsection{拉力与压力}
+在某一点取 $\vb B$ 的方向为第三个坐标轴，$\mathbf T_m=\frac{B^2}{2\mu_0}\operatorname{diag}(-1,-1,+1)$。也就是说：
+\begin{itemize}
+\item 沿磁力线方向是\textbf{拉力} $B^2/(2\mu_0)$：$\vb B$ 垂直于物体表面时，表面被拉向磁场一侧。磁力线几乎垂直地进出高磁导率的铁面（\chref{ch:interfaces}），所以铁总是被吸向磁场强的地方，两个相对的极面互相吸引。
+\item 垂直于磁力线方向是\textbf{压力} $B^2/(2\mu_0)$：$\vb B$ 平行于表面时，表面被推离磁场。长螺线管的绕组受到向外的压力，就是这个原因。
+\end{itemize}
+磁力线像一束拉紧的橡皮筋，又彼此侧向排斥——这是 Faraday 的图像，现在有了精确的式子。磁压力 $B^2/(2\mu_0)$ 在 $0.1\,\mathrm T$ 时是 $3.98\,\mathrm{kPa}$，$0.5\,\mathrm T$ 时是 $99.5\,\mathrm{kPa}$（约一个大气压），$1.0\,\mathrm T$ 时 $398\,\mathrm{kPa}$，$1.5\,\mathrm T$ 时 $895\,\mathrm{kPa}$。它是应力的量级，不是任意几何的完整受力预测。
+
+\begin{example}[label=ex:magnets-force]{上下两半磁体之间的吸力：大头在哪里}
+(1) 求\figref{fig:magnet_assembly} 截面的上半部分与下半部分之间的吸力（单位深度），并分出经过气隙的部分与经过两根柱子的部分。(2) 对\exref{ex:lumped-pillars} 中 $N=4$、$A_p=0.005\,\mathrm{m^2}$ 的情形，网络给出 $B_g=0.162\,\mathrm T$（极面面积 $0.20\,\mathrm{m^2}$）、柱中 $B_p=1.62\,\mathrm T$。比较两极面之间的吸力与四根柱子的连接面上的吸力。
+\solution
+(1) 取包围上半部分的闭合面：中平面 $y=0$ 加上远处一段磁场已衰减到可以忽略的弧。由对称性，中平面上 $B_x=0$，$\mathbf T_m$ 的法向分量就是拉力 $B_y^2/(2\mu_0)$。中平面在柱子处穿过铁；把它理解为柱子中一道极薄的空气接缝：法向的 $B_y$ 连续，缝中的切向 $B$ 等于 $\mu_0H_t$，可以忽略，这正是一个机械接缝实际受的力。沿中平面积分场解：经过气隙的吸力为 $5.2\,\mathrm{kN/m}$（其中两极面正对的部分 $4.7\,\mathrm{kN/m}$；若用中心磁场的磁压力乘以极面宽度估计，得 $5.5\,\mathrm{kN/m}$，偏高 18\%，因为边缘附近的场较弱）；经过两根柱子的吸力却有 $40.6\,\mathrm{kN/m}$，是气隙部分的 $7.8$ 倍。合计 $45.8\,\mathrm{kN/m}$。
+
+(2) 极面：$B_g^2/(2\mu_0)=10.5\,\mathrm{kPa}$，乘以 $0.20\,\mathrm{m^2}$ 得 $2.10\,\mathrm{kN}$，相当于 $214\,\mathrm{kg}$ 物体的重量。柱子：$B_p^2/(2\mu_0)=1.05\,\mathrm{MPa}$，四根柱子的连接面合计 $21.0\,\mathrm{kN}$，正好是极面吸力的 10 倍。这不是巧合：通过一个截面的拉力为 $\Phi^2/(2\mu_0A)$，同样的磁通集中到十分之一的面积上，力就变为 10 倍。
+
+吸力最大的地方，不是人们关心的成像气隙，而是磁通最集中的铁件接合处。设计连接件与装配工装时，要的正是这些力。
+\end{example}
+
+\subsection{数值实践}
+在有限元结果上用 \eqref{eq:maxwellstress} 计算力时：
+\begin{enumerate}
+\item 积分面放在空气中，避开紧贴材料表面和尖角的那一层单元（场的数值误差在那里最大）；需要穿过连接面时，按上例那样把它当作一道薄的空气缝，并确认这种解释符合实际结构。
+\item 改变积分面的位置、加密积分面附近的网格，检查结果是否稳定~\cite{haus,femm}。
+\item 用独立的方法核对：对整个体积加权平均的应力张量积分（FEMM 等软件提供这种做法~\cite{femm}），或虚功法（\chref{ch:lumped}，\chref{ch:framework}）。
+\end{enumerate}
+力矩用同一个积分面计算，参考点 $\vb r_0$ 要写明；磁体块在近似均匀的外场中，力矩可以用偶极子公式 $\boldsymbol\tau=\vb m\times\vb B$ \eqref{eq:dipoletorque}估计量级，但附近有铁时，铁的磁化会显著改变它。
+
+\section{对照：集总磁路与场模型}\label{sec:magnets-compare}
+
+现在可以把同一个截面的网络结果和场解并排放在一起（\tabref{tab:magnets-network-field}）。
+
+\begin{table}[htbp]\centering\small
+\caption{同一个二维截面：网络（\chref{ch:lumped} 的方法，极靴与轭板按理想铁，柱子非线性，无漏磁）与场解。}\label{tab:magnets-network-field}
+\begin{tabularx}{\linewidth}{@{}Y >{\raggedright\arraybackslash}p{.27\linewidth} >{\raggedright\arraybackslash}p{.3\linewidth}@{}}
+\toprule
+量 & 网络 & 场解\\\midrule
+气隙中心的 $B$ & $0.191\,\mathrm T$（平均值） & $0.152\,\mathrm T$\\
+穿过两极面之间的磁通 / 磁体磁通 & $100\%$（假设） & $46\%$\\
+磁体内平均 $B$ & $0.191\,\mathrm T$ & $0.305\,\mathrm T$\\
+磁体内 $H_y$ & $-765\,\mathrm{kA/m}$，均匀 & 中心 $-684\,\mathrm{kA/m}$，尖角更负\\
+柱中平均 $B$（中平面） & $1.15\,\mathrm T$ & $1.01\,\mathrm T$\\
+轭板中最大的截面平均 $B$ & 未计算（理想铁） & $1.73\,\mathrm T$（磁体边缘上方）\\
+成像区 $\Delta B/B$ & 无 & $2.5\%$\\
+计算量 & 一个标量非线性方程 & 约 $9\times10^3$ 个节点，12 次牛顿迭代\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+网络的误差在这里有两个方向：它高估了气隙磁场（漏走的磁通没有算），却低估了磁体的工作磁通（漏磁通路与气隙并联，提高了磁体的负载线）。\secref{sec:lumped-validity} 的标定可以让网络的某一个输出与场解吻合，例如加一个漏磁导；但轭板在磁体边缘上方的局部饱和、磁体尖角的反向场、成像区的均匀度，本质上是场的空间分布，不是任何一个集总元件能表示的。
+
+\begin{compare}{集总磁路与场模型}{集总磁路}{场模型（二维或三维有限元）}
+\cmprow{未知量}{几个支路磁通或节点磁位}{每一点的 $\vb A$（或 $\vb B$、$\psi$）}
+\cmprow{给出}{平均 $B_g$、电感、粗略的力、敏感度}{场分布、均匀度、漏磁、局部饱和、退磁风险、力}
+\cmprow{关键假设}{磁通沿预定路径、截面上均匀}{Maxwell 方程、本构关系与边界条件}
+\cmprow{主要误差来源}{未建模的漏磁与边缘；不知道多大}{网格、外边界、材料数据；可以通过收敛检查估计}
+\cmprow{代价}{毫秒级，便于大量扫描}{分钟到小时，三维非线性更贵}
+\cmprow{适合}{初期定尺寸、看趋势、粗筛设计}{验证、局部设计、标定网络、最终确认}
+\cmpsum{磁路告诉你“大概要多少磁体和铁”，场模型告诉你“这些磁体和铁实际在哪里做了什么”。}
+\end{compare}
+
+两种模型不是二选一，而是一个流程中的不同步骤：
+\begin{enumerate}
+\item 用网络确定量级：磁体厚度、柱的总截面、预期气隙磁场（\chref{ch:lumped}）。
+\item 对候选设计做场计算，先检查网格与外边界的收敛，再报告\tabref{tab:magnets-outputs} 中的各项。
+\item 用场解标定网络中的漏磁导与边缘系数，并在标定点以外检查（\secref{sec:lumped-validity}）。
+\item 在验证过的参数范围内用网络或代理模型做优化。
+\item 用三维场计算复核最终设计，包括非线性退磁检查与受力；最后与测量对照（\chref{ch:practice}）。
+\end{enumerate}
+
+本章用到的场计算——$A_z$ 形式、线性单元、非线性铁的牛顿迭代——一直被当作黑箱。下一部分打开这个黑箱：一条偏微分方程怎样变成一个可以求解、可以检验的矩阵方程？
+
+\begin{takeaways}
+\begin{itemize}
+\item 永磁体 $\vb B=\mu_0\boldsymbol\mu_{\rm rec}\vb H+\vb B_r$ 自带源；$\vb B_r$ 与 $\boldsymbol\mu_{\rm rec}$ 要随材料坐标系旋转。剩磁、磁化、矫顽场与等效面电流是同一关系的不同写法，$M_r$ 与 $H_c$ 相差因子 $\mu_{\rm rec}$。
+\item 软铁引导磁通、本身不是源；永磁体是源，但对外来磁通几乎透明。只赋大 $\mu_r$ 而不给 $\vb B_r$，描述的是软铁。
+\item 均匀磁化的椭球内 $\vb H_{\rm int}=\vb H_{\rm applied}-\mathbf N_d\vb M$；有效磁化率不超过 $1/N_d$，形状常常比材料更重要。孤立磁体的负载线来自形状，$P=(1-N_d)/N_d$。
+\item 场模型要报告的不只是平均 $B_g$：还有均匀度、漏磁、局部饱和、磁体内的反向场与受力，并要检查网格、外边界和对称面条件；对称面的条件取决于源的奇偶性。
+\item 力用空气中闭合面上的 Maxwell 应力 $\mathbf T_m$ 计算：沿磁力线是拉力、垂直方向是压力，量级 $B^2/(2\mu_0)$；磁通最集中的铁件接合处受力往往最大。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 某软件要求输入永磁体的“矫顽场”，有人填入了 $B_r/\mu_0$（$B_r=1.2\,\mathrm T$，$\mu_{\rm rec}=1.05$）。源强了还是弱了？大约多少？
+\item 一块磁体在装配中绕某轴转了 $90^\circ$，模型里只更新了磁体的位置。会出什么问题？各向异性的回复磁导率还要怎样处理？
+\item 把\exref{ex:magnets-ironsphere} 中的铁球换成 $\mu_r=10^4$ 的材料，球内 $B/B_0$ 约为多少？为什么几乎不变？
+\item 为什么沿厚度方向磁化的薄磁体，即使材料的回复线是直的，也可能有退磁风险？
+\item 一个磁体的四分之一模型在 $x=0$ 面上取 $A_z=0$。现在要在同一个四分之一模型中计算一个横向梯度线圈的场，$x=0$ 面上的条件应该怎样改？
+\item \exref{ex:magnets-force} 中，若把四根柱子换成截面加倍的柱子（总磁通不变），柱子连接面上的总吸力怎样变化？
+\item 有人用场解的平均气隙磁场与网络吻合来证明“网络模型已经验证”。还缺少哪些检查？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item 强了。$B_r/\mu_0=9.55\times10^5\,\mathrm{A/m}$，而 $H_c=B_r/(\mu_0\mu_{\rm rec})=9.09\times10^5\,\mathrm{A/m}$，源强了 $5.0\%$，所有场整体偏大。
+\item 磁化方向仍停留在旋转前的方向，等于把磁体装错了方向。$\vb B_r$ 要乘以旋转矩阵，张量 $\boldsymbol\mu_{\rm rec}$ 要变换为 $\mathbf R\boldsymbol\mu_{\rm rec}^{\rm loc}\mathbf R^{\mathsf T}$ \eqref{eq:magnets-rotate}。
+\item $B/B_0=10^4/(1+(10^4-1)/3)\approx3.00$。上限是 $1/N_d=3$，材料磁导率一旦很大，响应就只由形状决定。
+\item 薄磁体沿厚度方向的退磁因子接近 1，形状给出的磁导系数 $P=(1-N_d)/N_d$ 很小，工作点被推到很负的 $H$（$c/a=0.1$ 的扁椭球为 $-788\,\mathrm{kA/m}$），可能越过实际材料的拐点；棱角处的反向场还更强。
+\item 横向梯度场在 $x=0$ 面上垂直穿过，应改为自然边界条件 $\partial A_z/\partial n=0$（$\mathbf n\times\vb H=0$）；$y=0$ 面上两者都是自然边界条件。
+\item 拉力为 $\Phi^2/(2\mu_0A)$，磁通不变、面积加倍，总吸力减半，约 $10.5\,\mathrm{kN}$（柱中 $B$ 也减半，不再接近饱和）。
+\item 还要比较局部量：轭板与柱中的最大 $B$、磁体内的反向场、漏磁比例、成像区均匀度与受力；要在标定点以外的设计上检查；还要报告场解本身的网格与外边界收敛（\secref{sec:lumped-validity}、\tabref{tab:magnets-outputs}）。
+\end{answers}

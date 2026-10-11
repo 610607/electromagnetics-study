@@ -1,0 +1,361 @@
+% =====================================================================
+%  Appendices A (vector identities) and B (symbols and units).
+%  main_zh.tex puts \appendix before this file; the editor's comparison
+%  index (app:compare) follows as appendix C.
+% =====================================================================
+% "first used / used again" pointer under each identity (same macro in both editions)
+\providecommand{\idwhere}[2]{\par\vspace{1pt}{\small{\sffamily\bfseries\color{muted}\ZE{首次出现}{First used}}\enspace #1\par
+  {\sffamily\bfseries\color{muted}\ZE{后面用在}{Used again}}\enspace #2\par}\vspace{2pt}}
+
+\chapter{向量恒等式速查}\label{app:identities}
+
+全书的推导主要依靠九个向量恒等式。它们没有在书的开头一次列出，而是在第一次真正需要时才引入，并按引入的先后编号为 (V1)--(V9)。本附录把它们放在一起，编号与正文相同，这里不再另行编号。每一条后面注明它在哪里第一次出现、后来又替我们做了什么。查到一个恒等式时，不妨翻回它第一次出现的地方：那里有它的来历，也有它第一次派上用场的物理问题。
+
+\section{约定与三个基本运算}\label{sec:app-conventions}
+
+\begin{itemize}
+\item \textbf{方向。}$\vb n$ 是闭合曲面的外法向。开曲面 $S$ 的边界曲线 $\partial S$ 的绕行方向与 $\vb n$ 满足右手规则：右手四指沿绕行方向，拇指指向 $\vb n$。
+\item \textbf{光滑性。}恒等式按经典意义对足够光滑的场成立。在材料参数跳变的界面上，要么在每个区域内分别使用，再用界面条件把各区域连起来（\chref{ch:interfaces}）；要么按弱的意义理解，这正是有限元的做法（\chref{ch:femscalar}）。奇异的薄层、理想尖角或人为指定的不连续场，需要单独处理。
+\item \textbf{记号。}$\partial_x$ 表示对 $x$ 求偏导。恒等式里的 $\vb F$、$\vb G$ 是一般的光滑矢量场，$\phi$、$a$、$v$ 是一般的标量场——它们只是占位符，并不特指力或电势。
+\end{itemize}
+
+直角坐标中的三个基本运算如下，它们的几何意义（“下坡”“净流出”“环流”）见\secref{sec:calc-grad}、\secref{sec:calc-div} 与\secref{sec:calc-curl}：
+\begin{equation*}
+\nabla\phi=(\partial_x\phi,\ \partial_y\phi,\ \partial_z\phi),\qquad
+\nabla\cdot\vb F=\partial_xF_x+\partial_yF_y+\partial_zF_z,
+\end{equation*}
+\begin{equation*}
+\nabla\times\vb F=\bigl(\partial_yF_z-\partial_zF_y,\ \ \partial_zF_x-\partial_xF_z,\ \ \partial_xF_y-\partial_yF_x\bigr).
+\end{equation*}
+标量拉普拉斯算子为 $\nabla^2\phi=\nabla\cdot\nabla\phi$。直角坐标中的矢量拉普拉斯算子 $\nabla^2\vb F$ 就是对每个分量分别作用标量拉普拉斯算子；在柱坐标、球坐标中不能这样逐分量地做。
+
+\section{九个恒等式}\label{sec:app-nine}
+
+\tabref{tab:app-identities} 是一览表；下面逐条写出，数学内容与正文完全相同。
+
+\begin{table}[htbp]\centering\small
+\caption{九个恒等式一览（编号按第一次使用的先后）。}\label{tab:app-identities}
+\begin{tabularx}{\linewidth}{@{}l >{\raggedright\arraybackslash}p{.2\linewidth} >{\raggedright\arraybackslash}p{.14\linewidth} Y@{}}
+\toprule
+编号 & 名称 & 首次出现 & 它替我们做了什么\\\midrule
+\eqref{id:div} & 散度定理 & \chref{ch:calculus} & 体内的源 $\leftrightarrow$ 边界上的通量\\
+\eqref{id:stokes} & Stokes 定理 & \chref{ch:calculus} & 面上的旋度通量 $\leftrightarrow$ 边界上的环量\\
+\eqref{id:zeros} & 两个恒为零的组合 & \chref{ch:calculus} & 势函数为什么存在；精确序列\\
+\eqref{id:product} & 乘积法则 & \chref{ch:calculus} & 变系数不能提出导数；界面电荷的来历\\
+\eqref{id:crossdiv} & 叉积的散度 & \chref{ch:systems} & Poynting 定理；推出 \eqref{id:curlibp}\\
+\eqref{id:curlcurl} & 旋度的旋度 & \chref{ch:regimes} & 扩散方程、波动方程、Poisson 方程\\
+\eqref{id:scalaribp} & 标量分部积分 & \chref{ch:tms} & TMS 投影；标量有限元的弱形式\\
+\eqref{id:curlibp} & 旋度分部积分 & \chref{ch:femvector} & 磁场与射频的弱形式\\
+\eqref{id:path} & 沿路径的链式法则 & \chref{ch:neuro} & 弯曲神经上的激活函数\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{V1\quad 散度定理}
+\begin{equation*}
+\int_V\nabla\cdot\vb F\dV=\oint_{\partial V}\vb F\cdot\vb n\dS .
+\end{equation*}
+左边把体内各处的“源”加起来，右边是从边界净流出的总量。它把“某处的散度等于什么”这种局部守恒方程，换成“流出多少等于里面有多少源”这种边界上的通量平衡。
+\idwhere{\eqref{id:div}，\secref{sec:calc-div}：把体积切成小盒子，相邻盒子公共面上的通量两两抵消，只剩最外层的表面。}
+{高斯定律与电荷守恒的积分形式（\chref{ch:electric}）；$\vb D$、$\vb B$ 的通量 \eqref{eq:DHintegral}；薄盒导出的法向界面条件 \eqref{eq:normalbc}；电极电流之和为零 \eqref{eq:currentcompatibility}；磁路的节点律 \eqref{eq:kcl-flux}；把应力张量的体积分化成面积分 \eqref{eq:maxwellstress}；以及 \eqref{id:scalaribp}、\eqref{id:curlibp} 的推导。}
+
+\subsubsection{V2\quad Stokes 定理}
+\begin{equation*}
+\int_S(\nabla\times\vb F)\cdot\vb n\dS=\oint_{\partial S}\vb F\cdot\dd\boldsymbol\ell .
+\end{equation*}
+左边是旋度穿过曲面的通量，右边是沿边界曲线的环量。只要边界相同，换一张曲面，左边不变。
+\idwhere{\eqref{id:stokes}，\secref{sec:calc-curl}：把曲面铺满小回路，公共边被走两次、方向相反，只剩外边界。}
+{安培定律的积分形式 \eqref{eq:amperevac}；法拉第定律 \eqref{eq:faradayintegral}；“矢势的环量就是磁通” \eqref{eq:Aflux}；窄回路导出的切向界面条件 \eqref{eq:tangentbc}；磁路的回路律 \eqref{eq:kvl-mmf}。}
+
+\subsubsection{V3\quad 两个恒为零的组合}
+\begin{equation*}
+\nabla\times\nabla\phi=0,\qquad \nabla\cdot(\nabla\times\vb F)=0 .
+\end{equation*}
+来自混合偏导数可以交换次序。梯度没有环流，旋度没有源头。
+\idwhere{\eqref{id:zeros}，\chref{ch:calculus}：由此预告了 $\vb E=-\nabla\phi$、$\vb B=\nabla\times\vb A$ 这两种表示。}
+{把 $\vb B$ 写成 $\nabla\times\vb A$ 就自动无散 \eqref{eq:vectorpotential}，$\vb E=-\partial_t\vb A-\nabla\phi$ 自动满足法拉第定律 \eqref{eq:Etwopotentials}；规范变换不改变 $\vb B$ \eqref{eq:gauge}；对安培定律取散度得到电荷守恒（\secref{sec:matter-displacement}）；TMS 的梯度修正不改变环量（\chref{ch:tms}）；有限元精确序列中的 $\vb C\vb G=0$、$\vb D\vb C=0$（\chref{ch:femvector}）。反过来不一定成立：无旋场只在单连通区域内才是单值标势的梯度（\secref{sec:potentials-scalar}）。}
+
+\subsubsection{V4\quad 乘积法则}
+\begin{equation*}
+\nabla\cdot(a\vb F)=\nabla a\cdot\vb F+a\nabla\cdot\vb F,
+\qquad
+\nabla\times(a\vb F)=\nabla a\times\vb F+a\nabla\times\vb F .
+\end{equation*}
+与一元函数的 $(uv)'=u'v+uv'$ 是同一回事。要点在第一项：系数 $a$ 随位置变化时，不能把它从微分号里提出来。
+\idwhere{\eqref{id:product}，\chref{ch:calculus}：电导率渐变的导体板。}
+{TES 方程展开为 $\sigma\nabla^2\phi+\nabla\sigma\cdot\nabla\phi=0$，第二项正是界面电荷所在（\chref{ch:tes}）；TMS 的源项 $\vb E_p\cdot\nabla\sigma$ \eqref{eq:tmspde}；电荷弛豫 \eqref{eq:relaxation}；Biot--Savart 定律的推导（\secref{sec:potentials-biot}）；Maxwell 应力的推导（\chref{ch:magnets}）；棱基函数的旋度（\chref{ch:femvector}）；以及 \eqref{id:scalaribp} 的推导。}
+
+\subsubsection{V5\quad 叉积的散度}
+\begin{equation*}
+\nabla\cdot(\vb F\times\vb G)=\vb G\cdot(\nabla\times\vb F)-\vb F\cdot(\nabla\times\vb G) .
+\end{equation*}
+求散度时导数要么落在 $\vb F$ 上，要么落在 $\vb G$ 上；落在 $\vb G$ 上的那一组因为叉积换了次序，多出一个负号。
+\idwhere{\eqref{id:crossdiv}，\secref{sec:systems-energy}：追踪电磁能量的流动。}
+{Poynting 定理 \eqref{eq:poynting}；与 \eqref{id:div} 合用推出 \eqref{id:curlibp}。}
+
+\subsubsection{V6\quad 旋度的旋度}
+\begin{equation*}
+\nabla\times(\nabla\times\vb F)=\nabla(\nabla\cdot\vb F)-\nabla^2\vb F .
+\end{equation*}
+右端的 $\nabla(\nabla\cdot\vb F)$ 只有在另有理由说明 $\nabla\cdot\vb F=0$ 时才能丢掉。
+\idwhere{\eqref{id:curlcurl}，\secref{sec:regimes-diffusion}：推导磁扩散方程。}
+{磁扩散方程 \eqref{eq:diffusion} 与趋肤深度 \eqref{eq:skindepth}；波动方程 \eqref{eq:wave}；库仑规范下矢势的 Poisson 方程 \eqref{eq:curlcurlA}；无源均匀区域中梯度场的每个分量都是调和函数（\chref{ch:mri}）。}
+
+\subsubsection{V7\quad 标量分部积分}
+\begin{equation*}
+\int_Vv\,\nabla\cdot\vb F\dV=\oint_{\partial V}v\,\vb F\cdot\vb n\dS-\int_V\nabla v\cdot\vb F\dV .
+\end{equation*}
+导数从 $\vb F$ 上“挪”到 $v$ 上，代价是一个边界项和一个负号。
+\idwhere{\eqref{id:scalaribp}，\secref{sec:tms-projection}：把 TMS 的修正写成加权投影。}
+{由正交性 \eqref{eq:tmsorthogonal} 得到方程与自然边界条件；标量有限元的弱形式 \eqref{eq:scalarweak} 与完整电极模型的弱形式 \eqref{eq:cemweak}；电的互易性（\secref{sec:framework-reciprocity}）。}
+
+\subsubsection{V8\quad 旋度分部积分}
+\begin{equation*}
+\int_V(\nabla\times\vb F)\cdot\vb G\dV
+=\int_V\vb F\cdot(\nabla\times\vb G)\dV
++\oint_{\partial V}(\vb n\times\vb F)\cdot\vb G\dS .
+\end{equation*}
+旋度从 $\vb F$ 挪到 $\vb G$ 上，代价是一个边界项。边界项的符号取决于叉积的次序：$\vb n\times\vb F$ 与 $\vb F\times\vb n$ 互为相反数。
+\idwhere{\eqref{id:curlibp}，\secref{sec:femvector-weak}：推导静磁问题的弱形式。}
+{磁弱形式 \eqref{eq:magweak}；射频的弱形式 \eqref{eq:rfweak}，其中的边界项承载端口与吸收边界。}
+
+\subsubsection{V9\quad 沿路径的链式法则}
+\begin{equation*}
+\frac{\dd}{\dd s}\vb F(\vb r(s))=(\vb t\cdot\nabla)\vb F,
+\qquad \vb t=\frac{\dd\vb r}{\dd s},\quad \abs{\vb t}=1 .
+\end{equation*}
+$s$ 为弧长，$\vb t$ 为单位切向量。逐分量看，它就是多元函数的链式法则 $\dd F_i/\dd s=\sum_j(\partial F_i/\partial x_j)(\dd x_j/\dd s)$。路径弯曲时，对投影 $\vb F\cdot\vb t$ 求导还必须对 $\vb t$ 求导。
+\idwhere{\eqref{id:path}，\secref{sec:neuro-bends}：解释均匀电场为什么能在神经的弯曲处使它极化。}
+{弯曲轴突的激活函数 \eqref{eq:curvatureAF}；沿神经路径逐段积分得到的节点驱动差 \eqref{eq:nervedifference}——它的二阶差分自动包含了弯曲项。}
+
+\section{两个最常用的分部积分形式}\label{sec:app-ibp}
+
+有限元里用得最多的，是 \eqref{id:scalaribp} 与 \eqref{id:curlibp} 的两个具体形式。
+
+\subsubsection{电导问题。} 在 \eqref{id:scalaribp} 中取 $\vb F=\sig\nabla u$，$u$ 是试探的电势，$v$ 是测试函数，$\sig$ 是电导率张量：
+\begin{equation*}
+\int_V\nabla v\cdot\sig\nabla u\dV
+=-\int_Vv\,\nabla\cdot(\sig\nabla u)\dV
++\oint_{\partial V}v\,\vb n\cdot\sig\nabla u\dS .
+\end{equation*}
+推导中没有假设电导率在空间中为常数。这正是从散度形式出发的有限元能自然处理材料界面的原因：界面两侧的边界项相互抵消，留下的就是法向电流连续（\chref{ch:femscalar}）。
+
+\subsubsection{静磁问题。} 在 \eqref{id:curlibp} 中取 $\vb F=\vb H$、$\vb G=\vb w$，$\vb w$ 是矢量测试场：
+\begin{equation*}
+\int_V\vb w\cdot(\nabla\times\vb H)\dV
+=\int_V(\nabla\times\vb w)\cdot\vb H\dV
++\oint_{\partial V}\vb w\cdot(\vb n\times\vb H)\dS .
+\end{equation*}
+边界上给定切向的 $\vb H$（例如自然边界条件 $\vb n\times\vb H=0$）时，这一项直接进入右端；符号来自 \eqref{id:curlibp}，把 $\vb n\times\vb H$ 写成 $\vb H\times\vb n$ 会使它反号。
+
+\begin{compare}{标量分部积分与旋度分部积分}{标量分部积分 \eqref{id:scalaribp}}{旋度分部积分 \eqref{id:curlibp}}
+\cmprow{导数怎样挪}{散度从 $\vb F$ 挪到 $v$ 上，变成梯度}{旋度从 $\vb F$ 挪到 $\vb G$ 上，仍是旋度}
+\cmprow{从哪里来}{\eqref{id:div} 用于 $v\vb F$，再用 \eqref{id:product} 展开}{\eqref{id:div} 用于 $\vb F\times\vb G$，再用 \eqref{id:crossdiv} 展开}
+\cmprow{边界项}{$\oint v\,\vb F\cdot\vb n\dS$：法向通量}{$\oint(\vb n\times\vb F)\cdot\vb G\dS$：切向分量}
+\cmprow{符号}{体积项前有负号}{体积项前没有负号；叉积换序，边界项变号}
+\cmprow{自然边界条件}{给定流出的电流 $\vb J\cdot\vb n$，绝缘时为零}{给定切向 $\vb n\times\vb H$，例如 $\vb n\times\vb H=0$}
+\cmprow{用在}{TES、TMS 的标量弱形式 \eqref{eq:scalarweak}}{静磁、涡流与射频的矢量弱形式 \eqref{eq:magweak}、\eqref{eq:rfweak}}
+\cmpsum{两者都是“散度定理加乘积法则”；标量版本的边界项是法向通量，旋度版本的边界项是切向场。记不清符号时，用两行重新推一遍，比凭记忆可靠。}
+\end{compare}
+
+\section{恒等式之间的关系}\label{sec:app-family}
+
+九个恒等式其实只有三种来历。看清这一点，忘了某个符号时就能自己推回来。
+\begin{enumerate}
+\item \textbf{把小块加起来：}\eqref{id:div} 与 \eqref{id:stokes}。把区域切成小盒子或把曲面铺满小回路，内部的公共面、公共边两两抵消，只剩边界（\chref{ch:calculus}）。它们联系的是“区域内部”与“区域边界”。
+\item \textbf{逐点求导：}\eqref{id:zeros} 来自混合偏导数可交换，\eqref{id:product}、\eqref{id:crossdiv} 来自乘积法则，\eqref{id:curlcurl} 是逐分量展开，\eqref{id:path} 是多元链式法则。它们在每一点上成立，与区域和边界无关。
+\item \textbf{前两类的组合：}\eqref{id:scalaribp} 是把 \eqref{id:div} 用于 $v\vb F$，再用 \eqref{id:product} 展开 $\nabla\cdot(v\vb F)$；\eqref{id:curlibp} 是把 \eqref{id:div} 用于 $\vb F\times\vb G$，再用 \eqref{id:crossdiv} 展开，并注意 $\vb n\cdot(\vb F\times\vb G)=(\vb n\times\vb F)\cdot\vb G$。所以两个分部积分公式都只是“散度定理加乘积法则”。
+\end{enumerate}
+
+\begin{pitfall}[“恒等式总是对的，所以怎样用都不会错”]
+恒等式本身不会错，用错的是它的前提。全书遇到过的几种误用：
+\begin{itemize}
+\item 把分片常数的 $\sigma$ 当作常数提到导数外面 \eqref{id:product}，丢掉了界面上的 $\nabla\sigma\cdot\nabla\phi$，也就丢掉了界面电荷（\chref{ch:tes}）。
+\item 没有理由就丢掉 \eqref{id:curlcurl} 中的 $\nabla(\nabla\cdot\vb F)$。只有 $\nabla\cdot\vb B=0$、库仑规范或均匀无源区域这类独立的理由，才允许这样做。
+\item 把 \eqref{id:zeros} 反过来用：在绕导线的区域里，$\nabla\times\vb H=0$ 并不意味着存在单值的磁标势（\secref{sec:potentials-scalar}）。
+\item 把 \eqref{id:curlibp} 的边界项写成 $(\vb F\times\vb n)\cdot\vb G$，符号反了。
+\item 沿弯曲路径对 $\vb E\cdot\vb t$ 求导时漏掉 $\dd\vb t/\dd s$ \eqref{id:path}——而它恰恰是弯曲处激活函数的来源 \eqref{eq:curvatureAF}。
+\item 跨过理想尖角、奇异薄层直接使用 \eqref{id:div}、\eqref{id:stokes}：那里要用界面条件，或者先把奇异性单独处理。
+\end{itemize}
+\end{pitfall}
+
+% =====================================================================
+\chapter{符号与单位}\label{app:symbols}
+
+全书使用国际单位制（SI）。下面按用途分组列出主要符号，每一行的最后注明详细讨论它的地方。记号的总体约定——矢量与张量的字体、峰值相量、恒等式的编号——见前言中的“记号与约定”（\pgref{front:notation}）；插图中颜色与物理量的对应关系见前言中的“图中颜色的含义”（\pgref{front:colours}），这里不再重复。
+
+同一个字母在不同语境中常常有不同的含义，各章都在使用处局部定义。最容易混淆的几组集中在\secref{sec:app-collisions}；常用常数与单位换算在\secref{sec:app-constants}。
+
+\newcommand{\symhead}{\toprule 符号 & 单位 & 名称 & 含义与出处\\\midrule}
+\newcommand{\symtable}[1]{\begingroup\small\renewcommand{\arraystretch}{1.18}%
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{.15\linewidth} >{\raggedright\arraybackslash}p{.15\linewidth} >{\raggedright\arraybackslash}p{.18\linewidth} >{\raggedright\arraybackslash}p{.43\linewidth}@{}}
+\symhead\endfirsthead
+\symhead\endhead
+#1
+\bottomrule
+\end{longtable}\endgroup}
+
+\needspace{8\baselineskip}% keep the heading with its table
+\section{场、源与势}\label{sec:app-fields}
+\symtable{%
+$\vb E$ & V/m & 电场强度（电场） & 单位静止试探电荷受的力；推动电荷、输送能量的是它（\chref{ch:electric}）\\
+$\vb D$ & $\mathrm{C/m^2}$ & 电位移 & $\varepsilon_0\vb E+\vb P$；散度是自由电荷（\secref{sec:matter-DH}）\\
+$\vb B$ & T & 磁通密度 & 出现在 Lorentz 力、磁通与法拉第定律中的磁场（\chref{ch:magnetic}）\\
+$\vb H$ & A/m & 磁场强度 & $\vb B/\mu_0-\vb M$；环量是自由电流加位移电流（\secref{sec:matter-DH}）\\
+$\vb P$ & $\mathrm{C/m^2}$ & 极化强度 & 单位体积的电偶极矩（\secref{sec:matter-P}）\\
+$\vb M$ & A/m & 磁化强度 & 单位体积的磁偶极矩（\secref{sec:matter-M}）\\
+$\vb p$；$\vb m$ & C\,m；$\mathrm{A\,m^2}$ & 电偶极矩；磁偶极矩 & $q\vb d$，$\vb d$ 从负电荷指向正电荷；小电流环的电流乘以有向面积（\secref{sec:matter-dipoles}）\\
+$q$，$Q$ & C & 电荷 & 单个电荷或一个区域内的总电荷，不是密度\\
+$\rho_f$；$\rho_b$ & $\mathrm{C/m^3}$ & 自由、束缚电荷密度 & $\nabla\cdot\vb D=\rho_f$；$\rho_b=-\nabla\cdot\vb P$ \eqref{eq:boundcharge}\\
+$q_s$ & $\mathrm{C/m^2}$ & 面电荷密度 & 界面上的一薄层电荷；$q_{f,s}$、$q_{b,s}$ 分别为自由、束缚面电荷（\secref{sec:interfaces-surfacecharge}）\\
+$I$ & A & 电流 & 穿过一个截面的总电流\\
+$\vb J$ & $\mathrm{A/m^2}$ & 电流密度 & 单位时间穿过单位面积的电荷（\secref{sec:electric-current}）\\
+$\vb J_c$；$\vb J_s$ & $\mathrm{A/m^2}$ & 传导电流；外加电流 & $\vb J_c=\sig\vb E$；$\vb J_s$ 是给定的源，不能与同一传导响应重复计入（\secref{sec:electric-ohm}）\\
+$\vb J_f$ & $\mathrm{A/m^2}$ & 自由电流密度 & $\vb J_s+\vb J_c$\\
+$\vb J_M$；$\vb K_M$ & $\mathrm{A/m^2}$；A/m & 磁化电流；束缚面电流 & $\nabla\times\vb M$；$\vb M\times\vb n$ \eqref{eq:boundcurrent}\\
+$\vb J_{\rm mat}$ & $\mathrm{A/m^2}$ & 全部物质电流 & $\vb J_f+\partial_t\vb P+\nabla\times\vb M$（\secref{sec:matter-displacement}）\\
+$\vb J_{\rm amp}$ & $\mathrm{A/m^2}$ & 安培定律右端的总量 & $\vb J_f+\partial_t\vb D$；处处无散，含真空位移电流，不全是电荷的输运\\
+$\vb K_f$，$\vb K_s$ & A/m & 面电流密度 & 电流片上单位横向长度的电流；$\vb K_f$ 见界面条件 \eqref{eq:tangentbc}，$\vb K_s$ 见线圈电流片（\secref{sec:potentials-stream}）\\
+$\phi$ & V & 电标势 & 给出电场的梯度部分；有感应时它不是电场的全部（\secref{sec:electric-potential}）\\
+$\vb A$；$A_z$ & Wb/m（T\,m） & 磁矢势 & $\vb B=\nabla\times\vb A$，依赖规范；二维中 $A_z$ 的等值线就是磁力线（\secref{sec:magnetic-A}、\secref{sec:potentials-2d}）\\
+$\chi$ & Wb & 规范函数 & $\vb A'=\vb A+\nabla\chi$，$\phi'=\phi-\partial_t\chi$ \eqref{eq:gauge}\\
+$\psi$ & A & 磁标势 & 无电流区域中 $\vb H=-\nabla\psi$；要处理拓扑（\secref{sec:potentials-scalar}）\\
+$\psi_s$ & A & 表面流函数 & $\vb K_s=\nabla_s\psi_s\times\vb n$；等值线就是电流路径 \eqref{eq:stream}\\
+$\vb E_p$ & V/m & 初级电场 & $-\partial_t\vb A_p$，只由线圈决定 \eqref{eq:tmsE}\\
+$V_e^{\rm eff}$ & V & 有效胞外势 & 沿一条神经路径的 $-\int\vb E\cdot\vb t\,\dd s$，只对这条路径有意义（\chref{ch:neuro}）\\
+}
+
+\needspace{8\baselineskip}% keep the heading with its table
+\section{材料}\label{sec:app-materials}
+\symtable{%
+$\sigma$，$\sig$ & S/m & 电导率（张量） & $\vb J_c=\sig\vb E$；张量随材料坐标系旋转 \eqref{eq:sigmatensor}\\
+$\varepsilon$，$\eps$；$\varepsilon_r$ & F/m；1 & 介电常数；相对介电常数 & 线性材料中 $\vb D=\eps\vb E$（\secref{sec:matter-linear}）\\
+$\mu$，$\boldsymbol\mu$；$\mu_r$ & H/m；1 & 磁导率；相对磁导率 & 非线性材料中必须说明是割线值、微分值还是线性化值\\
+$\nu$ & m/H & 磁阻率 & 标量线性关系中为 $1/\mu$，$\vb H=\nu\vb B$\\
+$\chi_e$，$\chi_m$ & 1 & 电极化率、磁化率 & $\vb P=\varepsilon_0\chi_e\vb E$，$\vb M=\chi_m\vb H$；不同于规范函数 $\chi$ \eqref{eq:susceptibility}\\
+$\boldsymbol Y$ & S/m & 复导纳率 & $\sig+\jj\omega\eps$ \eqref{eq:admittivity}；耗散来自它的 Hermite 部分（\secref{sec:framework-sar}）\\
+$\mu_{\rm sec}$，$\mu_{\rm diff}$ & H/m & 割线、微分磁导率 & $B/H$ 与 $\dd B/\dd H$ \eqref{eq:permeabilities}\\
+$\nu_{\rm sec}$，$\nu_{\rm diff}$；$\boldsymbol\nu_{\rm inc}$ & m/H & 割线、微分磁阻率；增量磁阻率张量 & 牛顿切线中的材料项 \eqref{eq:inctensor}\\
+$B_s$，$H_s$ & T，A/m & 合成曲线的参数 & 教学用的 B--H 曲线 \eqref{eq:syntheticbh}，不是材料数据\\
+$\vb B_r$，$B_r$ & T & 剩磁 & 永磁体本构关系中与场无关的源项 \eqref{eq:pmconstitutive}\\
+$\mu_{\rm rec}$，$\boldsymbol\mu_{\rm rec}$ & 1 & 相对回复磁导率 & 回复线的斜率除以 $\mu_0$ \eqref{eq:recoil}\\
+$H_{cB}$，$H_{cJ}$ & A/m & 矫顽力、内禀矫顽力 & 使 $B=0$ 与使 $M=0$ 的反向场（\secref{sec:bh-hysteresis}）\\
+$H_c$ & A/m & 直线回复线的截距 & $B_r/(\mu_0\mu_{\rm rec})$；一般不等于 $H_{cB}$，更不是安全的退磁界限（\secref{sec:lumped-pm}）\\
+$N_d$，$\mathbf N_d$ & 1 & 退磁因子、退磁张量 & 只取决于形状；椭球的三个因子之和为 1 \eqref{eq:demag}\\
+$(BH)_{\max}$ & $\mathrm{J/m^3}$ & 最大磁能积 & 直线回复线上 $B_m|H_m|$ 的最大值（\secref{sec:lumped-pm}）\\
+$\rho_m$ & $\mathrm{kg/m^3}$ & 质量密度 & 把单位体积的损耗换算成 SAR \eqref{eq:localsar}\\
+}
+
+\needspace{8\baselineskip}% keep the heading with its table
+\section{电路、磁路、能量与力}\label{sec:app-lumped}
+\symtable{%
+$\Phi_B$，$\Phi$ & Wb & 磁通 & 指定曲面上 $\vb B$ 法向分量的积分 \eqref{eq:atlasflux}\\
+$\lambda$ & Wb & 磁链 & 线圈链接的磁通，逐匝相加（\secref{sec:magnetic-linkage}）\\
+$L$；$L_{ij}$ & H & 自感；互感 & $\lambda=LI$；多线圈 $\boldsymbol\lambda=\vb L\vb I$，$\vb L$ 对称 \eqref{eq:multicircuit}\\
+$R$；$G$ & $\Omega$；S & 电阻；电导 & 欧姆集总模型中压降与电流之比；$G=1/R$\\
+$C$ & F & 电容 & 理想线性静电模型中电荷与电压之比 \eqref{eq:capall}\\
+$Z$ & $\Omega$ & 阻抗 & 正弦稳态端电压与电流相量之比，一般为复数 \eqref{eq:impedance}\\
+$\mathcal E$ & V & 电动势 & 沿有向闭合回路的 $\oint\vb E\cdot\dd\boldsymbol\ell$，是单位电荷得到的功，不是力 \eqref{eq:atlasemf}\\
+$N$ & 1 & 匝数 & 只能计入一次（\chref{ch:tms}）\\
+$\mathcal F$ & A & 磁动势 & $NI=\oint\vb H\cdot\dd\boldsymbol\ell$ \eqref{eq:mmf}\\
+$\mathcal R$；$\mathcal P$ & A/Wb；H & 磁阻；磁导 & $\ell/(\mu A)$ 及其倒数 \eqref{eq:reluctance}\\
+$w_e$，$w_m$ & $\mathrm{J/m^3}$ & 电、磁能量密度 & 线性材料中 $\tfrac12\vb E\cdot\vb D$、$\tfrac12\vb B\cdot\vb H$ \eqref{eq:energydensity}\\
+$w_m'$ & $\mathrm{J/m^3}$ & 磁共能密度 & $\int\vb B\cdot\dd\vb H$；总有 $w_m+w_m'=\vb B\cdot\vb H$，只有线性时二者都等于 $\tfrac12\vb B\cdot\vb H$（\chref{ch:framework}）\\
+$W$，$W'$ & J & 能量、共能 & $\int i\,\dd\lambda$ 与 $\int\lambda\,\dd i$；求力时分别对应恒磁链与恒电流（\chref{ch:framework}）\\
+$p$；$\overline p$ & $\mathrm{W/m^3}$ & 损耗密度；周期平均值 & 瞬时 $\vb E\cdot\vb J_c$ \eqref{eq:lossdensity}；峰值相量下 $\tfrac12\mathrm{Re}(\widetilde{\vb E}^\dagger\sig\widetilde{\vb E})$（\secref{sec:framework-sar}）\\
+$\vb S$ & $\mathrm{W/m^2}$ & Poynting 矢量 & $\vb E\times\vb H$，电磁能流 \eqref{eq:poynting}\\
+$\mathbf T_m$ & Pa & Maxwell 应力张量 & 在空气中的闭合面上积分得到力与力矩 \eqref{eq:maxwellstress}\\
+$\mathrm{SAR}$ & W/kg & 比吸收率 & 单位质量的周期平均损耗 \eqref{eq:localsar}\\
+$\vb Q$，$Q_{ij}$ & W/kg（每单位驱动的平方） & SAR 矩阵 & $\mathrm{SAR}=\vb c^\dagger\vb Q\vb c$，Hermite 半正定 \eqref{eq:sarQ}\\
+}
+
+\needspace{8\baselineskip}% keep the heading with its table
+\section{时间、频率与尺度}\label{sec:app-scales}
+\symtable{%
+$f$，$\omega$ & Hz，rad/s & 频率、角频率 & $\omega=2\pi f$\\
+$\widetilde{\vb E}$ 等 & 同对应的场 & 峰值相量 & $\vb E(t)=\mathrm{Re}\{\widetilde{\vb E}e^{\jj\omega t}\}$；有效值等于峰值除以 $\sqrt2$ \eqref{eq:phasor}\\
+$\tau_q$ & s & 电荷弛豫时间 & $\varepsilon/\sigma$ \eqref{eq:relaxation}\\
+$\tau_m$ & s & 磁扩散时间 & $\mu\sigma\ell^2$（\secref{sec:regimes-scales}）；与神经的膜时间常数同名\\
+$\tau_{em}$ & s & 电磁传播时间 & $\ell\sqrt{\mu\varepsilon}$\\
+$\eta_w$，$\eta_d$，$\eta_m$ & 1 & 三把尺子 & 波的延迟、位移与传导之比、感应电流的磁场与源磁场之比；$\eta_w^2=\eta_d\eta_m$ \eqref{eq:scales}\\
+$\ell$ & m & 特征长度 & 按所估计的那条反馈来选（\secref{sec:regimes-scales}）\\
+$\delta$ & m & 趋肤深度 & $\sqrt{2/(\omega\mu\sigma)}$ \eqref{eq:skindepth}\\
+$k$；$\lambda_0$ & 1/m；m & 波数；自由空间波长 & $k^2=\omega^2\mu\varepsilon-\jj\omega\mu\sigma$ \eqref{eq:wave}；$\lambda_0$ 不是磁链\\
+}
+
+\needspace{8\baselineskip}% keep the heading with its table
+\section{MRI、神经响应与有限元}\label{sec:app-applications}
+\symtable{%
+$B_0$ & T & 主磁场 & 静态的偏置磁场（\chref{ch:mri}）\\
+$\vb b_k$ & T/A & 每安培磁场图 & 第 $k$ 个线圈单位电流产生的磁场\\
+$\vb e_k$ & (V/m)/(A/s) 或 (V/m)/A & 单位电场图 & 感应：每单位电流变化率，已含导体修正 \eqref{eq:tmswaveform}；传导：每单位电极电流 \eqref{eq:tesleadfield}\\
+$G$；$G_{ij}$ & T/m & 梯度强度；磁场梯度张量 & 如 $\partial b_z/\partial x$；$G_{ij}=\partial B_i/\partial x_j$ 是空间导数，不是时间变化率 \eqref{eq:gradientmatrix}\\
+$\eta_k$ & T/(m\,A) & 梯度效率 & $G_k=\eta_kI_k$（\chref{ch:projects}）；不是三把尺子中的 $\eta$\\
+$\gamma$，$\bar\gamma$ & rad/(s\,T)，Hz/T & 旋磁比 & $\bar\gamma=\gamma/2\pi$，氢核约 $42.58\,\mathrm{MHz/T}$\\
+$f_0$ & Hz & 拉莫尔频率 & $\bar\gamma B_0$（\chref{ch:rf}）\\
+$\widetilde b_{\rm co}$，$\widetilde b_{\rm counter}$ & T & 同向、反向旋转分量 & 发射看同向分量（$B_1^+$），接收看反向分量（$B_1^-$） \eqref{eq:corotating}\\
+$V_m$ & V & 膜电压 & 相对静息值的偏离 $V_i-V_e-V_{\rm rest}$ \eqref{eq:cablephysical}\\
+$E_s$ & V/m & 纵向电场 & $\vb E\cdot\vb t$，$\vb t$ 为神经路径的单位切向\\
+$f$ & $\mathrm{V/m^2}$ & 激活函数 & $\partial^2V_e/\partial s^2=-\partial E_s/\partial s$ \eqref{eq:activating}\\
+$r_i$；$c_m$；$g_m$ & $\Omega$/m；F/m；S/m & 单位长度的轴向电阻、膜电容、膜电导 & 都按单位长度定义；$g_m$ 与电导率单位相同，含义完全不同\\
+$\tau_m$；$\lambda$ & s；m & 膜时间常数；长度常数 & $c_m/g_m$；$1/\sqrt{r_ig_m}$ \eqref{eq:cablenormalized}\\
+$C_n$，$R_a$，$I_{{\rm ion},n}$ & F，$\Omega$，A & 一个节点的总量 & 节点模型中 $C_n=c_m\Delta s$，$R_a=r_i\Delta s$ \eqref{eq:discretecable}\\
+$A_{\rm rh}$；$\tau_{\rm ch}$ & 刺激幅值的单位；s & 基强度；时值 & 被动模型中 $\tau_{\rm ch}=\tau_m\ln2$ \eqref{eq:exactsd}\\
+$h$ & m & 网格尺寸 & 收敛阶按 $h$ 计（\chref{ch:femscalar}）\\
+$N_i$ & 1 & 节点基函数 & 在节点 $i$ 为 1、在其他节点为 0（\secref{sec:femscalar-basis}）\\
+$\vb W_{ij}$ & 1/m & 棱基函数 & 沿自己那条棱的线积分为 1 \eqref{eq:edgebasis}\\
+$\vb K$；$\vb u$，$\vb f$ & 电导问题中为 S；V，A & 刚度矩阵；未知系数；右端 & 电导问题中 $\vb K$ 是一张电导网络，$\vb f$ 是节点注入的电流（\secref{sec:femscalar-bar}）\\
+$\vb J_N$ & --- & Jacobian 矩阵 & 牛顿法的切线矩阵，不是电流密度 \eqref{eq:newtonK}\\
+$\vb G$，$\vb C$，$\vb D$ & --- & 离散梯度、旋度、散度 & 关联矩阵，$\vb C\vb G=0$、$\vb D\vb C=0$（\chref{ch:femvector}）\\
+}
+
+\section{同一个字母，不同的含义}\label{sec:app-collisions}
+
+符号不够用，同一个字母只好身兼数职。\tabref{tab:app-collisions} 列出全书中最容易混淆的几组。读公式时先看单位：单位不同，就一定不是同一个量。
+
+\begin{table}[H]\centering\small
+\caption{同一个字母的不同含义。}\label{tab:app-collisions}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{.1\linewidth} Y Y@{}}
+\toprule
+字母 & 含义一 & 含义二（及其他）\\\midrule
+$\lambda$ & 磁链，Wb（\secref{sec:magnetic-linkage}） & 神经的长度常数，m（\chref{ch:neuro}）；自由空间波长另记作 $\lambda_0$\\
+$\tau_m$ & 磁扩散时间 $\mu\sigma\ell^2$（\chref{ch:regimes}） & 膜时间常数 $c_m/g_m$（\chref{ch:neuro}）\\
+$\chi$ & 规范函数，Wb（\secref{sec:potentials-gauge}） & 带下标的 $\chi_e$、$\chi_m$：无量纲的极化率\\
+$A$ & 面积，$\mathrm{m^2}$（$A_c$、$A_m$、$A_p$ 等） & 磁矢势 $\vb A$ 及其分量 $A_z$，Wb/m\\
+$R$ & 电阻，$\Omega$ & 曲率半径、源点到场点的距离 $|\vb r-\vb r'|$，m；磁阻另记作 $\mathcal R$\\
+$\psi$，$\psi_s$ & 磁标势，生成 $\vb H$ & 表面流函数，生成电流；二者单位都是 A，用途完全不同（\secref{sec:potentials-compare}）\\
+$\rho$ & $\rho_f$：电荷密度，$\mathrm{C/m^3}$ & $\rho_m$：质量密度，$\mathrm{kg/m^3}$\\
+$f$ & 频率，Hz & 激活函数，$\mathrm{V/m^2}$；黑体 $\vb f$ 是有限元的右端向量\\
+$G$ & 梯度强度，T/m；$G_{ij}$ 为梯度张量 & 电导，S；黑体 $\vb G$ 是离散梯度矩阵\\
+$\vb K$ & 刚度矩阵 & 面电流密度 $\vb K_f$、$\vb K_s$、$\vb K_M$，A/m\\
+$\vb J$ & 电流密度，$\mathrm{A/m^2}$ & $\vb J_N$：Jacobian 矩阵\\
+$P$ & 极化强度 $\vb P$，$\mathrm{C/m^2}$；功率 $P$，W & 磁导 $\mathcal P$，H；孤立磁体的磁导系数 $P$，无量纲（\chref{ch:magnets}）\\
+$Q$ & 电荷，C & SAR 矩阵 $\vb Q$；正交（旋转）矩阵 $\vb Q$（\eqref{eq:sigmatensor}、\eqref{eq:projects-frames}）；有限元与伴随灵敏度中泛指一个观测量\\
+$N$ & 匝数 & 节点基函数 $N_i$；退磁因子 $N_d$\\
+$F$ & 力，N & 磁动势 $\mathcal F$，A；恒等式中的 $\vb F$ 只是一般矢量场\\
+$g$ & 气隙长度，m & 边界上向外的电流密度 $g=\vb J\cdot\vb n$ \eqref{eq:tesneumann}；膜电导 $g_m$\\
+$\eta$ & 三把尺子 $\eta_w$、$\eta_d$、$\eta_m$，无量纲 & 梯度效率 $\eta_k$，T/(m\,A)\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{常用常数与单位换算}\label{sec:app-constants}
+
+\begin{table}[H]\centering\small
+\caption{全书计算所用的常数与常见换算。}\label{tab:app-constants}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{.36\linewidth} Y@{}}
+\toprule
+量 & 数值与说明\\\midrule
+真空磁导率 $\mu_0$ & $4\pi\times10^{-7}\,\mathrm{H/m}$。2019 年修订后的 SI 中它是测量值，但与这个数的相对差别小于 $10^{-9}$，对本书的计算可以忽略\\
+真空介电常数 $\varepsilon_0$ & $8.854\times10^{-12}\,\mathrm{F/m}$\\
+真空光速 $c=1/\sqrt{\mu_0\varepsilon_0}$ & $2.998\times10^8\,\mathrm{m/s}$\\
+氢核旋磁比 $\bar\gamma=\gamma/2\pi$ & $42.577\,\mathrm{MHz/T}$；$0.1\,\mathrm T$ 时拉莫尔频率 $4.258\,\mathrm{MHz}$，$1\,\mathrm{ppm}$ 对应 $4.258\,\mathrm{Hz}$\\
+磁的单位 & $\mathrm T=\mathrm{Wb/m^2}=\mathrm{V\,s/m^2}$；$\mathrm H=\mathrm{Wb/A}=\mathrm{V\,s/A}$；磁阻 $\mathrm{A/Wb}=\mathrm H^{-1}$\\
+高斯制 & $1\,\mathrm{Gs}=10^{-4}\,\mathrm T$；$1\,\mathrm{Oe}=1000/(4\pi)\,\mathrm{A/m}\approx79.58\,\mathrm{A/m}$（\chref{ch:bh}）\\
+能量密度与压强 & $\mathrm{J/m^3}=\mathrm{N/m^2}=\mathrm{Pa}$：磁压力 $B^2/(2\mu_0)$ 在 $1\,\mathrm T$ 时为 $398\,\mathrm{kPa}$（\chref{ch:magnets}）\\
+单位场图 & 每 A/s 的电场：$(\mathrm{V/m})/(\mathrm{A/s})=\mathrm{H/m}$；$1\,\mathrm{A}/\mu\mathrm s=10^6\,\mathrm{A/s}$（\chref{ch:tms}）\\
+正弦量 & 峰值 $=\sqrt2\times$ 有效值；峰值相量下二次量的周期平均带因子 $\tfrac12$（\secref{sec:regimes-phasor}）\\
+长度 & 按毫米求梯度与按米求梯度相差 $10^3$（\secref{sec:projects-interface}）\\
+\bottomrule
+\end{tabularx}
+\end{table}

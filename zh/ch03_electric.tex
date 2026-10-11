@@ -1,0 +1,318 @@
+\chapter{电荷、电场与电势}\label{ch:electric}
+
+\begin{chapterguide}
+\guidequestion{电场的“强”和电势的“高”是一回事吗？电荷静止与流动时，场各遵守什么规律？}
+\begin{guidegoals}
+\item 区分电荷、体电荷密度与面电荷密度，并按几何选择合适的描述；
+\item 用力和做功理解电场，用高斯定律求出点电荷与平行板的电场；
+\item 从“静电场无旋”推出电势，并说清电势与电场的区别：哪个依赖参考点，哪个推动电荷；
+\item 用“数电荷”推导电荷守恒方程，区分 $\nabla\cdot\vb J=0$ 与 $\vb J=0$，区分 $\vb J$、$\vb K$、$I$ 三种电流量；
+\item 用欧姆定律计算电流、电阻与发热，并解释各向异性电导率为什么让电流偏离电场方向。
+\end{guidegoals}
+\guideprereq{\chref{ch:intro}（洛伦兹力，Maxwell 方程的读法）；\secref{sec:calc-grad}（梯度定理）；\secref{sec:calc-div}（散度定理）。}
+\end{chapterguide}
+
+先看两个区域。第一个区域里，各处的电势都是 $10^6\,\mathrm V$；第二个区域里，电势只有 1 伏左右，但在 1 厘米的距离内从 $1\,\mathrm V$ 降到 $0\,\mathrm V$。把同一个电荷分别放进两个区域，它在哪里受的力更大？
+
+如果你的直觉是“一百万伏当然更危险”，本章会说明这个直觉混淆了两个不同的量：电势和电场。为了说清楚它们，我们从最基本的源——电荷——出发：先让电荷静止，看它产生怎样的电场、电势怎样描述这个电场；再让电荷流动，看电流怎样描述、电荷怎样守恒，以及导体中电流与电场怎样联系。
+
+\section{电荷与电荷密度}\label{sec:electric-charge}
+
+单个电荷 $q$ 与总电荷 $Q$ 的单位都是库仑（C）。宏观问题里，电荷数量极多，我们用连续的密度来描述它们。电荷分布在体积中时，用\textbf{体电荷密度} $\rho(\vb r)$，单位 $\mathrm{C/m^3}$：
+\begin{equation}
+Q(V)=\int_V\rho\dV .
+\label{eq:electric-Qvol}
+\end{equation}
+电荷集中在一层很薄的表面上时，把这层直接当作曲面，用\textbf{面电荷密度} $q_s$，单位 $\mathrm{C/m^2}$，于是 $Q(S)=\int_Sq_s\dS$。下标 $s$ 提醒我们它是“每单位面积”的电荷，而不是某个粒子的电荷。有些教材把面电荷密度记作 $\sigma_s$；本书不这样记，因为 $\sigma$ 留给电导率。
+
+几何同样重要。同样的总电荷摊到两倍的面积上，面电荷密度就减半。一层极薄的界面电荷可以让宏观场在界面两侧发生跳变，却不需要在网格里画成一个有厚度的区域；求解器通常通过界面条件来表达它的作用，而不是在每个单元里放带电粒子（\chref{ch:interfaces}）。
+
+物质中的电荷还常常被分成“自由”与“束缚”两类：自由电荷是可以整体移动的载流子，或被人为放到某处的电荷；束缚电荷来自分子内部正负电荷的微小错位。这只是宏观模型里的一种分账方式，\chref{ch:matter} 会详细说明。两类电荷都是真实的电荷，都按同样的规律产生电场。本章先不区分它们：$\rho$ 就是全部电荷。还要记住，净电荷为零的物质里完全可以有大量正、负载流子，它们照样能导电（\secref{sec:electric-current}）。
+
+\section{电场：力、方向与做功}\label{sec:electric-field}
+
+由洛伦兹力 \eqref{eq:lorentz}，静止的试探电荷受力 $q\vb E$。所以电场的单位是 N/C，也就是 V/m。电荷在电场中移动一小段 $\dd\vb r$ 时，电场对它做的功是
+\begin{equation}
+\dd W=q\vb E\cdot\dd\vb r .
+\label{eq:electric-work}
+\end{equation}
+点积只挑出电场沿位移方向的分量：即使电场很强，沿垂直于电场的方向移动，电场也不做功。
+
+举个数字。在 $E_x=100\,\mathrm{V/m}$ 的均匀场中，把电荷沿 $+x$ 方向移动 $0.01\,\mathrm m$，电场对每库仑电荷做功 $100\times0.01=1\,\mathrm{J}$，也就是 $1\,\mathrm{J/C}=1\,\mathrm V$。下一节会看到，这正对应电势降低 $1\,\mathrm V$。可见电场描述的是\emph{局部的坡度}或推动作用，而不是某处“储存了多少电压”。
+
+几个点电荷同时存在时，总电场是各自电场的矢量和——这叫\textbf{叠加原理}，它来自 Maxwell 方程的线性。
+
+画电场线时，线上每一点的切线方向就是该点 $\vb E$ 的方向。但电场线\emph{不是}离子、电子或神经纤维的轨迹：带电粒子怎样运动，还取决于惯性、碰撞、扩散和其他力。电流的走向由电流密度 $\vb J$ 描述，在各向异性导体中 $\vb J$ 甚至不与 $\vb E$ 平行（\secref{sec:electric-ohm}）。另外，静电场像地形的“下坡”，从高电势指向低电势；而\chref{ch:magnetic} 的感应电场可以沿闭合回路转圈。二者都是电场，通过同一个 $q\vb E$ 推动电荷；不同的是 Maxwell 方程对它们空间结构的约束。
+
+\section{高斯定律：电荷是电场的源}\label{sec:electric-gauss}
+
+在真空中，Maxwell 方程的第一条读作
+\begin{keyeq}
+\nabla\cdot(\varepsilon_0\vb E)=\rho .
+\label{eq:gaussvac}
+\end{keyeq}
+用\chref{ch:calculus} 的语言说：电荷是电场通量的源，电荷密度就是“源的密度”。对任意体积 $V$ 积分，再用散度定理 \eqref{id:div}，得到积分形式的\textbf{高斯定律}：
+\begin{equation}
+\oint_{\partial V}\varepsilon_0\vb E\cdot\vb n\dS=Q(V).
+\label{eq:electric-gaussint}
+\end{equation}
+穿出闭合曲面的电场通量（乘以 $\varepsilon_0$）等于曲面内的总电荷，与曲面外的电荷无关，也与曲面内电荷怎样分布无关。
+
+高斯定律对任何电荷分布都成立，但只有在对称性足够高时，才能单靠它求出电场。下面是两个最重要的例子。
+
+\subsubsection{点电荷。}
+点电荷 $Q$ 的电场由球对称性必然沿径向，大小只与距离 $r$ 有关。取半径为 $r$ 的球面，$\varepsilon_0E(r)\cdot4\pi r^2=Q$，于是
+\begin{equation}
+E(r)=\frac{Q}{4\pi\varepsilon_0r^2}.
+\label{eq:electric-coulomb}
+\end{equation}
+这就是库仑定律。再用叠加原理，原则上可以算出任意电荷分布的电场。
+
+\subsubsection{带电平面与平行板。}
+一张很大的平面均匀带有面电荷 $q_s>0$。由对称性，电场垂直于平面，两侧大小相等、方向背离平面。取一个横跨平面的扁圆柱（“药盒”），侧面没有通量，两个底面的通量都是 $\varepsilon_0EA$，于是 $2\varepsilon_0EA=q_sA$，$E=q_s/(2\varepsilon_0)$。现在把两张平面平行放置，分别带 $+q_s$ 与 $-q_s$：两板之间，两个场同向相加；两板之外，两个场反向抵消。忽略边缘效应，
+\begin{equation}
+E=\frac{q_s}{\varepsilon_0}\quad\text{（两板之间）},\qquad E=0\quad\text{（两板之外）}.
+\label{eq:electric-plates}
+\end{equation}
+注意电场穿过一张带电面时会跳变 $q_s/\varepsilon_0$：薄层电荷造成场的跳变，这正是\secref{sec:electric-charge} 所说的情形（\chref{ch:interfaces} 会把它写成一般的界面条件）。
+
+\begin{example}{真空平行板电容器}\label{ex:electric-cap}
+平行板电容器的极板面积 $A_c=0.01\,\mathrm{m^2}$（$10\,\mathrm{cm}\times10\,\mathrm{cm}$），间距 $d=1\,\mathrm{mm}$，两板分别带 $\pm Q$，$Q=1\,\mathrm{nC}$，板间为真空。求面电荷密度、板间电场，以及电场从正极板到负极板做的功（每库仑）。
+\solution
+$q_s=Q/A_c=1.00\times10^{-7}\,\mathrm{C/m^2}$。由 \eqref{eq:electric-plates}，$E=q_s/\varepsilon_0\approx1.13\times10^4\,\mathrm{V/m}$，方向从正极板指向负极板。电场均匀，每库仑电荷从正极板移到负极板，电场做功 $Ed\approx11.3\,\mathrm{J/C}$，即两板间的电势差约为 $11.3\,\mathrm V$。这个电容器会在\chref{ch:matter} 中被填入介质，在\chref{ch:systems} 中用来计算电容与电场能。
+\end{example}
+
+\section{静电场无旋，所以有电势}\label{sec:electric-potential}
+
+只有高斯定律还不够：\chref{ch:calculus} 说过，只给出散度，场并不确定，还需要旋度。静态时磁场不随时间变化，Maxwell 方程 \eqref{eq:curlboth} 中的 $\nabla\times\vb E=-\partial_t\vb B$ 变成
+\begin{equation}
+\nabla\times\vb E=\vb 0 .
+\label{eq:electric-curlfree}
+\end{equation}
+静电场没有局部环流。在一个没有“洞”（单连通）的区域里，这意味着沿任何闭合回路的积分都为零，从而 $\vb E$ 沿两点之间的线积分与路径无关。于是可以定义一个标量 $\phi$，让它的“下坡”就是电场：
+\begin{keyeq}
+\vb E=-\nabla\phi,
+\qquad
+\phi(b)-\phi(a)=-\int_a^b\vb E\cdot\dd\boldsymbol\ell .
+\label{eq:atlasphi}
+\end{keyeq}
+第二式就是梯度定理 \eqref{eq:gradthm} 用于 $-\vb E=\nabla\phi$。$\phi$ 叫作\textbf{电标势}，简称\textbf{电势}，单位是伏特，即焦耳每库仑：$\phi(a)-\phi(b)$ 就是电荷从 $a$ 移到 $b$ 时，电场对每库仑电荷做的功。
+
+电势有三个性质需要牢记：
+\begin{itemize}
+\item \textbf{只有差值有意义。}给 $\phi$ 处处加上同一个常数 $c$，电场不变，因为 $\nabla c=\vb 0$。选择哪一点的电势为零（“接地”或“参考点”）完全是约定。
+\item \textbf{等势面垂直于电场。}这是\chref{ch:calculus} 中“梯度垂直于等值面”的直接推论。
+\item \textbf{电场指向电势降低的方向。}正电荷在静电场中自由释放，会“滚下坡”。
+\end{itemize}
+
+\begin{example}{电势很高不等于电场很强}\label{ex:electric-phiE}
+区域 1 中处处 $\phi_1=10^6\,\mathrm V$；区域 2 中 $\phi_2(x)=1\,\mathrm V-(100\,\mathrm{V/m})\,x$，$0\le x\le1\,\mathrm{cm}$。比较两区域中的电场。
+\solution
+由 \eqref{eq:atlasphi}，$\vb E_1=-\nabla\phi_1=\vb 0$，而 $\vb E_2=-\nabla\phi_2=100\,\mathrm{V/m}\;\vb e_x$。电势高达一百万伏的区域里电荷不受电力，电势只有一伏的区域里电场却是 $100\,\mathrm{V/m}$（\figref{fig:potential_vs_field}）。决定电场的是电势在空间中\emph{变化得多快}，而不是它的数值有多大；给 $\phi_2$ 加上任意常数，结论都不变。本章开头的问题由此得到回答。
+\end{example}
+
+\fig{potential_vs_field}{同一段 $1\,\mathrm{cm}$ 的区域，两种电势分布。上：电势随位置的变化（注意两图纵轴单位相差 $10^6$ 倍）。下：等势线与电场。(a) 处处同一电势，没有等势线间距可言，$\vb E=0$；(b) 每 $2\,\mathrm{mm}$ 下降 $0.2\,\mathrm V$，等势线等间距排列，电场均匀，为 $100\,\mathrm{V/m}$，从高电势指向低电势。}{fig:potential_vs_field}
+
+这个例子也解释了一个数值上的细节：如果一个导电问题只规定了流入、流出的电流，而没有规定任何一点的电势，那么解出的电势只确定到一个常数。求解器必须人为固定一个参考值，但这只是消除了“加常数”的自由，并没有增加任何物理激励（\chref{ch:tes}）。读仿真软件的电势图时也是一样：要看等势线的疏密，而不是色标的绝对数值。
+
+\begin{pitfall}[“两点之间的电压总是等于电势差，与怎样测量无关”]
+\eqref{eq:atlasphi} 依赖于 $\nabla\times\vb E=\vb 0$，即没有变化的磁场。磁场变化时，电场写成 $\vb E=-\nabla\phi-\partial_t\vb A$（\chref{ch:intro}），$\phi(b)-\phi(a)$ 一般不再等于总电场沿路径积分的负值；电压表的读数还与引线所走的路径、引线所围的磁通有关（\chref{ch:magnetic}）。
+\end{pitfall}
+
+\section{对照：电势与电场}\label{sec:electric-compare-phiE}
+
+电势与电场的关系，正像\chref{ch:calculus} 里地形的“海拔”与“坡度”：海拔高的地方可以是一片平原，海拔低的地方也可以是陡坡。下面把两者的区别放在一起。
+
+\begin{compare}{电势与电场}{电势 $\phi$}{电场 $\vb E$}
+\cmprow{类型与单位}{标量，V}{矢量，V/m}
+\cmprow{参考点}{依赖：可加任意常数}{不依赖}
+\cmprow{怎样测量}{两点之间的电压（电势差）}{试探电荷受的力；或小距离上的电势差除以距离}
+\cmprow{进入力与功率}{不直接：只有它的梯度进入}{直接：$q\vb E$，$\vb E\cdot\vb J$}
+\cmprow{决定刺激与发热}{不直接}{决定发热；神经响应取决于 $\vb E$ 及其沿纤维的变化（\chref{ch:neuro}）}
+\cmprow{适用范围}{单独使用时只适用于静态（无旋）电场}{任何时候都有定义}
+\cmpsum{电势像海拔，电场像坡度：站得高不等于站在陡坡上；推动电荷的是坡度。}
+\end{compare}
+
+\section{电流与电荷守恒}\label{sec:electric-current}
+
+现在让电荷动起来。设第 $a$ 类载流子的数密度为 $n_a$（单位 $\mathrm m^{-3}$），每个带电荷 $q_a$，平均漂移速度为 $\vb v_a$。单位时间穿过单位面积的电荷就是\textbf{电流密度}
+\begin{equation}
+\vb J=\sum_an_aq_a\vb v_a,
+\qquad
+I(S)=\int_S\vb J\cdot\vb n\dS .
+\label{eq:electric-carriers}
+\end{equation}
+$\vb J$ 的单位是 $\mathrm{A/m^2}$；穿过曲面 $S$ 的总\textbf{电流} $I$ 的单位是安培（A），法向 $\vb n$ 规定了哪个方向算正。约定电流的方向是正电荷运动的方向；金属中的电子带负电，它们的漂移方向与约定电流相反。
+
+电荷密度与电流密度对正负载流子的处理很不一样。设正、负载流子数密度相同、电荷等量反号，在电场中反向漂移：电荷密度 $nq+n(-q)=0$ 相互抵消；电流密度 $nq\vb v+n(-q)(-\vb v)=2nq\vb v$ 却相互叠加（\figref{fig:charge_current}b）。所以，\emph{净电荷为零的物体照样可以导电}，也照样会发热（\secref{sec:electric-ohm}）。
+
+\fig{charge_current}{电荷与电流是两回事。(a) 有净电荷而无电流：电荷静止。(b) 有电流而无净电荷：正、负载流子在电场中反向漂移，电荷密度相互抵消，对电流的贡献却同向相加。(c) 流入多于流出：控制体内的电荷随时间增加。虚线是用来“记账”的控制面，并不是真实的墙。}{fig:charge_current}
+
+\subsubsection{数电荷：连续性方程。}
+取一个固定的体积 $V$（\figref{fig:charge_current}c）。电荷既不会凭空产生，也不会凭空消失；体内电荷的减少，只能是因为有电流从边界净流出：
+\begin{equation}
+\frac{\dd}{\dd t}\int_V\rho\dV=-\oint_{\partial V}\vb J\cdot\vb n\dS .
+\label{eq:electric-contint}
+\end{equation}
+用散度定理 \eqref{id:div} 把右边换成体积分，得到 $\int_V(\partial_t\rho+\nabla\cdot\vb J)\dV=0$。这对\emph{任意}体积都成立，被积函数只能处处为零：
+\begin{keyeq}
+\frac{\partial\rho}{\partial t}+\nabla\cdot\vb J=0 .
+\label{eq:continuity}
+\end{keyeq}
+这就是\textbf{电荷守恒}的局部形式，也叫\textbf{连续性方程}：某处电流的净流出（散度）等于该处电荷的减少率。\chref{ch:matter} 会看到，它其实已经包含在 Maxwell 方程之中。
+
+\subsubsection{稳恒电流。}
+电荷分布不随时间变化时，$\partial_t\rho=0$，于是
+\begin{equation}
+\nabla\cdot\vb J=0 .
+\label{eq:electric-steady}
+\end{equation}
+这\emph{不}表示 $\vb J=0$，而是表示每个小区域流进多少电流就流出多少。它也\emph{不}表示没有电荷：电荷可以静静地停在某处（例如界面上），只要它不再随时间变化。
+
+\begin{pitfall}[“既然 $\nabla\cdot\vb J=0$，导体里就没有电荷，也就没有电荷产生的电场”]
+$\nabla\cdot\vb J=0$ 说的是电荷\emph{不再变化}，不是电荷\emph{不存在}。体积导体模型中的次级电场，正是由很快建立起来的界面电荷产生的（\chref{ch:intro}）。在电流平衡中可以忽略这些电荷微小的时间积累，同时必须保留它们产生的电场。更一般地，严格无散的是 Ampère--Maxwell 方程右边的总量 $\vb J_f+\partial_t\vb D$（\chref{ch:matter}）；只有当电荷积累在所关心的精度内可以忽略时，传导电流本身才近似无散（\chref{ch:regimes}）。
+\end{pitfall}
+
+\subsubsection{三种电流量。}
+电流还可以集中在一层很薄的导电片里，例如一层金属屏蔽或线圈的导电面。把体电流密度沿厚度积分，得到切向的\textbf{面电流密度} $\vb K$，单位 A/m。穿过片内一条曲线 $\Gamma$ 的电流是
+\begin{equation}
+I=\int_\Gamma\vb K\cdot\vb m\dell,
+\label{eq:electric-sheet}
+\end{equation}
+其中 $\vb m$ 是\emph{位于薄片切平面内}、垂直于 $\Gamma$ 的单位矢量。这与穿过三维曲面的积分不同。三种电流量的单位与用途各不相同（\tabref{tab:electric-currents}）；仿真中指定电流源时，体电流源、面电流边界和端子电流要用不同的量。
+
+\begin{table}[htbp]\centering\small
+\caption{三种电流量。}\label{tab:electric-currents}
+\begin{tabularx}{\linewidth}{@{}l l l Y@{}}
+\toprule
+量 & 单位 & 怎样得到电流 & 典型用途\\\midrule
+体电流密度 $\vb J$ & $\mathrm{A/m^2}$ & 对曲面积分 $\int_S\vb J\cdot\vb n\dS$ & 组织、导体内部；绕组的体电流源\\
+面电流密度 $\vb K$ & A/m & 对片内曲线积分 $\int_\Gamma\vb K\cdot\vb m\dell$ & 薄屏蔽层、线圈的导电面、等效面电流\\
+电流 $I$ & A & 本身就是穿过某个截面的总量 & 导线、端子、电极\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{导体中的欧姆定律}\label{sec:electric-ohm}
+
+是什么让电荷流动？在导体中，载流子在电场推动下运动，同时不断与周围的粒子碰撞。对电解液、生物组织和金属这类导体，在相当宽的条件下，实验表明传导电流密度与电场成正比。把它和外加的源电流一起写出：
+\begin{keyeq}
+\vb J_f=\vb J_s+\vb J_c,
+\qquad \vb J_c=\sig\vb E.
+\label{eq:jfrome}
+\end{keyeq}
+$\vb J_c=\sig\vb E$ 就是\textbf{欧姆定律}的局部形式，$\sig$ 是\textbf{电导率}，单位 S/m（西门子每米）；各向同性材料中它是一个正数 $\sigma$。$\vb J_s$ 是事先给定的源电流（例如线圈绕组中的电流、电极注入的电流），$\vb J_c$ 则是由求出的电场决定的传导响应。这种“源与响应”的划分是一个建模选择：已经把线圈电流当作给定的源，就不能在同一个导体里再叠加一份数值相同、相互独立的欧姆电流。
+
+\subsubsection{电阻。}
+一根长 $\ell$、截面积 $A_c$、电导率均匀的导体棒，两端加电压 $V$。棒内电场均匀，$E=V/\ell$；电流密度 $J=\sigma V/\ell$；电流 $I=JA_c$。于是
+\begin{equation}
+R=\frac VI=\frac{\ell}{\sigma A_c}.
+\label{eq:electric-resistance}
+\end{equation}
+越长越难通过，越粗越容易，电导率越大越容易。\chref{ch:systems} 会把电阻放进“场到集总元件”的统一框架中。
+
+\subsubsection{发热。}
+电场对单位体积内的载流子做功的功率是 $\sum_an_aq_a\vb E\cdot\vb v_a=\vb E\cdot\vb J$（磁力不做功）。对传导电流，这部分功率变成热：
+\begin{equation}
+p=\vb E\cdot\vb J_c\quad[\mathrm{W/m^3}],
+\qquad p=\sigma\abs{\vb E}^2\ \ \text{（各向同性）}.
+\label{eq:electric-power}
+\end{equation}
+注意功率密度是 $\vb E\cdot\vb J_c$，而不是“电荷密度乘以电场”。
+
+\begin{example}{一层导体：电流、电场、电阻与热}\label{ex:electric-layer}
+一块导体层厚 $\ell=8\,\mathrm{mm}$，截面积 $A_c=1\,\mathrm{cm^2}$，电导率 $\sigma=0.2\,\mathrm{S/m}$（教学输入）。电流 $I=1\,\mathrm{mA}$ 沿厚度方向均匀流过。求电流密度、电场、电压、电阻和发热功率。层内几乎没有净电荷，为什么仍会发热？
+\solution
+$J=I/A_c=10\,\mathrm{A/m^2}$；$E=J/\sigma=50\,\mathrm{V/m}$；电压 $V=E\ell=0.4\,\mathrm V$；电阻 $R=\ell/(\sigma A_c)=400\,\Omega$，与 $V/I$ 一致。功率密度 $p=\sigma E^2=500\,\mathrm{W/m^3}$，乘以体积 $A_c\ell=8\times10^{-7}\,\mathrm{m^3}$，得 $P=0.4\,\mathrm{mW}$，恰好等于 $VI$。层内正负载流子的电荷相互抵消，但它们对电流的贡献相加（\figref{fig:charge_current}b）；发热由 $\vb E\cdot\vb J_c$ 决定，与净电荷无关。\chref{ch:interfaces} 会在这一层下面再接一层电导率小十倍的导体，看看电场会发生什么。
+\end{example}
+
+\subsubsection{各向异性：电流未必沿电场方向。}
+有些材料在不同方向上导电能力不同，例如具有层状或纤维状结构的材料。这时电导率要写成一个对称正定的张量：
+\begin{keyeq}
+\sig=\vb Q\,\mathrm{diag}(\sigma_1,\sigma_2,\sigma_3)\,\vb Q^{\mathsf T},
+\qquad \sigma_i>0,
+\label{eq:sigmatensor}
+\end{keyeq}
+正交矩阵 $\vb Q$ 的各列是材料的\textbf{主方向}，$\sigma_i$ 是沿各主方向的电导率。$\sig\vb E$ 的计算可以分三步理解：先把电场分解到主方向上（$\vb Q^{\mathsf T}\vb E$），再把各分量分别乘以对应的电导率，最后转回原来的坐标系。除非电场恰好沿某个主方向，否则电流不与电场平行。
+
+\begin{example}{电流偏向导电性好的方向}\label{ex:electric-aniso}
+二维情形取 $\sig=\mathrm{diag}(1,4)\,\mathrm{S/m}$（主方向就是 $x$、$y$ 轴），电场 $\vb E=(1,1)\,\mathrm{V/m}$。求电流密度、它与电场的夹角，以及发热功率密度。
+\solution
+$\vb J_c=\sig\vb E=(1\cdot1,\;4\cdot1)=(1,4)\,\mathrm{A/m^2}$。电场与 $x$ 轴成 $45^\circ$，电流与 $x$ 轴成 $\arctan4\approx76^\circ$，二者相差约 $31^\circ$：电流被“拉”向电导率大的 $y$ 方向（\figref{fig:anisotropic_current}）。功率密度 $\vb E\cdot\vb J_c=1+4=5\,\mathrm{W/m^3}$，仍为正：夹角小于 $90^\circ$。各向异性改变的不仅是大小，还有方向。
+\end{example}
+
+\fig{anisotropic_current}{同一个电场 $\vb E=(1,1)\,\mathrm{V/m}$（蓝）作用于两种材料时的电流密度（绿）。(a) 各向同性：电流与电场同向。(b) $\sig=\mathrm{diag}(1,4)\,\mathrm{S/m}$：$y$ 分量被放大四倍，电流偏向电导率大的方向，与电场相差约 $31^\circ$。两支箭头单位不同，图中只比较方向；虚线表示按主方向分解的分量。}{fig:anisotropic_current}
+
+张量的两个性质都有物理含义。\emph{正定}保证对任何电场都有 $\vb E^{\mathsf T}\sig\vb E>0$：导体只会耗散能量，不会凭空产生能量。\emph{对称}则对应局部传导规律的互易性。
+
+\begin{pitfall}[“扩散 MRI 测到的扩散张量就是电导率张量”]
+扩散 MRI 可以提供组织的方向信息，但扩散张量描述的是水分子的扩散，并不是电导率张量。从前者得到后者需要额外的本构假设与标定，而且必须写明：使用了哪些特征向量、特征值怎样映射为电导率、张量定义在哪个坐标系中，以及怎样保证结果仍然对称正定。
+\end{pitfall}
+
+\begin{deeper}[张量材料的一般注意事项]
+同样的张量写法也用于介电常数 $\eps$ 与磁导率 $\boldsymbol\mu$。磁性材料的各向异性同样需要谨慎：一条标量 B--H 曲线加上“$\vb B$ 与 $\vb H$ 平行”的假设，描述的是各向同性的磁性材料，不能自动描述叠片钢、晶体易轴或各向异性永磁材料（\chref{ch:bh}、\chref{ch:magnets}）。物体在仿真中旋转时，它的局部材料张量也必须随之旋转到仿真坐标系。
+\end{deeper}
+
+\section{对照：电荷密度与电流密度}\label{sec:electric-compare}
+
+本章的核心问题还剩后一半：电荷静止与流动时，场各遵守什么规律？把本章的结论排在一起：
+\begin{itemize}
+\item \textbf{电荷静止（静电学）}：高斯定律 \eqref{eq:gaussvac} 与无旋条件 \eqref{eq:electric-curlfree}；后者让电场可以写成 $\vb E=-\nabla\phi$。导体内部没有电场。
+\item \textbf{电荷稳定流动（稳恒电流）}：上面两条照样成立，再加上 $\nabla\cdot\vb J=0$ 与欧姆定律 $\vb J_c=\sig\vb E$；导体内部必须有电场来推动电流。
+\item \textbf{电荷分布随时间变化}：使用完整的连续性方程 \eqref{eq:continuity}；如果磁场也在变化，无旋条件要换成法拉第定律（\chref{ch:magnetic}）。
+\end{itemize}
+下面先把两个“源”放在一起比较，再比较导体的两种稳定状态。
+
+\begin{compare}{电荷密度与电流密度}{电荷密度 $\rho$}{电流密度 $\vb J$}
+\cmprow{类型与单位}{标量，$\mathrm{C/m^3}$}{矢量，$\mathrm{A/m^2}$}
+\cmprow{正负载流子}{相互抵消}{反向运动时相互叠加}
+\cmprow{是谁的源}{电场的散度源：$\nabla\cdot(\varepsilon_0\vb E)=\rho$}{磁场的旋度源（\chref{ch:magnetic}）}
+\cmprow{恒定状态}{不随时间变化，但可以不为零}{无散 $\nabla\cdot\vb J=0$，但可以不为零}
+\cmprow{在守恒律中}{$\partial_t\rho$：电荷的变化率}{$\nabla\cdot\vb J$：净流出，与左边之和为零}
+\cmpsum{$\rho$ 回答“这里有多少电荷”，$\vb J$ 回答“电荷怎样流过这里”；一个可以为零而另一个不为零（\figref{fig:charge_current}）。}
+\end{compare}
+
+两种状态下的导体满足同样的静电场方程，区别只在于导体内部是否允许有电场。
+
+\begin{compare}{导体中的两种稳定状态}{静电平衡（电荷静止）}{稳恒电流（电荷匀速流动）}
+\cmprow{内部电场}{$\vb E=\vb 0$，否则电荷还会移动}{$\vb E=\sig^{-1}\vb J\neq\vb 0$}
+\cmprow{导体是否等势}{是，整个导体是一个等势体}{否，电势沿电流方向下降}
+\cmprow{电荷在哪里}{全部在导体表面}{均匀各向同性导体内部为零；表面与界面上有电荷}
+\cmprow{能量}{不耗散}{持续发热，$p=\vb E\cdot\vb J_c$（\exref{ex:electric-layer}）}
+\cmpsum{“导体内部电场为零”只在电荷停下来以后成立；只要有电流流过，导体内部就必须有电场。}
+\end{compare}
+
+静电学的两条方程给出电场的散度与旋度，再加上边界条件就能确定电场~\cite{griffiths}；电荷流动时，又多了电荷守恒与欧姆定律。可是流动的电荷——电流——还会产生另一种场。下一章讨论它：电流怎样产生磁场，变化的磁场又怎样反过来产生电场。
+
+\begin{takeaways}
+\begin{itemize}
+\item 电荷用 $q$、$Q$、体密度 $\rho$（$\mathrm{C/m^3}$）或面密度 $q_s$（$\mathrm{C/m^2}$）描述；薄层电荷让场在界面两侧跳变。
+\item 电场由静止电荷的受力定义，$\dd W=q\vb E\cdot\dd\vb r$。电场线不是粒子的轨迹。
+\item 高斯定律 $\nabla\cdot(\varepsilon_0\vb E)=\rho$：电荷是电场通量的源。对称时可直接求出电场，例如点电荷 $Q/(4\pi\varepsilon_0r^2)$、平行板之间 $q_s/\varepsilon_0$。
+\item 静电场无旋，所以 $\vb E=-\nabla\phi$。电势只有差值有意义；电场取决于电势变化得多快，与它的绝对数值无关。
+\item 电荷守恒 $\partial_t\rho+\nabla\cdot\vb J=0$。稳恒时 $\nabla\cdot\vb J=0$，但电流与电荷都可以不为零；正负载流子的电荷相互抵消，电流却相加。
+\item 欧姆定律 $\vb J_c=\sig\vb E$，电阻 $R=\ell/(\sigma A_c)$，发热 $p=\vb E\cdot\vb J_c$。各向异性时电流偏向电导率大的主方向。
+\end{itemize}
+\end{takeaways}
+
+\begin{selfcheck}
+\begin{enumerate}
+\item 把\exref{ex:electric-cap} 中的极板面积加倍、电荷不变，面电荷密度与板间电场各变为多少？
+\item 在 $100\,\mathrm{V/m}$ 的均匀电场中，把正电荷沿\emph{垂直于}电场的方向移动 $1\,\mathrm{cm}$，电场做功多少？电势变化多少？
+\item 一张仿真得到的电势图上，某个区域颜色最深，电势最高。能否断定那里电场最强？应该看什么？
+\item 金属导线中的电子向左漂移，约定电流朝哪个方向？
+\item 一个闭合曲面上，流入的电流是 $3\,\mathrm{mA}$，流出的电流是 $1\,\mathrm{mA}$。曲面内的电荷怎样变化？
+\item 稳恒电流时 $\nabla\cdot\vb J=0$。这是否说明导体内部各处都没有电荷？
+\item 在\exref{ex:electric-aniso} 的材料中把电场改为 $\vb E=(1,0)\,\mathrm{V/m}$，电流密度是多少？与电场平行吗？
+\end{enumerate}
+\end{selfcheck}
+
+\begin{answers}
+\item 面电荷密度减半，为 $5.0\times10^{-8}\,\mathrm{C/m^2}$；板间电场也减半，约为 $5.65\times10^3\,\mathrm{V/m}$。
+\item 做功为零，电势不变：位移与电场垂直，点积为零；移动是沿着等势面进行的。
+\item 不能。电场取决于电势的空间变化：要看等势线有多密，或电势梯度有多大（\exref{ex:electric-phiE}）。
+\item 向右。约定电流沿正电荷运动的方向，电子带负电。
+\item 曲面内的电荷以 $2\,\mathrm{mA}$，即每秒 $2\times10^{-3}\,\mathrm C$ 的速率增加（连续性方程的积分形式 \eqref{eq:electric-contint}）。
+\item 不是。它只说明电荷不随时间变化。在电导率变化的地方，特别是不同材料的界面上，电荷会停留并产生电场（\chref{ch:calculus} 中电导率渐变的导体板，以及\chref{ch:interfaces}）。
+\item $\vb J_c=(1,0)\,\mathrm{A/m^2}$，与电场平行：电场沿着主方向时，各向异性不改变电流方向。
+\end{answers}
